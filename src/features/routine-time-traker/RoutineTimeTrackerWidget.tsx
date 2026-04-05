@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
+// 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 32;
@@ -9,11 +10,27 @@ export default function RoutineTimeTrackerWidget() {
         { id: 1, title: '深度工作', start: '07:00', end: '10:30', side: 'left' }
     ]);
 
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     // 将 "07:30" 转换为距离 00:00 的分钟数
     const timeToMinutes = (timeStr) => {
         const [hours, minutes] = timeStr.split(':').map(Number);
         return hours * 60 + minutes;
     };
+
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const currentTimeString = currentTime.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+    });
 
     return (
         // 外层滚动容器
@@ -26,12 +43,14 @@ export default function RoutineTimeTrackerWidget() {
                 {[...Array(25)].map((_, i) => (
                     <div
                         key={i}
-                        className="absolute w-full flex justify-center text-muted-foreground text-xs font-mono"
+                        className="absolute w-full flex items-center justify-center text-muted-foreground text-xs font-mono -translate-y-1/2"
                         style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                     >
                         {/* 时间文字与刻度线 */}
-                        <span className="bg-background px-2 z-10 tabular-nums">{String(i).padStart(2, '0')}:00</span>
-                        <div className="absolute top-2 w-full border-t border-border border-dashed" />
+                        <div className="absolute w-full border-t border-border border-dashed" />
+                        <span className="bg-background px-2 z-10 tabular-nums">
+                            {String(i).padStart(2, '0')}:00
+                        </span>
                     </div>
                 ))}
 
@@ -61,12 +80,12 @@ export default function RoutineTimeTrackerWidget() {
 
                 {/* 当前时间红线 */}
                 <div
-                    className="absolute w-full flex items-center justify-center z-20 pointer-events-none"
-                    style={{ top: `${630 * PIXELS_PER_MINUTE + 32}px` }}
+                    className="absolute w-full flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
+                    style={{ top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                 >
                     <div className="w-full border-t-2 border-primary/50" />
                     <span className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
-                        10:30
+                        {currentTimeString}
                     </span>
                 </div>
 
