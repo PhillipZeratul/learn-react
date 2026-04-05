@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
-// 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
+const TOP_MARGIN = 32;
+const BOTTOM_MARGIN = 32;
 
 export default function RoutineTimeTrackerWidget() {
     const [tasks, setTasks] = useState([
@@ -16,21 +17,21 @@ export default function RoutineTimeTrackerWidget() {
 
     return (
         // 外层滚动容器
-        <div className="h-screen overflow-y-auto bg-white relative">
+        <div className="h-full overflow-y-auto bg-background relative scrollbar-hide">
 
             {/* 24小时画布，总高度 24 * 60 = 1440px */}
-            <div className="relative w-full max-w-md mx-auto" style={{ height: `${24 * 60 * PIXELS_PER_MINUTE}px` }}>
+            <div className="relative w-full max-w-2xl mx-auto py-8 px-4" style={{ height: `${25 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px` }}>
 
                 {/* 中央时间刻度 (生成 0-24 的数组) */}
-                {[...Array(24)].map((_, i) => (
+                {[...Array(25)].map((_, i) => (
                     <div
                         key={i}
-                        className="absolute w-full flex justify-center text-gray-400 text-sm"
-                        style={{ top: `${i * 60 * PIXELS_PER_MINUTE}px` }}
+                        className="absolute w-full flex justify-center text-muted-foreground text-xs font-mono"
+                        style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                     >
                         {/* 时间文字与刻度线 */}
-                        <span className="bg-white px-2 z-10">{i}:00</span>
-                        <div className="absolute top-3 w-full border-t border-gray-200 border-dashed" />
+                        <span className="bg-background px-2 z-10 tabular-nums">{String(i).padStart(2, '0')}:00</span>
+                        <div className="absolute top-2 w-full border-t border-border border-dashed" />
                     </div>
                 ))}
 
@@ -42,28 +43,31 @@ export default function RoutineTimeTrackerWidget() {
                     return (
                         <div
                             key={task.id}
-                            className={`absolute rounded-lg bg-gray-100 p-2 shadow-sm ${
-                                task.side === 'left' ? 'left-4 right-[55%]' : 'left-[55%] right-4'
+                            className={`absolute rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md ${
+                                task.side === 'left' ? 'left-8 right-[52%]' : 'left-[52%] right-8'
                             }`}
                             style={{
-                                top: `${startMin * PIXELS_PER_MINUTE}px`,
+                                top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
                                 height: `${duration * PIXELS_PER_MINUTE}px`,
                             }}
                         >
-                            {task.title}
+                            <div className="font-medium text-sm text-foreground">{task.title}</div>
+                            <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                                {task.start} - {task.end}
+                            </div>
                         </div>
                     );
                 })}
 
-                {/* 当前时间红线 (假设当前是 10:30 = 630 分钟) */}
+                {/* 当前时间红线 */}
                 <div
                     className="absolute w-full flex items-center justify-center z-20 pointer-events-none"
-                    style={{ top: `${630 * PIXELS_PER_MINUTE}px` }}
+                    style={{ top: `${630 * PIXELS_PER_MINUTE + 32}px` }}
                 >
-                    <div className="w-full border-t border-red-400" />
-                    <span className="absolute bg-red-400 text-white text-xs px-2 py-1 rounded-full">
-            10:30
-          </span>
+                    <div className="w-full border-t-2 border-primary/50" />
+                    <span className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                        10:30
+                    </span>
                 </div>
 
             </div>
