@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 // 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
@@ -6,7 +6,7 @@ const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 32;
 
 export default function RoutineTimeTrackerWidget() {
-    const [tasks, setTasks] = useState([
+    const [tasks] = useState([
         { id: 1, title: '深度工作', start: '07:00', end: '10:30', side: 'left' }
     ]);
 
@@ -20,7 +20,7 @@ export default function RoutineTimeTrackerWidget() {
     }, []);
 
     // 将 "07:30" 转换为距离 00:00 的分钟数
-    const timeToMinutes = (timeStr) => {
+    const timeToMinutes = (timeStr: string) => {
         const [hours, minutes] = timeStr.split(':').map(Number);
         return hours * 60 + minutes;
     };
