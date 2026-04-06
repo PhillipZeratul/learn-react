@@ -131,52 +131,91 @@ export default function RoutineTimeTrackerWidget() {
         >
 
             {/* 24小时画布 */}
-            <div className="relative w-full max-w-2xl py-8 px-4 pointer-events-none" style={{ height: `${25 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px` }}>
-
-                {/* 中央时间刻度 (生成 0-24 的数组) */}
+            <div className="relative w-full max-w-2xl mx-auto py-8 pointer-events-none" style={{ height: `${25 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px` }}>
+                
+                {/* 1. 背景刻度线 (全宽) */}
                 {[...Array(25)].map((_, i) => (
                     <div
-                        key={i}
-                        className="absolute left-0 right-0 flex items-center justify-center text-muted-foreground text-xs font-mono -translate-y-1/2"
+                        key={`line-${i}`}
+                        className="absolute left-0 right-0 border-t border-border border-dashed -translate-y-1/2"
                         style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
-                    >
-                        {/* 时间文字与刻度线 */}
-                        <div className="absolute w-full border-t border-border border-dashed" />
-                        <span className="bg-background px-2 z-10 tabular-nums">
-                            {String(i).padStart(2, '0')}:00
-                        </span>
-                    </div>
+                    />
                 ))}
 
-                {/* 渲染任务卡片 */}
-                {tasks.map(task => {
-                    const startMin = timeToMinutes(task.start);
-                    const duration = timeToMinutes(task.end) - startMin;
+                {/* 2. 三栏布局层 (左任务 - 时间轴 - 右任务) */}
+                <div className="absolute inset-0 flex">
+                    
+                    {/* 左侧任务栏 */}
+                    <div className="relative flex-1 h-full">
+                        {tasks.filter(t => t.side === 'left').map(task => {
+                            const startMin = timeToMinutes(task.start);
+                            const duration = timeToMinutes(task.end) - startMin;
+                            return (
+                                <div
+                                    key={task.id}
+                                    className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto"
+                                    style={{
+                                        top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
+                                        height: `${duration * PIXELS_PER_MINUTE}px`,
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onTouchStart={(e) => e.stopPropagation()}
+                                >
+                                    <div className="font-medium text-sm text-foreground">{task.title}</div>
+                                    <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                                        {task.start} - {task.end}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
 
-                    return (
-                        <div
-                            key={task.id}
-                            className={`task-card absolute rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto ${
-                                task.side === 'left' 
-                                    ? 'left-2 right-[calc(50%+30px)]' 
-                                    : 'left-[calc(50%+30px)] right-2'
-                            }`}
-                            style={{
-                                top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
-                                height: `${duration * PIXELS_PER_MINUTE}px`,
-                            }}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onTouchStart={(e) => e.stopPropagation()}
-                        >
-                            <div className="font-medium text-sm text-foreground">{task.title}</div>
-                            <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                                {task.start} - {task.end}
+                    {/* 中间时间轴 */}
+                    <div className="relative w-fit h-full flex flex-col items-center">
+                        {/* 隐形占位符，确保轴宽随字体变化 */}
+                        <div className="invisible font-mono text-xs select-none px-2">00:00</div>
+                        
+                        {/* 时间文字 */}
+                        {[...Array(25)].map((_, i) => (
+                            <div
+                                key={`time-${i}`}
+                                className="absolute left-1/2 -translate-x-1/2 text-muted-foreground text-xs font-mono -translate-y-1/2 z-10"
+                                style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
+                            >
+                                <span className="bg-background px-2 tabular-nums">
+                                    {String(i).padStart(2, '0')}:00
+                                </span>
                             </div>
-                        </div>
-                    );
-                })}
+                        ))}
+                    </div>
 
-                {/* 当前时间红线 */}
+                    {/* 右侧任务栏 */}
+                    <div className="relative flex-1 h-full">
+                        {tasks.filter(t => t.side === 'right').map(task => {
+                            const startMin = timeToMinutes(task.start);
+                            const duration = timeToMinutes(task.end) - startMin;
+                            return (
+                                <div
+                                    key={task.id}
+                                    className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto"
+                                    style={{
+                                        top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
+                                        height: `${duration * PIXELS_PER_MINUTE}px`,
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onTouchStart={(e) => e.stopPropagation()}
+                                >
+                                    <div className="font-medium text-sm text-foreground">{task.title}</div>
+                                    <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                                        {task.start} - {task.end}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* 3. 当前时间红线 (全宽) */}
                 <div
                     className="absolute left-0 right-0 flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
                     style={{ top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
