@@ -2,7 +2,7 @@ import RoutineTimeTrackerWidget from "@/features/routine-time-traker/RoutineTime
 
 export function App() {
     return (
-        <div className="h-svh overflow-hidden">
+        <div className="h-svh w-full overflow-hidden flex justify-center">
             <RoutineTimeTrackerWidget/>
         </div>
     )

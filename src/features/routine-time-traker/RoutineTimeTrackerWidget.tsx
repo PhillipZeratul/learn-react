@@ -42,6 +42,9 @@ export default function RoutineTimeTrackerWidget() {
         const relativeY = clientY - rect.top + scrollContainerRef.current.scrollTop;
         const relativeX = clientX - rect.left;
 
+        // 使用 clientWidth 而不是 rect.width 来排除滚动条的影响，确保中心点判断准确
+        const contentWidth = scrollContainerRef.current.clientWidth;
+
         // 减去容器内边距和顶部边距
         const minutes = Math.floor((relativeY - TOP_MARGIN) / PIXELS_PER_MINUTE);
 
@@ -60,7 +63,8 @@ export default function RoutineTimeTrackerWidget() {
         const endMin = endMinutes % 60;
         const endTime = `${String(Math.min(24, endHour)).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 
-        const side = relativeX < rect.width / 2 ? 'left' : 'right';
+        // 使用 contentWidth 来判断左右侧
+        const side = relativeX < contentWidth / 2 ? 'left' : 'right';
 
         const newTask = {
             id: Date.now(),
@@ -116,7 +120,7 @@ export default function RoutineTimeTrackerWidget() {
         // 外层滚动容器
         <div 
             ref={scrollContainerRef}
-            className="h-full overflow-y-auto bg-background relative scrollbar-hide select-none"
+            className="h-full w-full overflow-y-auto bg-background relative flex flex-col items-center scrollbar-hide select-none"
             onMouseDown={startPress}
             onMouseUp={endPress}
             onMouseLeave={endPress}
@@ -127,13 +131,13 @@ export default function RoutineTimeTrackerWidget() {
         >
 
             {/* 24小时画布 */}
-            <div className="relative w-full max-w-2xl mx-auto py-8 px-4 pointer-events-none" style={{ height: `${25 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px` }}>
+            <div className="relative w-full max-w-2xl py-8 px-4 pointer-events-none" style={{ height: `${25 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px` }}>
 
                 {/* 中央时间刻度 (生成 0-24 的数组) */}
                 {[...Array(25)].map((_, i) => (
                     <div
                         key={i}
-                        className="absolute w-full flex items-center justify-center text-muted-foreground text-xs font-mono -translate-y-1/2"
+                        className="absolute left-0 right-0 flex items-center justify-center text-muted-foreground text-xs font-mono -translate-y-1/2"
                         style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                     >
                         {/* 时间文字与刻度线 */}
@@ -153,7 +157,7 @@ export default function RoutineTimeTrackerWidget() {
                         <div
                             key={task.id}
                             className={`task-card absolute rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto ${
-                                task.side === 'left' ? 'left-8 right-[52%]' : 'left-[52%] right-8'
+                                task.side === 'left' ? 'left-4 right-[56%]' : 'left-[56%] right-4'
                             }`}
                             style={{
                                 top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
@@ -172,7 +176,7 @@ export default function RoutineTimeTrackerWidget() {
 
                 {/* 当前时间红线 */}
                 <div
-                    className="absolute w-full flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
+                    className="absolute left-0 right-0 flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
                     style={{ top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                 >
                     <div className="w-full border-t-2 border-primary/50" />
