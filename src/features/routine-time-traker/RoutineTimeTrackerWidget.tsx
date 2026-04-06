@@ -157,7 +157,9 @@ export default function RoutineTimeTrackerWidget() {
                         <div
                             key={task.id}
                             className={`task-card absolute rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto ${
-                                task.side === 'left' ? 'left-4 right-[56%]' : 'left-[56%] right-4'
+                                task.side === 'left' 
+                                    ? 'left-2 right-[calc(50%+30px)]' 
+                                    : 'left-[calc(50%+30px)] right-2'
                             }`}
                             style={{
                                 top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
