@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
-const BOTTOM_MARGIN = 32;
+const BOTTOM_MARGIN = 64;
 
 export default function RoutineTimeTrackerWidget() {
     const [tasks, setTasks] = useState([
@@ -120,7 +120,7 @@ export default function RoutineTimeTrackerWidget() {
         // 外层滚动容器
         <div 
             ref={scrollContainerRef}
-            className="h-full w-full overflow-y-auto bg-background relative flex flex-col items-center scrollbar-hide select-none"
+            className="h-full w-full overflow-y-auto bg-background relative scrollbar-hide select-none"
             onMouseDown={startPress}
             onMouseUp={endPress}
             onMouseLeave={endPress}
@@ -129,11 +129,15 @@ export default function RoutineTimeTrackerWidget() {
             onTouchEnd={endPress}
             onTouchMove={handleMove}
         >
+            {/* 24小时画布 - 固定高度确保触发滚动 */}
+            <div
+                className="relative w-full max-w-2xl mx-auto pointer-events-none"
+                style={{
+                    height: `${24 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px`,
+                }}
+            >
 
-            {/* 24小时画布 */}
-            <div className="relative w-full max-w-2xl mx-auto py-8 pointer-events-none" style={{ height: `${25 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px` }}>
-                
-                {/* 1. 背景刻度线 (全宽) */}
+                {/* 1. 背景刻度线 (根据容器宽度铺满) */}
                 {[...Array(25)].map((_, i) => (
                     <div
                         key={`line-${i}`}
