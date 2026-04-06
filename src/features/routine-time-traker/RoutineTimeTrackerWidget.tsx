@@ -136,7 +136,6 @@ export default function RoutineTimeTrackerWidget() {
                     height: `${24 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px`,
                 }}
             >
-
                 {/* 1. 背景刻度线 (根据容器宽度铺满) */}
                 {[...Array(25)].map((_, i) => (
                     <div
@@ -229,7 +228,6 @@ export default function RoutineTimeTrackerWidget() {
                         {currentTimeString}
                     </span>
                 </div>
-
             </div>
         </div>
     );
