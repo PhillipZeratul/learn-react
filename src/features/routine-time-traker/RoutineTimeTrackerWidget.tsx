@@ -2,6 +2,8 @@ import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/types/models";
 import { RoutineCard } from '@/features/routine-time-traker/models/RoutineCard';
 import { TimeTrackerCard } from '@/features/routine-time-traker/models/TimeTrackerCard';
+import { useRoutineStore } from '@/store/routineStore';
+import { RoutineService } from '@/services/routineService';
 
 // 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
@@ -21,15 +23,8 @@ const isoToTime = (isoStr: string): string => {
 type AnyCard = TimeTrackerCard | RoutineCard;
 
 export default function RoutineTimeTrackerWidget() {
-    const [timeTrackerCards, setTimeTrackerCards] = useState<TimeTrackerCard[]>([
-        new TimeTrackerCard({
-            title: 'Deep Work',
-            start_at: timeToISO('07:00'),
-            end_at: timeToISO('10:30'),
-        })
-    ]);
-    const [routineCards, setRoutineCards] = useState<RoutineCard[]>([]);
-
+    const { timeTrackerCards, routineCards, addTimeTrackerCard, addRoutineCard, updateTimeTrackerCard, updateRoutineCard, deleteTimeTrackerCard, deleteRoutineCard } = useRoutineStore();
+    
     const [editingTask, setEditingTask] = useState<AnyCard | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -55,36 +50,27 @@ export default function RoutineTimeTrackerWidget() {
         hour12: false
     });
 
-    const handleCreateTask = (clientX: number, clientY: number) => {
+    const handleCreateTask = async (clientX: number, clientY: number) => {
         if (!scrollContainerRef.current) return;
 
         const rect = scrollContainerRef.current.getBoundingClientRect();
-        // 获取相对于内容区域的 Y 坐标（考虑滚动）
         const relativeY = clientY - rect.top + scrollContainerRef.current.scrollTop;
         const relativeX = clientX - rect.left;
-
-        // 使用 clientWidth 而不是 rect.width 来排除滚动条的影响，确保中心点判断准确
         const contentWidth = scrollContainerRef.current.clientWidth;
 
-        // 减去容器内边距和顶部边距
         const minutes = Math.floor((relativeY - TOP_MARGIN) / PIXELS_PER_MINUTE);
-
         if (minutes < 0 || minutes >= 24 * 60) return;
 
-        // 就近取整到 30 分钟间隔
         const roundedMinutes = Math.round(minutes / 30) * 30;
         const startHour = Math.floor(roundedMinutes / 60);
         const startMin = roundedMinutes % 60;
-
         const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
 
-        // 默认 1 小时时长
         const endMinutes = roundedMinutes + 60;
         const endHour = Math.floor(endMinutes / 60);
         const endMin = endMinutes % 60;
         const endTime = `${String(Math.min(24, endHour)).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 
-        // 使用 contentWidth 来判断左右侧
         const isTimeTrackerBlock = relativeX < contentWidth / 2;
 
         if (isTimeTrackerBlock) {
@@ -92,33 +78,44 @@ export default function RoutineTimeTrackerWidget() {
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
-            setTimeTrackerCards(prev => [...prev, newCard]);
+            addTimeTrackerCard(newCard);
+            await RoutineService.saveTimeTrackerCard(newCard);
         } else {
             const newCard = new RoutineCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
-            setRoutineCards(prev => [...prev, newCard]);
+            addRoutineCard(newCard);
+            await RoutineService.saveRoutineCard(newCard);
         }
     };
 
-    const handleUpdateTask = (updatedTask: AnyCard) => {
+    const handleUpdateTask = async (updatedTask: AnyCard) => {
         if (updatedTask instanceof TimeTrackerCard) {
-            setTimeTrackerCards(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+            updateTimeTrackerCard(updatedTask.id, updatedTask);
+            await RoutineService.saveTimeTrackerCard(updatedTask);
         } else if (updatedTask instanceof RoutineCard) {
-            setRoutineCards(prev => prev.map(r => r.id === updatedTask.id ? updatedTask : r));
+            updateRoutineCard(updatedTask.id, updatedTask);
+            await RoutineService.saveRoutineCard(updatedTask);
         }
         setEditingTask(null);
     };
 
-    const handleDeleteTask = (id: string) => {
-        setTimeTrackerCards(prev => prev.filter(t => t.id !== id));
-        setRoutineCards(prev => prev.filter(r => r.id !== id));
+    const handleDeleteTask = async (id: string) => {
+        const taskToDelete = [...timeTrackerCards, ...routineCards].find(t => t.id === id);
+        if (!taskToDelete) return;
+
+        if (taskToDelete instanceof TimeTrackerCard) {
+            deleteTimeTrackerCard(id);
+            await RoutineService.deleteTimeTrackerCard(id);
+        } else {
+            deleteRoutineCard(id);
+            await RoutineService.deleteRoutineCard(id);
+        }
         setEditingTask(null);
     };
 
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
-        // 如果点击的是已有任务，不触发创建
         if ((e.target as HTMLElement).closest('.task-card')) return;
 
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -145,7 +142,6 @@ export default function RoutineTimeTrackerWidget() {
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
-        // 如果移动距离超过 10px，取消长按
         const dist = Math.sqrt(
             Math.pow(clientX - lastTouchPos.current.x, 2) +
             Math.pow(clientY - lastTouchPos.current.y, 2)
@@ -158,7 +154,6 @@ export default function RoutineTimeTrackerWidget() {
 
     return (
         <div className="h-full w-full relative overflow-hidden">
-            {/* 外层滚动容器 */}
             <div
                 ref={scrollContainerRef}
                 className="h-full w-full overflow-y-auto bg-background relative scrollbar-hide select-none"
@@ -170,14 +165,12 @@ export default function RoutineTimeTrackerWidget() {
                 onTouchEnd={endPress}
                 onTouchMove={handleMove}
             >
-                {/* 24小时画布 - 固定高度确保触发滚动 */}
                 <div
                     className="relative w-full max-w-2xl mx-auto pointer-events-none"
                     style={{
                         height: `${24 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px`,
                     }}
                 >
-                    {/* 1. 背景刻度线 (根据容器宽度铺满) */}
                     {[...Array(25)].map((_, i) => (
                         <div
                             key={`line-${i}`}
@@ -186,12 +179,9 @@ export default function RoutineTimeTrackerWidget() {
                         />
                     ))}
 
-                    {/* 2. 三栏布局层 (左任务 - 时间轴 - 右任务) */}
                     <div className="absolute inset-0 flex">
-
-                        {/* 左侧任务栏 (TimeTracker) */}
                         <div className="relative flex-1 h-full">
-                            {timeTrackerCards.map(task => {
+                            {timeTrackerCards.filter(t => !t.is_deleted).map(task => {
                                 const startMin = isoToMinutes(task.start_at);
                                 const duration = isoToMinutes(task.end_at) - startMin;
                                 return (
@@ -215,12 +205,8 @@ export default function RoutineTimeTrackerWidget() {
                             })}
                         </div>
 
-                        {/* 中间时间轴 */}
                         <div className="relative w-fit h-full flex flex-col items-center">
-                            {/* 隐形占位符，确保轴宽随字体变化 */}
                             <div className="invisible font-mono text-xs select-none px-2">00:00</div>
-
-                            {/* 时间文字 */}
                             {[...Array(25)].map((_, i) => (
                                 <div
                                     key={`time-${i}`}
@@ -234,9 +220,8 @@ export default function RoutineTimeTrackerWidget() {
                             ))}
                         </div>
 
-                        {/* 右侧任务栏 (Routine) */}
                         <div className="relative flex-1 h-full">
-                            {routineCards.map(task => {
+                            {routineCards.filter(t => !t.is_deleted).map(task => {
                                 const startMin = isoToMinutes(task.start_at);
                                 const duration = isoToMinutes(task.end_at) - startMin;
                                 return (
@@ -261,7 +246,6 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
                     </div>
 
-                    {/* 3. 当前时间红线 (全宽) */}
                     <div
                         className="absolute left-0 right-0 flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
                         style={{top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px`}}
@@ -275,7 +259,6 @@ export default function RoutineTimeTrackerWidget() {
                 </div>
             </div>
 
-            {/* 任务编辑弹窗 */}
             {editingTask && (
                 <TaskEditor
                     task={editingTask}

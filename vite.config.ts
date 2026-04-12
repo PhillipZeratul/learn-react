@@ -10,9 +10,17 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
 const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
+const isTauri = process.env.TAURI_ENV === 'true' || process.env.VITE_PLATFORM === 'tauri';
+const isCapacitor = process.env.CAPACITOR_ENV === 'true' || process.env.VITE_PLATFORM === 'capacitor';
+
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    'import.meta.env.IS_TAURI': JSON.stringify(isTauri),
+    'import.meta.env.IS_CAPACITOR': JSON.stringify(isCapacitor),
+    'import.meta.env.IS_WEB': JSON.stringify(!isTauri && !isCapacitor),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src")

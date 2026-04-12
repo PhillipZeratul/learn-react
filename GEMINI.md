@@ -4,6 +4,7 @@
 
 - When you generate new TypeScript code, follow the existing coding style.
 - Prefer functional programming paradigms where appropriate.
+- Respond and code in English.
 
 ## Coding Style
 
@@ -11,7 +12,7 @@
 
 ## Core Philosophy
 
-- Hybrid App: Adopts a "single set of React Web code + native shell" solution, supporting both PC desktop and mobile platforms.
+- Hybrid App: Adopts a "single set of React Web code + native shell" solution, supporting  Web, PC desktop and mobile platforms.
 - Local-First: The client possesses complete and independent business logic capabilities. Data is prioritized for storage in a local SQLite database and synchronized to the cloud via an "Action Queue" when network connectivity is restored.
 - Separation of Macro and Micro States: Business logic utilizes a unidirectional data flow, while high-frequency 3D rendering uses pointer-level direct connections (to bypass React virtual DOM performance bottlenecks).
 
