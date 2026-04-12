@@ -1,8 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
-import type {UserId, IsoDateTime} from "@/types/models";
+import type {IsoDateTime} from "@/types/models";
 import { RoutineCard } from '@/features/routine-time-traker/models/RoutineCard';
 import { TimeTrackerCard } from '@/features/routine-time-traker/models/TimeTrackerCard';
-import {TEST_USER_ID, TEST_TAG_ID} from "@/test/test_consts";
 
 // 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
@@ -14,17 +13,24 @@ const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
     return new Date(`${date}T${timeStr}:00`).toISOString() as IsoDateTime;
 };
 
+const isoToTime = (isoStr: string): string => {
+    const date = new Date(isoStr);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
+
+type AnyCard = TimeTrackerCard | RoutineCard;
+
 export default function RoutineTimeTrackerWidget() {
     const [timeTrackerCards, setTimeTrackerCards] = useState<TimeTrackerCard[]>([
         new TimeTrackerCard({
-            title: '深度工作',
+            title: 'Deep Work',
             start_at: timeToISO('07:00'),
             end_at: timeToISO('10:30'),
         })
     ]);
     const [routineCards, setRoutineCards] = useState<RoutineCard[]>([]);
 
-    const [editingTask, setEditingTask] = useState<RoutineCard | null>(null);
+    const [editingTask, setEditingTask] = useState<AnyCard | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -37,9 +43,9 @@ export default function RoutineTimeTrackerWidget() {
         return () => clearInterval(timer);
     }, []);
 
-    const timeToMinutes = (timeStr: string) => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        return hours * 60 + minutes;
+    const isoToMinutes = (isoStr: string) => {
+        const date = new Date(isoStr);
+        return date.getHours() * 60 + date.getMinutes();
     };
 
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
@@ -82,27 +88,32 @@ export default function RoutineTimeTrackerWidget() {
         const isTimeTrackerBlock = relativeX < contentWidth / 2;
 
         if (isTimeTrackerBlock) {
-            let newTimeTrackerCard: TimeTrackerCard = new TimeTrackerCard({
+            const newCard = new TimeTrackerCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
-            setTimeTrackerCards(prev => [...prev, newTimeTrackerCard]);
+            setTimeTrackerCards(prev => [...prev, newCard]);
         } else {
-            let newRoutineCard: RoutineCard = new RoutineCard({
+            const newCard = new RoutineCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
-            setRoutineCards(prev => [...prev, newRoutineCard]);
+            setRoutineCards(prev => [...prev, newCard]);
         }
     };
 
-    const handleUpdateTask = (updatedTask: RoutineCard) => {
-        setTimeTrackerCards(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+    const handleUpdateTask = (updatedTask: AnyCard) => {
+        if (updatedTask instanceof TimeTrackerCard) {
+            setTimeTrackerCards(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+        } else if (updatedTask instanceof RoutineCard) {
+            setRoutineCards(prev => prev.map(r => r.id === updatedTask.id ? updatedTask : r));
+        }
         setEditingTask(null);
     };
 
     const handleDeleteTask = (id: string) => {
         setTimeTrackerCards(prev => prev.filter(t => t.id !== id));
+        setRoutineCards(prev => prev.filter(r => r.id !== id));
         setEditingTask(null);
     };
 
@@ -178,11 +189,11 @@ export default function RoutineTimeTrackerWidget() {
                     {/* 2. 三栏布局层 (左任务 - 时间轴 - 右任务) */}
                     <div className="absolute inset-0 flex">
 
-                        {/* 左侧任务栏 */}
+                        {/* 左侧任务栏 (TimeTracker) */}
                         <div className="relative flex-1 h-full">
-                            {timeTrackerCards.filter(t => t.side === 'left').map(task => {
-                                const startMin = timeToMinutes(task.start_at);
-                                const duration = timeToMinutes(task.end_at) - startMin;
+                            {timeTrackerCards.map(task => {
+                                const startMin = isoToMinutes(task.start_at);
+                                const duration = isoToMinutes(task.end_at) - startMin;
                                 return (
                                     <div
                                         key={task.id}
@@ -197,7 +208,7 @@ export default function RoutineTimeTrackerWidget() {
                                     >
                                         <div className="font-medium text-sm text-foreground">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                                            {task.start_at} - {task.end_at}
+                                            {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
                                         </div>
                                     </div>
                                 );
@@ -223,11 +234,11 @@ export default function RoutineTimeTrackerWidget() {
                             ))}
                         </div>
 
-                        {/* 右侧任务栏 */}
+                        {/* 右侧任务栏 (Routine) */}
                         <div className="relative flex-1 h-full">
-                            {timeTrackerCards.filter(t => t.side === 'right').map(task => {
-                                const startMin = timeToMinutes(task.start_at);
-                                const duration = timeToMinutes(task.end_at) - startMin;
+                            {routineCards.map(task => {
+                                const startMin = isoToMinutes(task.start_at);
+                                const duration = isoToMinutes(task.end_at) - startMin;
                                 return (
                                     <div
                                         key={task.id}
@@ -242,7 +253,7 @@ export default function RoutineTimeTrackerWidget() {
                                     >
                                         <div className="font-medium text-sm text-foreground">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                                            {task.start_at} - {task.end_at}
+                                            {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
                                         </div>
                                     </div>
                                 );
@@ -283,14 +294,22 @@ function TaskEditor({
                         onDelete,
                         onCancel
                     }: {
-    task: RoutineCard,
-    onSave: (task: RoutineCard) => void,
+    task: AnyCard,
+    onSave: (task: AnyCard) => void,
     onDelete: (id: string) => void,
     onCancel: () => void
 }) {
     const [title, setTitle] = useState(task.title);
-    const [startAt, setStartAt] = useState(task.start_at);
-    const [endAt, setEndAt] = useState(task.end_at);
+    const [startAt, setStartAt] = useState(isoToTime(task.start_at));
+    const [endAt, setEndAt] = useState(isoToTime(task.end_at));
+
+    const handleSave = () => {
+        if (task instanceof TimeTrackerCard) {
+            onSave(new TimeTrackerCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
+        } else if (task instanceof RoutineCard) {
+            onSave(new RoutineCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
+        }
+    };
 
     return (
         <div
@@ -336,7 +355,7 @@ function TaskEditor({
 
                 <div className="mt-8 flex flex-col gap-2">
                     <button
-                        onClick={() => onSave(new RoutineCard({ ...task, title, start_at: startAt, end_at: endAt }))}
+                        onClick={handleSave}
                         className="w-full bg-primary text-primary-foreground font-medium py-2 rounded-lg hover:opacity-90 transition-opacity"
                     >
                         保存
