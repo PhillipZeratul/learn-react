@@ -16,6 +16,12 @@ const isCapacitor = process.env.CAPACITOR_ENV === 'true' || process.env.VITE_PLA
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
+  },
   define: {
     'import.meta.env.IS_TAURI': JSON.stringify(isTauri),
     'import.meta.env.IS_CAPACITOR': JSON.stringify(isCapacitor),

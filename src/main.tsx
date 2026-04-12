@@ -6,10 +6,15 @@ import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { RoutineService } from "@/services/routineService"
+import { SyncService } from "@/services/syncService"
 
 function Root() {
     useEffect(() => {
-        RoutineService.initialize();
+        const init = async () => {
+            await RoutineService.initialize();
+            SyncService.startBackgroundSync();
+        };
+        init();
     }, []);
 
     return (

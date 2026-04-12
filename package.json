@@ -24,6 +24,8 @@
     "@hugeicons/react": "^1.1.6",
     "@preact/signals": "^2.9.0",
     "@preact/signals-react": "^3.10.0",
+    "@sqlite.org/sqlite-wasm": "^3.51.2-build8",
+    "@supabase/supabase-js": "^2.103.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/plugin-sql": "^2.4.0",
     "class-variance-authority": "^0.7.1",

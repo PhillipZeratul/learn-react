@@ -9,6 +9,8 @@
 ## Coding Style
 
 - Use 4 spaces for indentation.
+- verbatimModuleSyntax is enabled, so use type-only import when needed.
+- erasableSyntaxOnly is enabled.
 
 ## Core Philosophy
 

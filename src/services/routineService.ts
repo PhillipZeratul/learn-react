@@ -39,6 +39,18 @@ export class RoutineService {
                 )
             `)
 
+            // Action Queue table for Local-First sync
+            await db.execute(`
+                CREATE TABLE IF NOT EXISTS sync_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    table_name TEXT,
+                    row_id TEXT,
+                    action TEXT, -- 'INSERT', 'UPDATE', 'DELETE'
+                    payload TEXT,
+                    created_at TEXT
+                )
+            `)
+
             await this.loadAll()
         } catch (error) {
             console.error("RoutineService Initialization failed:", error)
@@ -60,6 +72,14 @@ export class RoutineService {
         }
     }
 
+    private static async addToSyncQueue(tableName: string, rowId: string, action: string, payload: any) {
+        const db = await getDatabase()
+        await db.execute(`
+            INSERT INTO sync_queue (table_name, row_id, action, payload, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        `, [tableName, rowId, action, JSON.stringify(payload), new Date().toISOString()])
+    }
+
     static async saveRoutineCard(card: RoutineCard) {
         const db = await getDatabase()
         await db.execute(`
@@ -70,6 +90,8 @@ export class RoutineService {
             card.id, card.title, card.description, card.start_at, card.end_at, 
             card.tag_id, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
         ])
+        
+        await this.addToSyncQueue('routine_cards', card.id, 'UPSERT', card)
     }
 
     static async saveTimeTrackerCard(card: TimeTrackerCard) {
@@ -82,15 +104,23 @@ export class RoutineService {
             card.id, card.title, card.description, card.start_at, card.end_at, 
             card.tag, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
         ])
+
+        await this.addToSyncQueue('time_tracker_cards', card.id, 'UPSERT', card)
     }
 
     static async deleteRoutineCard(id: string) {
         const db = await getDatabase()
-        await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [new Date().toISOString(), id])
+        const updatedAt = new Date().toISOString()
+        await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
+        
+        await this.addToSyncQueue('routine_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
     }
 
     static async deleteTimeTrackerCard(id: string) {
         const db = await getDatabase()
-        await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [new Date().toISOString(), id])
+        const updatedAt = new Date().toISOString()
+        await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
+        
+        await this.addToSyncQueue('time_tracker_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
     }
 }

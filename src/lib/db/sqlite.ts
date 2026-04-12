@@ -1,4 +1,4 @@
-import { IDatabaseService, QueryResult } from "./types"
+import type { IDatabaseService, QueryResult } from "./types"
 
 // Platform detection using tree-shakable flags
 const isTauri = import.meta.env.IS_TAURI;
@@ -20,7 +20,11 @@ class MockDatabaseService implements IDatabaseService {
 }
 
 class TauriDatabaseService implements IDatabaseService {
-    constructor(private db: any) {}
+    private db: any;
+
+    constructor(db: any) {
+        this.db = db;
+    }
     async execute(query: string, values?: any[]): Promise<QueryResult> {
         const result = await this.db.execute(query, values);
         return { rows: [], changes: result.rowsAffected, lastInsertId: result.lastInsertId };
@@ -34,7 +38,11 @@ class TauriDatabaseService implements IDatabaseService {
 }
 
 class CapacitorDatabaseService implements IDatabaseService {
-    constructor(private db: any) {}
+    private db: any;
+
+    constructor(db: any) {
+        this.db = db;
+    }
     async execute(query: string, values?: any[]): Promise<QueryResult> {
         const result = await this.db.run(query, values);
         return { rows: [], changes: result.changes?.changes, lastInsertId: result.changes?.lastId };
@@ -68,15 +76,17 @@ class DatabaseServiceFactory {
                 this.instance = new CapacitorDatabaseService(db);
                 console.log("Capacitor SQLite Initialized");
             } else if (isWeb) {
-                // In a production app, we would use WASM SQLite or IndexedDB here
-                console.warn("Running in Web mode, using Mock database. For full local-first on web, consider WASM SQLite.");
-                this.instance = new MockDatabaseService();
+                const { webDatabaseService } = await import('./web-sqlite');
+                await webDatabaseService.init();
+                this.instance = webDatabaseService;
+                console.log("Web SQLite (WASM+OPFS) Initialized");
             }
         } catch (e) {
             console.error("Failed to initialize native SQLite:", e);
         }
 
         if (!this.instance) {
+            console.warn("No native database found or initialization failed, falling back to Mock.");
             this.instance = new MockDatabaseService();
         }
 
