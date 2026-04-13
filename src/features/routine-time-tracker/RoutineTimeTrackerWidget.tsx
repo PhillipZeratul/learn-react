@@ -2,8 +2,8 @@ import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/types/models";
 import { RoutineCard } from '@/features/routine-time-tracker/models/RoutineCard';
 import { TimeTrackerCard } from '@/features/routine-time-tracker/models/TimeTrackerCard';
-import { useRoutineStore } from '@/store/routineStore';
-import { RoutineService } from '@/services/routineService';
+import { useRoutineStore } from './store/routineStore';
+import { RoutineService } from './services/routineService';
 
 // 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;

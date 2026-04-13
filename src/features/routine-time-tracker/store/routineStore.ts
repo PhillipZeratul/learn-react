@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { RoutineCard } from '@/features/routine-time-tracker/models/RoutineCard'
-import { TimeTrackerCard } from '@/features/routine-time-tracker/models/TimeTrackerCard'
+import { RoutineCard } from '../models/RoutineCard'
+import { TimeTrackerCard } from '../models/TimeTrackerCard'
 
 interface RoutineState {
     timeTrackerCards: TimeTrackerCard[]

@@ -5,7 +5,7 @@ import "@preact/signals-react/runtime";
 import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
-import { RoutineService } from "@/services/routineService"
+import { RoutineService } from "@/features/routine-time-tracker/services/routineService"
 import { SyncService } from "@/services/syncService"
 
 function Root() {

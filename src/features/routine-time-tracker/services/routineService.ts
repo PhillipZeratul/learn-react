@@ -1,7 +1,7 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { RoutineCard } from '@/features/routine-time-tracker/models/RoutineCard'
-import { TimeTrackerCard } from '@/features/routine-time-tracker/models/TimeTrackerCard'
-import { useRoutineStore } from '@/store/routineStore'
+import { RoutineCard } from '../models/RoutineCard'
+import { TimeTrackerCard } from '../models/TimeTrackerCard'
+import { useRoutineStore } from '../store/routineStore'
 
 export class RoutineService {
     static async initialize() {

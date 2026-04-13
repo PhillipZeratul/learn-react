@@ -17,6 +17,7 @@
 - Hybrid App: Adopts a "single set of React Web code + native shell" solution, supporting  Web, PC desktop and mobile platforms.
 - Local-First: The client possesses complete and independent business logic capabilities. Data is prioritized for storage in a local SQLite database and synchronized to the cloud via an "Action Queue" when network connectivity is restored.
 - Separation of Macro and Micro States: Business logic utilizes a unidirectional data flow, while high-frequency 3D rendering uses pointer-level direct connections (to bypass React virtual DOM performance bottlenecks).
+- Design: The project is organized into separate modules according to the "Feature-Sliced / Domain-Driven Design" methodology.
 
 ## Tech Stack Matrix
 
