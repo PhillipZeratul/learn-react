@@ -16,6 +16,9 @@ const isCapacitor = process.env.CAPACITOR_ENV === 'true' || process.env.VITE_PLA
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    exclude: ['@sqlite.org/sqlite-wasm'],
+  },
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
