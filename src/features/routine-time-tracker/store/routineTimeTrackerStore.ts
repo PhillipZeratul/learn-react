@@ -3,14 +3,14 @@ import { immer } from 'zustand/middleware/immer'
 import { RoutineCard } from '../models/RoutineCard'
 import { TimeTrackerCard } from '../models/TimeTrackerCard'
 
-interface RoutineState {
+interface RoutineTimeTrackerState {
     timeTrackerCards: TimeTrackerCard[]
     routineCards: RoutineCard[]
     isLoading: boolean
     error: string | null
 }
 
-interface RoutineActions {
+interface RoutineTimeTrackerActions {
     setTimeTrackerCards: (cards: TimeTrackerCard[]) => void
     addTimeTrackerCard: (card: TimeTrackerCard) => void
     updateTimeTrackerCard: (id: string, updates: Partial<TimeTrackerCard>) => void
@@ -22,7 +22,7 @@ interface RoutineActions {
     deleteRoutineCard: (id: string) => void
 }
 
-export const useRoutineStore = create<RoutineState & RoutineActions>()(
+export const useRoutineTimeTrackerStore = create<RoutineTimeTrackerState & RoutineTimeTrackerActions>()(
     immer((set) => ({
         timeTrackerCards: [],
         routineCards: [],

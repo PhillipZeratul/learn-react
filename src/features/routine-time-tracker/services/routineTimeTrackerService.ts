@@ -1,9 +1,9 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { RoutineCard } from '../models/RoutineCard'
 import { TimeTrackerCard } from '../models/TimeTrackerCard'
-import { useRoutineStore } from '../store/routineStore'
+import { useRoutineTimeTrackerStore } from '../store/routineTimeTrackerStore'
 
-export class RoutineService {
+export class RoutineTimeTrackerService {
     static async initialize() {
         try {
             const db = await getDatabase()
@@ -59,7 +59,7 @@ export class RoutineService {
 
     static async loadAll() {
         const db = await getDatabase()
-        const store = useRoutineStore.getState()
+        const store = useRoutineTimeTrackerStore.getState()
         
         try {
             const routineRows = await db.select<any>('SELECT * FROM routine_cards WHERE is_deleted = 0')

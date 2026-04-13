@@ -5,7 +5,7 @@ import "@preact/signals-react/runtime";
 import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
-import { RoutineService } from "@/features/routine-time-tracker/services/routineService"
+import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routineTimeTrackerService.ts"
 import { SyncService } from "@/services/syncService"
 
 function Root() {
@@ -19,7 +19,7 @@ function Root() {
                 // Short delay to allow loading UI to show up
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
-                await RoutineService.initialize();
+                await RoutineTimeTrackerService.initialize();
                 SyncService.startBackgroundSync();
                 console.log("Initialization complete");
                 setIsInitializing(false);
