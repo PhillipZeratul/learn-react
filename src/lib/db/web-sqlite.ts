@@ -1,75 +1,58 @@
-import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import type { IDatabaseService, QueryResult } from "./types"
 
 class WebDatabaseService implements IDatabaseService {
-    private db: any = null;
+    private worker: Worker | null = null;
+    private messageCounter = 0;
+    private pendingPromises: Map<number, { resolve: Function; reject: Function }> = new Map();
 
     constructor() {}
 
     async init() {
-        if (this.db) return;
+        if (this.worker) return;
 
-        try {
-            const sqlite3 = await sqlite3InitModule();
+        // 使用 Vite 的 Worker 导入语法
+        this.worker = new Worker(new URL('./sqlite-worker.ts', import.meta.url), {
+            type: 'module'
+        });
 
-            if ('opfs' in sqlite3) {
-                this.db = new sqlite3.oo1.OpfsDb('local-routine-db.sqlite3');
-                console.log('SQLite WASM (OPFS) Initialized at', this.db.filename);
-            } else {
-                this.db = new sqlite3.oo1.DB('local-routine-db.sqlite3', 'ct');
-                console.warn('OPFS not available, falling back to in-memory/IDB (transient)');
+        this.worker.onmessage = (e) => {
+            const { id, success, rows, changes, error } = e.data;
+            const promise = this.pendingPromises.get(id);
+            
+            if (promise) {
+                if (success) {
+                    promise.resolve(rows || { rows: [], changes });
+                } else {
+                    promise.reject(new Error(error));
+                }
+                this.pendingPromises.delete(id);
             }
-        } catch (err) {
-            console.error('Failed to initialize SQLite WASM:', err);
-            throw err;
-        }
+        };
+    }
+
+    private sendToWorker(type: 'EXEC' | 'SELECT', query: string, values?: any[]): Promise<any> {
+        const id = ++this.messageCounter;
+        return new Promise((resolve, reject) => {
+            this.pendingPromises.set(id, { resolve, reject });
+            this.worker?.postMessage({ id, type, query, values });
+        });
     }
 
     async execute(query: string, values?: any[]): Promise<QueryResult> {
-        if (!this.db) await this.init();
-        
-        try {
-            this.db.exec({
-                sql: query,
-                bind: values || []
-            });
-            
-            // For changes/lastInsertId, we might need to query them separately 
-            // as exec() doesn't return them directly in this simple form
-            const changes = this.db.changes();
-            
-            return { rows: [], changes };
-        } catch (err) {
-            console.error('SQL Execution Error:', err);
-            throw err;
-        }
+        if (!this.worker) await this.init();
+        return this.sendToWorker('EXEC', query, values);
     }
 
     async select<T>(query: string, values?: any[]): Promise<T[]> {
-        if (!this.db) await this.init();
-
-        try {
-            const result: T[] = [];
-            this.db.exec({
-                sql: query,
-                bind: values || [],
-                rowMode: 'object',
-                callback: (row: any) => {
-                    result.push(row);
-                }
-            });
-            return result;
-        } catch (err) {
-            console.error('SQL Select Error:', err);
-            throw err;
-        }
+        if (!this.worker) await this.init();
+        return this.sendToWorker('SELECT', query, values);
     }
 
     async transaction<T>(callback: (db: IDatabaseService) => Promise<T>): Promise<T> {
-        if (!this.db) await this.init();
-        
+        // 由于 Worker 架构的限制，简单的事务处理变得复杂
+        // 这里暂时使用基础的 BEGIN/COMMIT 命令，但要注意并发问题
+        await this.execute('BEGIN TRANSACTION');
         try {
-            await this.execute('BEGIN TRANSACTION');
             const result = await callback(this);
             await this.execute('COMMIT');
             return result;
