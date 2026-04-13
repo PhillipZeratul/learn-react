@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/types/models";
-import { RoutineCard } from '@/features/routine-time-traker/models/RoutineCard';
-import { TimeTrackerCard } from '@/features/routine-time-traker/models/TimeTrackerCard';
+import { RoutineCard } from '@/features/routine-time-tracker/models/RoutineCard';
+import { TimeTrackerCard } from '@/features/routine-time-tracker/models/TimeTrackerCard';
 import { useRoutineStore } from '@/store/routineStore';
 import { RoutineService } from '@/services/routineService';
 

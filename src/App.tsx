@@ -1,4 +1,4 @@
-import RoutineTimeTrackerWidget from "@/features/routine-time-traker/RoutineTimeTrackerWidget"
+import RoutineTimeTrackerWidget from "@/features/routine-time-tracker/RoutineTimeTrackerWidget"
 
 export function App() {
     return (
