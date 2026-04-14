@@ -183,19 +183,39 @@ export class RoutineTimeTrackerService {
         await this.addToSyncQueue('time_tracker_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
     }
 
-    // DEBUG ONLY: Clear all local data
+    // DEBUG ONLY: Clear all data (Local + Cloud) via Soft Delete
     static async clearAllData() {
         const db = await getDatabase();
-        console.warn("RoutineService: CLEARING ALL LOCAL DATA...");
-        
-        await db.execute('DROP TABLE IF EXISTS routine_cards');
-        await db.execute('DROP TABLE IF EXISTS time_tracker_cards');
-        await db.execute('DROP TABLE IF EXISTS sync_queue');
-        
-        useRoutineTimeTrackerStore.getState().reset();
-        
-        // Re-initialize to recreate tables
-        await this.initialize();
-        console.log("RoutineService: Database cleared and re-initialized.");
+        const updatedAt = new Date().toISOString();
+        console.warn("RoutineService: INITIATING GLOBAL SOFT-DELETE...");
+
+        try {
+            // 1. Fetch all record IDs that aren't already deleted
+            const routineIds = await db.select<{id: string}>('SELECT id FROM routine_cards WHERE is_deleted = 0');
+            const trackerIds = await db.select<{id: string}>('SELECT id FROM time_tracker_cards WHERE is_deleted = 0');
+
+            // 2. Batch update local records
+            await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
+            await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
+
+            // 3. Add to sync queue for each record to propagate to Supabase
+            for (const row of routineIds) {
+                await this.addToSyncQueue('routine_cards', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+            }
+            for (const row of trackerIds) {
+                await this.addToSyncQueue('time_tracker_cards', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+            }
+
+            // 4. Reset Zustand store
+            useRoutineTimeTrackerStore.getState().reset();
+
+            // 5. Force immediate sync
+            console.log("RoutineService: Triggering immediate cloud sync for clear operation...");
+            SyncService.triggerSync(true);
+
+            console.log("RoutineService: Local data cleared. Sync in progress.");
+        } catch (error) {
+            console.error("RoutineService: Failed to clear all data:", error);
+        }
     }
 }
