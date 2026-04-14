@@ -4,6 +4,7 @@ import { TimeTrackerCard } from '../models/TimeTrackerCard'
 import { useRoutineTimeTrackerStore } from '../store/routineTimeTrackerStore'
 import { SyncService } from '@/services/syncService'
 import { useAuthStore } from '@/store/authStore'
+import { useSettingsStore } from '@/store/settingsStore'
 
 export class RoutineTimeTrackerService {
     static async initialize() {
@@ -53,9 +54,35 @@ export class RoutineTimeTrackerService {
                 )
             `)
 
+            await this.purgeOldDeletedRecords()
             await this.loadAll()
         } catch (error) {
             console.error("RoutineService Initialization failed:", error)
+        }
+    }
+
+    static async purgeOldDeletedRecords() {
+        try {
+            const db = await getDatabase()
+            const retentionDays = useSettingsStore.getState().syncRetentionDays
+            const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString()
+
+            console.log(`RoutineService: Purging soft-deleted records older than ${retentionDays} days (before ${cutoffDate})`)
+
+            const res1 = await db.execute(
+                'DELETE FROM routine_cards WHERE is_deleted = 1 AND updated_at < ?',
+                [cutoffDate]
+            )
+            const res2 = await db.execute(
+                'DELETE FROM time_tracker_cards WHERE is_deleted = 1 AND updated_at < ?',
+                [cutoffDate]
+            )
+
+            if ((res1.changes || 0) > 0 || (res2.changes || 0) > 0) {
+                console.log(`RoutineService: Purged ${(res1.changes || 0) + (res2.changes || 0)} old records.`)
+            }
+        } catch (error) {
+            console.error("RoutineService: Failed to purge old records:", error)
         }
     }
 
