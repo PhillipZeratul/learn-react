@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { TimeTrackerCardId, TagId } from '../types/models';
-import type { UserId, BaseEntity } from '@/types/models'
+import type { UserId, BaseEntity, IsoDateTime} from '@/types/models'
 import {TEST_USER_ID, TEST_TAG_ID} from "@/test/test_consts";
 
 export class TimeTrackerCard implements BaseEntity {
@@ -8,27 +8,24 @@ export class TimeTrackerCard implements BaseEntity {
     user_id: UserId;
     title: string;
     description?: string;
-    start_at: string;
-    end_at: string;
+    start_at: IsoDateTime;
+    end_at: IsoDateTime;
     tag: TagId;
     
-    created_at: string;
-    updated_at: string;
+    created_at: IsoDateTime;
+    updated_at: IsoDateTime;
     is_deleted: boolean;
 
     constructor(
-        data: Partial<TimeTrackerCard> & {
-            start_at: string;
-            end_at: string;
-        }
+        data: Partial<TimeTrackerCard>
     ) {
-        const now = new Date().toISOString();
+        const now = new Date().toISOString() as IsoDateTime;
         
         this.id = data.id || uuidv4() as TimeTrackerCardId;
         this.title = data.title || "New TimeTracker Card";
         this.description = data.description || "New TimeTracker Card Description.";
-        this.start_at = data.start_at;
-        this.end_at = data.end_at;
+        this.start_at = data.start_at || now;
+        this.end_at = data.end_at || now;
         this.tag = data.tag || TEST_TAG_ID;
         this.user_id = data.user_id || TEST_USER_ID;
         

@@ -20,7 +20,7 @@ function Root() {
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
                 await RoutineTimeTrackerService.initialize();
-                SyncService.startBackgroundSync();
+                SyncService.initialize();
                 console.log("Initialization complete");
                 setIsInitializing(false);
             } catch (err) {

@@ -2,6 +2,7 @@ import { getDatabase } from '@/lib/db/sqlite'
 import { RoutineCard } from '../models/RoutineCard'
 import { TimeTrackerCard } from '../models/TimeTrackerCard'
 import { useRoutineTimeTrackerStore } from '../store/routineTimeTrackerStore'
+import { SyncService } from '@/services/syncService'
 
 export class RoutineTimeTrackerService {
     static async initialize() {
@@ -45,7 +46,7 @@ export class RoutineTimeTrackerService {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     table_name TEXT,
                     row_id TEXT,
-                    action TEXT, -- 'INSERT', 'UPDATE', 'DELETE'
+                    action TEXT, -- 'UPSERT', 'SOFT_DELETE'
                     payload TEXT,
                     created_at TEXT
                 )
@@ -74,10 +75,28 @@ export class RoutineTimeTrackerService {
 
     private static async addToSyncQueue(tableName: string, rowId: string, action: string, payload: any) {
         const db = await getDatabase()
-        await db.execute(`
-            INSERT INTO sync_queue (table_name, row_id, action, payload, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        `, [tableName, rowId, action, JSON.stringify(payload), new Date().toISOString()])
+        
+        // Check if there's already a pending action for this record to merge
+        const existing = await db.select<any>(
+            'SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1',
+            [tableName, rowId]
+        )
+
+        if (existing.length > 0) {
+            await db.execute(`
+                UPDATE sync_queue 
+                SET action = ?, payload = ?, created_at = ?
+                WHERE id = ?
+            `, [action, JSON.stringify(payload), new Date().toISOString(), existing[0].id])
+        } else {
+            await db.execute(`
+                INSERT INTO sync_queue (table_name, row_id, action, payload, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            `, [tableName, rowId, action, JSON.stringify(payload), new Date().toISOString()])
+        }
+        
+        // Trigger event-driven sync
+        SyncService.triggerSync();
     }
 
     static async saveRoutineCard(card: RoutineCard) {

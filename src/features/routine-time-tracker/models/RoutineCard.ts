@@ -12,23 +12,20 @@ export class RoutineCard implements BaseEntity {
     tag_id: TagId;
     user_id: UserId;
     
-    created_at: string;
-    updated_at: string;
+    created_at: IsoDateTime;
+    updated_at: IsoDateTime;
     is_deleted: boolean;
 
     constructor(
-        data: Partial<RoutineCard> & {
-            start_at: string;
-            end_at: string;
-        }
+        data: Partial<RoutineCard>
     ) {
-        const now = new Date().toISOString();
+        const now = new Date().toISOString() as IsoDateTime;
         
         this.id = data.id || uuidv4() as RoutineCardId;
         this.title = data.title || "New Routine Card";
         this.description = data.description || "New Routine Card Description.";
-        this.start_at = data.start_at;
-        this.end_at = data.end_at;
+        this.start_at = data.start_at || now;
+        this.end_at = data.end_at || now;
         this.tag_id = data.tag_id || TEST_TAG_ID; // TODO: Why can this pass compilation?
         this.user_id = data.user_id || TEST_USER_ID;
         

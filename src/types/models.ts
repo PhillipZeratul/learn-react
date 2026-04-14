@@ -22,8 +22,8 @@ export type IsoDateTime = Brand<string, 'ISODateTime'>;
  * 所有需要与 Supabase 同步的表必须继承此接口
  */
 export interface BaseEntity {
-    created_at: string;       // ISO 8601 时间戳
-    updated_at: string;       // 用于 LWW (Last Write Wins) 冲突解决
+    created_at: IsoDateTime;       // ISO 8601 时间戳
+    updated_at: IsoDateTime;       // 用于 LWW (Last Write Wins) 冲突解决
     is_deleted: boolean;      // 铁律：绝不物理删除，全部使用软删除
 
     // Local-First 专属同步字段 (仅在 SQLite 客户端存在，不同步到云端)
