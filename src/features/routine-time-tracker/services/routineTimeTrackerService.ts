@@ -3,6 +3,7 @@ import { RoutineCard } from '../models/RoutineCard'
 import { TimeTrackerCard } from '../models/TimeTrackerCard'
 import { useRoutineTimeTrackerStore } from '../store/routineTimeTrackerStore'
 import { SyncService } from '@/services/syncService'
+import { useAuthStore } from '@/store/authStore'
 
 export class RoutineTimeTrackerService {
     static async initialize() {
@@ -61,13 +62,25 @@ export class RoutineTimeTrackerService {
     static async loadAll() {
         const db = await getDatabase()
         const store = useRoutineTimeTrackerStore.getState()
+        const currentUserId = useAuthStore.getState().user?.id;
+
+        if (!currentUserId) {
+            console.warn("RoutineService: No user signed in, skipping load.");
+            return;
+        }
         
         try {
-            const routineRows = await db.select<any>('SELECT * FROM routine_cards WHERE is_deleted = 0')
-            const trackerRows = await db.select<any>('SELECT * FROM time_tracker_cards WHERE is_deleted = 0')
+            const routineRows = await db.select<any>(
+                'SELECT * FROM routine_cards WHERE is_deleted = 0 AND user_id = ?', 
+                [currentUserId]
+            )
+            const timeTrackerRows = await db.select<any>(
+                'SELECT * FROM time_tracker_cards WHERE is_deleted = 0 AND user_id = ?', 
+                [currentUserId]
+            )
 
             store.setRoutineCards(routineRows.map(r => new RoutineCard({ ...r, is_deleted: !!r.is_deleted })))
-            store.setTimeTrackerCards(trackerRows.map(r => new TimeTrackerCard({ ...r, is_deleted: !!r.is_deleted })))
+            store.setTimeTrackerCards(timeTrackerRows.map(r => new TimeTrackerCard({ ...r, is_deleted: !!r.is_deleted })))
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
         }

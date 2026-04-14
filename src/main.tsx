@@ -7,15 +7,33 @@ import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routineTimeTrackerService.ts"
 import { SyncService } from "@/services/syncService"
+import { useAuthStore } from "@/store/authStore"
+import { supabase } from "@/lib/supabase"
 
 function Root() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [initError, setInitError] = useState<string | null>(null);
+    const setUser = useAuthStore(state => state.setUser);
+    const setSession = useAuthStore(state => state.setSession);
+    const setLoading = useAuthStore(state => state.setLoading);
 
     useEffect(() => {
         console.log("Root component mounted, starting initialization...");
         const init = async () => {
             try {
+                // Supabase Auth Listener
+                if (supabase) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    setSession(session);
+                    setUser(session?.user ?? null);
+                    
+                    supabase.auth.onAuthStateChange((_event, session) => {
+                        setSession(session);
+                        setUser(session?.user ?? null);
+                        setLoading(false);
+                    });
+                }
+                
                 // Short delay to allow loading UI to show up
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
@@ -30,10 +48,12 @@ function Root() {
 
                 console.log("Initialization complete");
                 setIsInitializing(false);
+                setLoading(false);
             } catch (err) {
                 console.error("Initialization failed:", err);
                 setInitError(err instanceof Error ? err.message : String(err));
                 setIsInitializing(false);
+                setLoading(false);
             }
         };
         init();

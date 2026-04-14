@@ -1,5 +1,5 @@
 import type {UserId} from "@/types/models.ts";
 import type {TagId} from "@/features/routine-time-tracker/types/models";
 
-export const TEST_USER_ID = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d' as UserId; // Default User
-export const TEST_TAG_ID = '2c5ea4c0-4067-11e9-9b5d-ab8dfbbd4bed' as TagId;   // Default Tag
+export const TEST_USER_ID = '4960388d-ff06-4669-9573-8b093b8fc3c7' as UserId; // Default User
+export const TEST_TAG_ID = 'b0ec7c88-ddd7-40ad-8fdd-478f02ac1941' as TagId;   // Default Tag
