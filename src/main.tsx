@@ -21,6 +21,13 @@ function Root() {
                 
                 await RoutineTimeTrackerService.initialize();
                 SyncService.initialize();
+
+                // Debug helper
+                (window as any).__DEBUG__ = {
+                    clearData: () => RoutineTimeTrackerService.clearAllData(),
+                    syncNow: () => SyncService.triggerSync(true),
+                };
+
                 console.log("Initialization complete");
                 setIsInitializing(false);
             } catch (err) {

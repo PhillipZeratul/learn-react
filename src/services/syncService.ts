@@ -130,11 +130,11 @@ export class SyncService {
                     } else if (table === 'time_tracker_cards') {
                          await db.execute(`
                             INSERT OR REPLACE INTO time_tracker_cards 
-                            (id, title, description, start_at, end_at, tag, user_id, created_at, updated_at, is_deleted)
+                            (id, title, description, start_at, end_at, tag_id, user_id, created_at, updated_at, is_deleted)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         `, [
                             newRecord.id, newRecord.title, newRecord.description, newRecord.start_at, newRecord.end_at,
-                            newRecord.tag, newRecord.user_id, newRecord.created_at, newRecord.updated_at, newRecord.is_deleted ? 1 : 0
+                            newRecord.tag_id, newRecord.user_id, newRecord.created_at, newRecord.updated_at, newRecord.is_deleted ? 1 : 0
                         ]);
 
                         // Hydrate Zustand

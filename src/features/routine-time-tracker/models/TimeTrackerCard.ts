@@ -10,7 +10,7 @@ export class TimeTrackerCard implements BaseEntity {
     description?: string;
     start_at: IsoDateTime;
     end_at: IsoDateTime;
-    tag: TagId;
+    tag_id: TagId;
     
     created_at: IsoDateTime;
     updated_at: IsoDateTime;
@@ -26,7 +26,7 @@ export class TimeTrackerCard implements BaseEntity {
         this.description = data.description || "New TimeTracker Card Description.";
         this.start_at = data.start_at || now;
         this.end_at = data.end_at || now;
-        this.tag = data.tag || TEST_TAG_ID;
+        this.tag_id = data.tag_id || TEST_TAG_ID;
         this.user_id = data.user_id || TEST_USER_ID;
         
         this.created_at = now;

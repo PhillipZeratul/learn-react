@@ -32,7 +32,7 @@ export class RoutineTimeTrackerService {
                     description TEXT,
                     start_at TEXT,
                     end_at TEXT,
-                    tag TEXT,
+                    tag_id TEXT,
                     user_id TEXT,
                     created_at TEXT,
                     updated_at TEXT,
@@ -117,11 +117,11 @@ export class RoutineTimeTrackerService {
         const db = await getDatabase()
         await db.execute(`
             INSERT OR REPLACE INTO time_tracker_cards 
-            (id, title, description, start_at, end_at, tag, user_id, created_at, updated_at, is_deleted)
+            (id, title, description, start_at, end_at, tag_id, user_id, created_at, updated_at, is_deleted)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             card.id, card.title, card.description, card.start_at, card.end_at, 
-            card.tag, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
+            card.tag_id, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
         ])
 
         await this.addToSyncQueue('time_tracker_cards', card.id, 'UPSERT', card)
@@ -141,5 +141,21 @@ export class RoutineTimeTrackerService {
         await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
         
         await this.addToSyncQueue('time_tracker_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+    }
+
+    // DEBUG ONLY: Clear all local data
+    static async clearAllData() {
+        const db = await getDatabase();
+        console.warn("RoutineService: CLEARING ALL LOCAL DATA...");
+        
+        await db.execute('DROP TABLE IF EXISTS routine_cards');
+        await db.execute('DROP TABLE IF EXISTS time_tracker_cards');
+        await db.execute('DROP TABLE IF EXISTS sync_queue');
+        
+        useRoutineTimeTrackerStore.getState().reset();
+        
+        // Re-initialize to recreate tables
+        await this.initialize();
+        console.log("RoutineService: Database cleared and re-initialized.");
     }
 }

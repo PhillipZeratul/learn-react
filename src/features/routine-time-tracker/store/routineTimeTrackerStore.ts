@@ -21,6 +21,8 @@ interface RoutineTimeTrackerActions {
     addRoutineCard: (card: RoutineCard) => void
     updateRoutineCard: (id: string, updates: Partial<RoutineCard>) => void
     deleteRoutineCard: (id: string) => void
+
+    reset: () => void
 }
 
 export const useRoutineTimeTrackerStore = create<RoutineTimeTrackerState & RoutineTimeTrackerActions>()(
@@ -29,6 +31,13 @@ export const useRoutineTimeTrackerStore = create<RoutineTimeTrackerState & Routi
         routineCards: [],
         isLoading: false,
         error: null,
+
+        reset: () => set((state) => {
+            state.timeTrackerCards = []
+            state.routineCards = []
+            state.isLoading = false
+            state.error = null
+        }),
 
         setTimeTrackerCards: (cards) => set((state) => {
             state.timeTrackerCards = cards
