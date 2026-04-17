@@ -5,7 +5,6 @@ import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 
 export interface RoutineCard extends BaseEntity {
-    __type: 'RoutineCard';
     id: RoutineCardId;
     user_id: UserId;
     title: string;
@@ -15,16 +14,11 @@ export interface RoutineCard extends BaseEntity {
     tag_id: TagId;
 }
 
-export const isRoutineCard = (card: any): card is RoutineCard => {
-    return card && card.__type === 'RoutineCard';
-};
-
 export const createRoutineCard = (data: Partial<RoutineCard> = {}): RoutineCard => {
     const now = new Date().toISOString() as IsoDateTime;
     const currentUserId = useAuthStore.getState().user?.id as UserId;
 
     return {
-        __type: 'RoutineCard',
         id: data.id || uuidv4() as RoutineCardId,
         title: data.title || "New Routine Card",
         description: data.description || "New Routine Card Description.",

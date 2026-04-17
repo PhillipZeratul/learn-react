@@ -5,7 +5,6 @@ import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 
 export interface TimeTrackerCard extends BaseEntity {
-    __type: 'TimeTrackerCard';
     id: TimeTrackerCardId;
     user_id: UserId;
     title: string;
@@ -15,16 +14,11 @@ export interface TimeTrackerCard extends BaseEntity {
     tag_id: TagId;
 }
 
-export const isTimeTrackerCard = (card: any): card is TimeTrackerCard => {
-    return card && card.__type === 'TimeTrackerCard';
-};
-
 export const createTimeTrackerCard = (data: Partial<TimeTrackerCard> = {}): TimeTrackerCard => {
     const now = new Date().toISOString() as IsoDateTime;
     const currentUserId = useAuthStore.getState().user?.id as UserId;
 
     return {
-        __type: 'TimeTrackerCard',
         id: data.id || uuidv4() as TimeTrackerCardId,
         title: data.title || "New TimeTracker Card",
         description: data.description || "New TimeTracker Card Description.",

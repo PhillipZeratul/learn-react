@@ -1,11 +1,10 @@
 import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/models/base.model";
-import { createRoutineCard, isRoutineCard, type RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model';
-import { createTimeTrackerCard, isTimeTrackerCard, type TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model';
+import { createRoutineCard, type RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model';
+import { createTimeTrackerCard, type TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 
-// 核心配置：1小时 = 60px
 const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 64;
@@ -20,12 +19,24 @@ const isoToTime = (isoStr: string): string => {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 
-type AnyCard = TimeTrackerCard | RoutineCard;
+type EditingState = 
+    | { type: 'routine'; task: RoutineCard }
+    | { type: 'timeTracker'; task: TimeTrackerCard }
+    | null;
 
 export default function RoutineTimeTrackerWidget() {
-    const { timeTrackerCards, routineCards, addTimeTrackerCard, addRoutineCard, updateTimeTrackerCard, updateRoutineCard, deleteTimeTrackerCard, deleteRoutineCard } = useRoutineTimeTrackerStore();
+    const { 
+        timeTrackerCards, 
+        routineCards, 
+        addTimeTrackerCard, 
+        addRoutineCard, 
+        updateTimeTrackerCard, 
+        updateRoutineCard, 
+        deleteTimeTrackerCard, 
+        deleteRoutineCard 
+    } = useRoutineTimeTrackerStore();
     
-    const [editingTask, setEditingTask] = useState<AnyCard | null>(null);
+    const [editingState, setEditingState] = useState<EditingState>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,31 +99,6 @@ export default function RoutineTimeTrackerWidget() {
             addRoutineCard(newCard);
             await RoutineTimeTrackerService.saveRoutineCard(newCard);
         }
-    };
-
-    const handleUpdateTask = async (updatedTask: AnyCard) => {
-        if (isTimeTrackerCard(updatedTask)) {
-            updateTimeTrackerCard(updatedTask.id, updatedTask);
-            await RoutineTimeTrackerService.saveTimeTrackerCard(updatedTask);
-        } else if (isRoutineCard(updatedTask)) {
-            updateRoutineCard(updatedTask.id, updatedTask);
-            await RoutineTimeTrackerService.saveRoutineCard(updatedTask);
-        }
-        setEditingTask(null);
-    };
-
-    const handleDeleteTask = async (id: string) => {
-        const taskToDelete = [...timeTrackerCards, ...routineCards].find(t => t.id === id);
-        if (!taskToDelete) return;
-
-        if (isTimeTrackerCard(taskToDelete)) {
-            deleteTimeTrackerCard(id);
-            await RoutineTimeTrackerService.deleteTimeTrackerCard(id);
-        } else {
-            deleteRoutineCard(id);
-            await RoutineTimeTrackerService.deleteRoutineCard(id);
-        }
-        setEditingTask(null);
     };
 
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
@@ -180,6 +166,7 @@ export default function RoutineTimeTrackerWidget() {
                     ))}
 
                     <div className="absolute inset-0 flex">
+                        {/* Time Tracker Column */}
                         <div className="relative flex-1 h-full">
                             {timeTrackerCards.filter(t => !t.is_deleted).map(task => {
                                 const startMin = isoToMinutes(task.start_at);
@@ -194,7 +181,7 @@ export default function RoutineTimeTrackerWidget() {
                                         }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onTouchStart={(e) => e.stopPropagation()}
-                                        onClick={() => setEditingTask(task)}
+                                        onClick={() => setEditingState({ type: 'timeTracker', task })}
                                     >
                                         <div className="font-medium text-sm text-foreground">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
@@ -205,6 +192,7 @@ export default function RoutineTimeTrackerWidget() {
                             })}
                         </div>
 
+                        {/* Center Timeline */}
                         <div className="relative w-fit h-full flex flex-col items-center">
                             <div className="invisible font-mono text-xs select-none px-2">00:00</div>
                             {[...Array(25)].map((_, i) => (
@@ -220,6 +208,7 @@ export default function RoutineTimeTrackerWidget() {
                             ))}
                         </div>
 
+                        {/* Routine Column */}
                         <div className="relative flex-1 h-full">
                             {routineCards.filter(t => !t.is_deleted).map(task => {
                                 const startMin = isoToMinutes(task.start_at);
@@ -234,7 +223,7 @@ export default function RoutineTimeTrackerWidget() {
                                         }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onTouchStart={(e) => e.stopPropagation()}
-                                        onClick={() => setEditingTask(task)}
+                                        onClick={() => setEditingState({ type: 'routine', task })}
                                     >
                                         <div className="font-medium text-sm text-foreground">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
@@ -259,64 +248,86 @@ export default function RoutineTimeTrackerWidget() {
                 </div>
             </div>
 
-            {editingTask && (
-                <TaskEditor
-                    task={editingTask}
-                    onSave={handleUpdateTask}
-                    onDelete={handleDeleteTask}
-                    onCancel={() => setEditingTask(null)}
+            {editingState?.type === 'routine' && (
+                <RoutineEditor
+                    task={editingState.task}
+                    onSave={async (updated) => {
+                        updateRoutineCard(updated.id, updated);
+                        await RoutineTimeTrackerService.saveRoutineCard(updated);
+                        setEditingState(null);
+                    }}
+                    onDelete={async (id) => {
+                        deleteRoutineCard(id);
+                        await RoutineTimeTrackerService.deleteRoutineCard(id);
+                        setEditingState(null);
+                    }}
+                    onCancel={() => setEditingState(null)}
+                />
+            )}
+
+            {editingState?.type === 'timeTracker' && (
+                <TimeTrackerEditor
+                    task={editingState.task}
+                    onSave={async (updated) => {
+                        updateTimeTrackerCard(updated.id, updated);
+                        await RoutineTimeTrackerService.saveTimeTrackerCard(updated);
+                        setEditingState(null);
+                    }}
+                    onDelete={async (id) => {
+                        deleteTimeTrackerCard(id);
+                        await RoutineTimeTrackerService.deleteTimeTrackerCard(id);
+                        setEditingState(null);
+                    }}
+                    onCancel={() => setEditingState(null)}
                 />
             )}
         </div>
     );
 }
 
-function TaskEditor({
-                        task,
-                        onSave,
-                        onDelete,
-                        onCancel
-                    }: {
-    task: AnyCard,
-    onSave: (task: AnyCard) => void,
-    onDelete: (id: string) => void,
-    onCancel: () => void
+function RoutineEditor({
+    task,
+    onSave,
+    onDelete,
+    onCancel
+}: {
+    task: RoutineCard;
+    onSave: (task: RoutineCard) => Promise<void>;
+    onDelete: (id: string) => Promise<void>;
+    onCancel: () => void;
 }) {
     const [title, setTitle] = useState(task.title);
     const [startAt, setStartAt] = useState(isoToTime(task.start_at));
     const [endAt, setEndAt] = useState(isoToTime(task.end_at));
 
-    const handleSave = () => {
-        if (isTimeTrackerCard(task)) {
-            onSave(createTimeTrackerCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
-        } else if (isRoutineCard(task)) {
-            onSave(createRoutineCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
-        }
+    const handleSave = async () => {
+        await onSave({ 
+            ...task,
+            title, 
+            start_at: timeToISO(startAt), 
+            end_at: timeToISO(endAt) 
+        });
     };
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div
-                className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
-                <h3 className="text-lg font-semibold mb-4 text-foreground">编辑任务</h3>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">编辑常规路线 (Routine)</h3>
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">任务名称</label>
+                        <label className="text-xs text-muted-foreground mb-1 block">路线名称</label>
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="任务名称"
+                            placeholder="路线名称"
                             autoFocus
                         />
                     </div>
-
                     <div className="flex gap-4">
                         <div className="flex-1">
-                            <label className="text-xs text-muted-foreground mb-1 block">开始时间</label>
+                            <label className="text-xs text-muted-foreground mb-1 block">开始</label>
                             <input
                                 type="time"
                                 value={startAt}
@@ -325,7 +336,7 @@ function TaskEditor({
                             />
                         </div>
                         <div className="flex-1">
-                            <label className="text-xs text-muted-foreground mb-1 block">结束时间</label>
+                            <label className="text-xs text-muted-foreground mb-1 block">结束</label>
                             <input
                                 type="time"
                                 value={endAt}
@@ -335,27 +346,84 @@ function TaskEditor({
                         </div>
                     </div>
                 </div>
-
                 <div className="mt-8 flex flex-col gap-2">
-                    <button
-                        onClick={handleSave}
-                        className="w-full bg-primary text-primary-foreground font-medium py-2 rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                        保存
-                    </button>
+                    <button onClick={handleSave} className="w-full bg-primary text-primary-foreground font-medium py-2 rounded-lg hover:opacity-90 transition-opacity">保存</button>
                     <div className="flex gap-2">
-                        <button
-                            onClick={onCancel}
-                            className="flex-1 bg-muted text-muted-foreground font-medium py-2 rounded-lg hover:bg-muted/80 transition-colors"
-                        >
-                            取消
-                        </button>
-                        <button
-                            onClick={() => onDelete(task.id)}
-                            className="px-4 bg-destructive/10 text-destructive font-medium py-2 rounded-lg hover:bg-destructive/20 transition-colors"
-                        >
-                            删除
-                        </button>
+                        <button onClick={onCancel} className="flex-1 bg-muted text-muted-foreground font-medium py-2 rounded-lg hover:bg-muted/80 transition-colors">取消</button>
+                        <button onClick={() => onDelete(task.id)} className="px-4 bg-destructive/10 text-destructive font-medium py-2 rounded-lg hover:bg-destructive/20 transition-colors">删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function TimeTrackerEditor({
+    task,
+    onSave,
+    onDelete,
+    onCancel
+}: {
+    task: TimeTrackerCard;
+    onSave: (task: TimeTrackerCard) => Promise<void>;
+    onDelete: (id: string) => Promise<void>;
+    onCancel: () => void;
+}) {
+    const [title, setTitle] = useState(task.title);
+    const [startAt, setStartAt] = useState(isoToTime(task.start_at));
+    const [endAt, setEndAt] = useState(isoToTime(task.end_at));
+
+    const handleSave = async () => {
+        await onSave({ 
+            ...task,
+            title, 
+            start_at: timeToISO(startAt), 
+            end_at: timeToISO(endAt) 
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">记录时间 (Time Tracker)</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">记录标题</label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="你在做什么？"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="text-xs text-muted-foreground mb-1 block">开始</label>
+                            <input
+                                type="time"
+                                value={startAt}
+                                onChange={(e) => setStartAt(e.target.value)}
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs text-muted-foreground mb-1 block">结束</label>
+                            <input
+                                type="time"
+                                value={endAt}
+                                onChange={(e) => setEndAt(e.target.value)}
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-8 flex flex-col gap-2">
+                    <button onClick={handleSave} className="w-full bg-primary text-primary-foreground font-medium py-2 rounded-lg hover:opacity-90 transition-opacity">保存记录</button>
+                    <div className="flex gap-2">
+                        <button onClick={onCancel} className="flex-1 bg-muted text-muted-foreground font-medium py-2 rounded-lg hover:bg-muted/80 transition-colors">取消</button>
+                        <button onClick={() => onDelete(task.id)} className="px-4 bg-destructive/10 text-destructive font-medium py-2 rounded-lg hover:bg-destructive/20 transition-colors">删除</button>
                     </div>
                 </div>
             </div>
