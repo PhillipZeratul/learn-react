@@ -1,9 +1,9 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useRoutineTimeTrackerStore } from '@/features/routine-time-tracker/stores/routine-time-tracker.store'
-import { RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model'
-import { TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model'
-import { RoutineTimeTrackerTag } from '@/features/routine-time-tracker/models/routine-time-tracker-tag.model'
+import { createRoutineCard, type RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model'
+import { createTimeTrackerCard, type TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model'
+import { createRoutineTimeTrackerTag, type RoutineTimeTrackerTag } from '@/features/routine-time-tracker/models/routine-time-tracker-tag.model'
 
 export class SyncService {
     private static isSyncing = false;
@@ -121,7 +121,7 @@ export class SyncService {
                         ]);
                         
                         // Hydrate Zustand
-                        const card = new RoutineCard({ ...newRecord, is_deleted: !!newRecord.is_deleted });
+                        const card = createRoutineCard({ ...newRecord, is_deleted: !!newRecord.is_deleted });
                         const existing = store.routineCards.find(c => c.id === card.id);
                         if (existing) {
                             store.updateRoutineCard(card.id, card);
@@ -139,7 +139,7 @@ export class SyncService {
                         ]);
 
                         // Hydrate Zustand
-                        const card = new TimeTrackerCard({ ...newRecord, is_deleted: !!newRecord.is_deleted });
+                        const card = createTimeTrackerCard({ ...newRecord, is_deleted: !!newRecord.is_deleted });
                         const existing = store.timeTrackerCards.find(c => c.id === card.id);
                         if (existing) {
                             store.updateTimeTrackerCard(card.id, card);
@@ -157,7 +157,7 @@ export class SyncService {
                         ]);
 
                         // Hydrate Zustand
-                        const tag = new RoutineTimeTrackerTag({ ...newRecord, is_deleted: !!newRecord.is_deleted });
+                        const tag = createRoutineTimeTrackerTag({ ...newRecord, is_deleted: !!newRecord.is_deleted });
                         const existing = store.tags.find(t => t.id === tag.id);
                         if (existing) {
                             store.updateTag(tag.id, tag);

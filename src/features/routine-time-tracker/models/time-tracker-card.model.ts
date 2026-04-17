@@ -4,7 +4,8 @@ import type { UserId, BaseEntity, IsoDateTime} from '@/models/base.model'
 import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 
-export class TimeTrackerCard implements BaseEntity {
+export interface TimeTrackerCard extends BaseEntity {
+    __type: 'TimeTrackerCard';
     id: TimeTrackerCardId;
     user_id: UserId;
     title: string;
@@ -12,27 +13,27 @@ export class TimeTrackerCard implements BaseEntity {
     start_at: IsoDateTime;
     end_at: IsoDateTime;
     tag_id: TagId;
-    
-    created_at: IsoDateTime;
-    updated_at: IsoDateTime;
-    is_deleted: boolean;
-
-    constructor(
-        data: Partial<TimeTrackerCard>
-    ) {
-        const now = new Date().toISOString() as IsoDateTime;
-        const currentUserId = useAuthStore.getState().user?.id as UserId;
-        
-        this.id = data.id || uuidv4() as TimeTrackerCardId;
-        this.title = data.title || "New TimeTracker Card";
-        this.description = data.description || "New TimeTracker Card Description.";
-        this.start_at = data.start_at || now;
-        this.end_at = data.end_at || now;
-        this.tag_id = data.tag_id || TEST_TAG_ID;
-        this.user_id = data.user_id || currentUserId;
-        
-        this.created_at = data.created_at || now;
-        this.updated_at = data.updated_at || now;
-        this.is_deleted = data.is_deleted || false;
-    }
 }
+
+export const isTimeTrackerCard = (card: any): card is TimeTrackerCard => {
+    return card && card.__type === 'TimeTrackerCard';
+};
+
+export const createTimeTrackerCard = (data: Partial<TimeTrackerCard> = {}): TimeTrackerCard => {
+    const now = new Date().toISOString() as IsoDateTime;
+    const currentUserId = useAuthStore.getState().user?.id as UserId;
+
+    return {
+        __type: 'TimeTrackerCard',
+        id: data.id || uuidv4() as TimeTrackerCardId,
+        title: data.title || "New TimeTracker Card",
+        description: data.description || "New TimeTracker Card Description.",
+        start_at: data.start_at || now,
+        end_at: data.end_at || now,
+        tag_id: data.tag_id || TEST_TAG_ID,
+        user_id: data.user_id || currentUserId,
+        created_at: data.created_at || now,
+        updated_at: data.updated_at || now,
+        is_deleted: data.is_deleted || false,
+    };
+};

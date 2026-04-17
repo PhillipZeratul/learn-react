@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/models/base.model";
-import { RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model';
-import { TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model';
+import { createRoutineCard, isRoutineCard, type RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model';
+import { createTimeTrackerCard, isTimeTrackerCard, type TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 
@@ -74,14 +74,14 @@ export default function RoutineTimeTrackerWidget() {
         const isTimeTrackerBlock = relativeX < contentWidth / 2;
 
         if (isTimeTrackerBlock) {
-            const newCard = new TimeTrackerCard({
+            const newCard = createTimeTrackerCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
             addTimeTrackerCard(newCard);
             await RoutineTimeTrackerService.saveTimeTrackerCard(newCard);
         } else {
-            const newCard = new RoutineCard({
+            const newCard = createRoutineCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
@@ -91,10 +91,10 @@ export default function RoutineTimeTrackerWidget() {
     };
 
     const handleUpdateTask = async (updatedTask: AnyCard) => {
-        if (updatedTask instanceof TimeTrackerCard) {
+        if (isTimeTrackerCard(updatedTask)) {
             updateTimeTrackerCard(updatedTask.id, updatedTask);
             await RoutineTimeTrackerService.saveTimeTrackerCard(updatedTask);
-        } else if (updatedTask instanceof RoutineCard) {
+        } else if (isRoutineCard(updatedTask)) {
             updateRoutineCard(updatedTask.id, updatedTask);
             await RoutineTimeTrackerService.saveRoutineCard(updatedTask);
         }
@@ -105,7 +105,7 @@ export default function RoutineTimeTrackerWidget() {
         const taskToDelete = [...timeTrackerCards, ...routineCards].find(t => t.id === id);
         if (!taskToDelete) return;
 
-        if (taskToDelete instanceof TimeTrackerCard) {
+        if (isTimeTrackerCard(taskToDelete)) {
             deleteTimeTrackerCard(id);
             await RoutineTimeTrackerService.deleteTimeTrackerCard(id);
         } else {
@@ -287,10 +287,10 @@ function TaskEditor({
     const [endAt, setEndAt] = useState(isoToTime(task.end_at));
 
     const handleSave = () => {
-        if (task instanceof TimeTrackerCard) {
-            onSave(new TimeTrackerCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
-        } else if (task instanceof RoutineCard) {
-            onSave(new RoutineCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
+        if (isTimeTrackerCard(task)) {
+            onSave(createTimeTrackerCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
+        } else if (isRoutineCard(task)) {
+            onSave(createRoutineCard({ ...task, title, start_at: timeToISO(startAt), end_at: timeToISO(endAt) }));
         }
     };
 

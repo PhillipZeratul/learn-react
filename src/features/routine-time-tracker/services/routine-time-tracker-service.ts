@@ -1,7 +1,7 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { RoutineCard } from '../models/routine-card.model'
-import { TimeTrackerCard } from '../models/time-tracker-card.model'
-import { RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
+import { createRoutineCard, type RoutineCard } from '../models/routine-card.model'
+import { createTimeTrackerCard, type TimeTrackerCard } from '../models/time-tracker-card.model'
+import { createRoutineTimeTrackerTag, type RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store'
 import { SyncService } from '@/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
@@ -127,9 +127,9 @@ export class RoutineTimeTrackerService {
                 [currentUserId]
             )
 
-            store.setRoutineCards(routineRows.map(r => new RoutineCard({ ...r, is_deleted: !!r.is_deleted })))
-            store.setTimeTrackerCards(timeTrackerRows.map(r => new TimeTrackerCard({ ...r, is_deleted: !!r.is_deleted })))
-            store.setTags(tagRows.map(t => new RoutineTimeTrackerTag({ ...t, is_deleted: !!t.is_deleted })))
+            store.setRoutineCards(routineRows.map(r => createRoutineCard({ ...r, is_deleted: !!r.is_deleted })))
+            store.setTimeTrackerCards(timeTrackerRows.map(r => createTimeTrackerCard({ ...r, is_deleted: !!r.is_deleted })))
+            store.setTags(tagRows.map(t => createRoutineTimeTrackerTag({ ...t, is_deleted: !!t.is_deleted })))
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
         }
