@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { RoutineCardId, TagId } from '../types/models';
-import type { UserId, BaseEntity, IsoDateTime} from '@/types/models'
+import type { UserId, BaseEntity, IsoDateTime} from '@/models/models'
 import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 

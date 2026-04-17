@@ -1,4 +1,4 @@
-import type {UserId} from "@/types/models.ts";
+import type {UserId} from "@/models/models";
 import type {TagId} from "@/features/routine-time-tracker/types/models";
 
 export const TEST_USER_ID = '4960388d-ff06-4669-9573-8b093b8fc3c7' as UserId; // Default User

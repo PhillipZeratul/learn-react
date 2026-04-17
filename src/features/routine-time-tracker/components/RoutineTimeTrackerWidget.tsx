@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import type {IsoDateTime} from "@/types/models";
+import type {IsoDateTime} from "@/models/models";
 import { RoutineCard } from '@/features/routine-time-tracker/models/routine-card';
 import { TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker-store';

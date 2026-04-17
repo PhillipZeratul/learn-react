@@ -46,7 +46,7 @@
 
 ## Naming Conventions
 
-- For folders, use kebab-case.
+- For folders, use kebab-case and pluralize.
 - For components, use PascalCase for both file name and exported component name.
 - For models, types and interfaces, use kebab-case for file name and PascalCase for exported model, type or interface name.
 - For pure functions and utilities, use kebab-case for file name and camelCase for exported function name.

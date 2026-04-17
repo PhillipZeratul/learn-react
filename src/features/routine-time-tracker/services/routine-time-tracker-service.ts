@@ -5,7 +5,7 @@ import { RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag'
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker-store'
 import { SyncService } from '@/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth-store'
-import { useSettingsStore } from '@/store/settings-store'
+import { useSettingsStore } from '@/stores/settings-store'
 
 export class RoutineTimeTrackerService {
     static async initialize() {

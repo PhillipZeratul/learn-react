@@ -1,4 +1,4 @@
-import type {Brand} from "@/types/models.ts";
+import type {Brand} from "@/models/models";
 
 export type RoutineCardId = Brand<string, 'TaskId'>;
 export type TimeTrackerCardId = Brand<string, 'TimeTrackerBlockId'>;
