@@ -4,10 +4,10 @@ import "@preact/signals-react/runtime";
 
 import "./index.css"
 import App from "./App.tsx"
-import { ThemeProvider } from "@/components/theme-provider.tsx"
-import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routineTimeTrackerService.ts"
-import { SyncService } from "@/services/syncService"
-import { useAuthStore } from "@/store/authStore"
+import { ThemeProvider } from "@/components/ThemeProvider.tsx"
+import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routine-time-tracker-service.ts"
+import { SyncService } from "@/services/sync-service"
+import { useAuthStore } from "@/features/auth/stores/auth-store.ts"
 import { supabase } from "@/lib/supabase"
 
 function Root() {

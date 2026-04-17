@@ -48,9 +48,8 @@
 
 - For folders, use kebab-case.
 - For components, use PascalCase for both file name and exported component name.
-- For models, use kebab-case for file name and PascalCase for exported model name.
+- For models, types and interfaces, use kebab-case for file name and PascalCase for exported model, type or interface name.
 - For pure functions and utilities, use kebab-case for file name and camelCase for exported function name.
 - For custom hooks and Zustand stores, use kebab-case for file name and camelCase (prefixed with `use`) for exported hook or store name.
 - For Preact signals, use kebab-case for file name and camelCase (suffixed with `Signal`) for exported signal name.
-- For types and interfaces, use kebab-case for file name and PascalCase for exported type or interface name.
 - For constants, use kebab-case for file name and UPPER_CASE for exported constant name.

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { TagId } from '../types/models';
 import type { UserId, BaseEntity, IsoDateTime } from '@/types/models';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 export class RoutineTimeTrackerTag implements BaseEntity {
     id: TagId;
