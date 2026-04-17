@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { TimeTrackerCardId, TagId } from '../types/models';
 import type { UserId, BaseEntity, IsoDateTime} from '@/types/models'
-import {TEST_TAG_ID} from "@/test/test_consts";
+import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/store/authStore';
 
 export class TimeTrackerCard implements BaseEntity {

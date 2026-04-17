@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { RoutineCardId, TagId } from '../types/models';
 import type { UserId, BaseEntity, IsoDateTime} from '@/types/models'
-import {TEST_TAG_ID} from "@/test/test_consts";
+import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/store/authStore';
 
 export class RoutineCard implements BaseEntity {
@@ -12,7 +12,7 @@ export class RoutineCard implements BaseEntity {
     start_at: IsoDateTime;
     end_at: IsoDateTime;
     tag_id: TagId;
-
+    
     created_at: IsoDateTime;
     updated_at: IsoDateTime;
     is_deleted: boolean;

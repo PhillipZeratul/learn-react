@@ -1,5 +1,5 @@
 import RoutineTimeTrackerWidget from "@/features/routine-time-tracker/RoutineTimeTrackerWidget"
-import { Auth } from "@/features/auth/Auth"
+import { Auth } from "@/features/auth/Components/Auth"
 import { useAuthStore } from "@/store/authStore"
 
 export function App() {
