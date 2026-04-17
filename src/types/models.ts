@@ -24,7 +24,7 @@ export type IsoDateTime = Brand<string, 'ISODateTime'>;
 export interface BaseEntity {
     created_at: IsoDateTime;       // ISO 8601 时间戳
     updated_at: IsoDateTime;       // 用于 LWW (Last Write Wins) 冲突解决
-    is_deleted: boolean;      // 铁律：绝不物理删除，全部使用软删除
+    is_deleted: boolean;           // 铁律：绝不物理删除，全部使用软删除
 
     // Local-First 专属同步字段 (仅在 SQLite 客户端存在，不同步到云端)
     _sync_status?: 'synced' | 'pending_insert' | 'pending_update' | 'pending_delete';
