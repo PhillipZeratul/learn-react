@@ -44,7 +44,7 @@ export class RoutineTimeTrackerService {
             `)
 
             await db.execute(`
-                CREATE TABLE IF NOT EXISTS routine_tags (
+                CREATE TABLE IF NOT EXISTS routine_time_tracker_tags (
                     id TEXT PRIMARY KEY,
                     name TEXT,
                     color TEXT,
@@ -91,7 +91,7 @@ export class RoutineTimeTrackerService {
                 [cutoffDate]
             )
             const res3 = await db.execute(
-                'DELETE FROM routine_tags WHERE is_deleted = 1 AND updated_at < ?',
+                'DELETE FROM routine_time_tracker_tags WHERE is_deleted = 1 AND updated_at < ?',
                 [cutoffDate]
             )
 
@@ -123,7 +123,7 @@ export class RoutineTimeTrackerService {
                 [currentUserId]
             )
             const tagRows = await db.select<any>(
-                'SELECT * FROM routine_tags WHERE is_deleted = 0 AND user_id = ?',
+                'SELECT * FROM routine_time_tracker_tags WHERE is_deleted = 0 AND user_id = ?',
                 [currentUserId]
             )
 
@@ -192,14 +192,14 @@ export class RoutineTimeTrackerService {
     static async saveTag(tag: RoutineTimeTrackerTag) {
         const db = await getDatabase()
         await db.execute(`
-            INSERT OR REPLACE INTO routine_tags 
+            INSERT OR REPLACE INTO routine_time_tracker_tags 
             (id, name, color, user_id, created_at, updated_at, is_deleted)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `, [
             tag.id, tag.name, tag.color, tag.user_id, tag.created_at, tag.updated_at, tag.is_deleted ? 1 : 0
         ])
 
-        await this.addToSyncQueue('routine_tags', tag.id, 'UPSERT', tag)
+        await this.addToSyncQueue('routine_time_tracker_tags', tag.id, 'UPSERT', tag)
     }
 
     static async deleteRoutineCard(id: string) {
@@ -221,9 +221,9 @@ export class RoutineTimeTrackerService {
     static async deleteTag(id: string) {
         const db = await getDatabase()
         const updatedAt = new Date().toISOString()
-        await db.execute('UPDATE routine_tags SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
+        await db.execute('UPDATE routine_time_tracker_tags SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
 
-        await this.addToSyncQueue('routine_tags', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+        await this.addToSyncQueue('routine_time_tracker_tags', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
     }
 
     // DEBUG ONLY: Clear all data (Local + Cloud) via Soft Delete
@@ -236,12 +236,12 @@ export class RoutineTimeTrackerService {
             // 1. Fetch all record IDs that aren't already deleted
             const routineIds = await db.select<{id: string}>('SELECT id FROM routine_cards WHERE is_deleted = 0');
             const trackerIds = await db.select<{id: string}>('SELECT id FROM time_tracker_cards WHERE is_deleted = 0');
-            const tagIds = await db.select<{id: string}>('SELECT id FROM routine_tags WHERE is_deleted = 0');
+            const tagIds = await db.select<{id: string}>('SELECT id FROM routine_time_tracker_tags WHERE is_deleted = 0');
 
             // 2. Batch update local records
             await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
             await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
-            await db.execute('UPDATE routine_tags SET is_deleted = 1, updated_at = ?', [updatedAt]);
+            await db.execute('UPDATE routine_time_tracker_tags SET is_deleted = 1, updated_at = ?', [updatedAt]);
 
             // 3. Add to sync queue for each record to propagate to Supabase
             for (const row of routineIds) {
@@ -251,7 +251,7 @@ export class RoutineTimeTrackerService {
                 await this.addToSyncQueue('time_tracker_cards', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
             }
             for (const row of tagIds) {
-                await this.addToSyncQueue('routine_tags', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+                await this.addToSyncQueue('routine_time_tracker_tags', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
             }
 
             // 4. Reset Zustand store
