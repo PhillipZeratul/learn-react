@@ -42,3 +42,11 @@
 - Adaptive UI: Writing two sets of project code is strictly prohibited. Presentational Components must be dynamically switched in memory using Tailwind media queries (micro) and the `useIsMobile` Hook (macro).
 - Disaster-Proof Sync: Clients are strictly prohibited from executing physical deletions (DELETE). Soft Deletes must be used via `is_deleted` or `deleted_at` flags. Synchronization relies on incremental event replay rather than mindless overwriting.
 - Dumb Components (UI Puppetization): shadcn/ui components must remain pure and completely free of business state. All data must be injected into them by the outer Container components.
+- Follow a feature-based module system (high cohesion) where business domains are isolated into independent functional units.
+
+## Naming Conventions
+
+- Use kebab-case for folders.
+- Use PascalCase for components.
+- Use camelCase for pure logic and utilities like hooks, stores, modles, etc.
+- use all caps for constants.
