@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { RoutineCard } from '../models/routine-card'
-import { TimeTrackerCard } from '../models/time-tracker-card'
-import { RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag'
-import type { IsoDateTime } from '@/models/models'
+import { RoutineCard } from '../models/routine-card.model'
+import { TimeTrackerCard } from '../models/time-tracker-card.model'
+import { RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
+import type { IsoDateTime } from '@/models/base.model'
 
 interface RoutineTimeTrackerState {
     timeTrackerCards: TimeTrackerCard[]

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { Button } from '@/components/ui/Button';
 
 export const Auth = () => {

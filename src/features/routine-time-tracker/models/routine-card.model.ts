@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { RoutineCardId, TagId } from '../types/models';
-import type { UserId, BaseEntity, IsoDateTime} from '@/models/models'
+import type { RoutineCardId, TagId } from './routine-time-tracker.model';
+import type { UserId, BaseEntity, IsoDateTime} from '@/models/base.model'
 import {TEST_TAG_ID} from "@/test/test-consts";
-import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
 
 export class RoutineCard implements BaseEntity {
     id: RoutineCardId;

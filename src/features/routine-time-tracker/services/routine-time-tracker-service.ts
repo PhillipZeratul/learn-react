@@ -1,11 +1,11 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { RoutineCard } from '../models/routine-card'
-import { TimeTrackerCard } from '../models/time-tracker-card'
-import { RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag'
-import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker-store'
+import { RoutineCard } from '../models/routine-card.model'
+import { TimeTrackerCard } from '../models/time-tracker-card.model'
+import { RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
+import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store'
 import { SyncService } from '@/services/sync-service'
-import { useAuthStore } from '@/features/auth/stores/auth-store'
-import { useSettingsStore } from '@/stores/settings-store'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
+import { useSettingsStore } from '@/stores/settings.store'
 
 export class RoutineTimeTrackerService {
     static async initialize() {

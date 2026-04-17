@@ -1,6 +1,6 @@
 import RoutineTimeTrackerWidget from "@/features/routine-time-tracker/components/RoutineTimeTrackerWidget"
 import { Auth } from "@/features/auth/components/Auth"
-import { useAuthStore } from "@/features/auth/stores/auth-store"
+import { useAuthStore } from "@/features/auth/stores/auth.store"
 
 export function App() {
     const user = useAuthStore(state => state.user);

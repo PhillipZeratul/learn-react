@@ -1,9 +1,9 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { useRoutineTimeTrackerStore } from '@/features/routine-time-tracker/stores/routine-time-tracker-store'
-import { RoutineCard } from '@/features/routine-time-tracker/models/routine-card'
-import { TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card'
-import { RoutineTimeTrackerTag } from '@/features/routine-time-tracker/models/routine-time-tracker-tag'
+import { useRoutineTimeTrackerStore } from '@/features/routine-time-tracker/stores/routine-time-tracker.store'
+import { RoutineCard } from '@/features/routine-time-tracker/models/routine-card.model'
+import { TimeTrackerCard } from '@/features/routine-time-tracker/models/time-tracker-card.model'
+import { RoutineTimeTrackerTag } from '@/features/routine-time-tracker/models/routine-time-tracker-tag.model'
 
 export class SyncService {
     private static isSyncing = false;
