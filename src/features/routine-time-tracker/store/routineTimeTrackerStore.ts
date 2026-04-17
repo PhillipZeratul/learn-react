@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { RoutineCard } from '../models/RoutineCard'
-import { TimeTrackerCard } from '../models/TimeTrackerCard'
+import { RoutineCard } from '../models/routineCard'
+import { TimeTrackerCard } from '../models/timeTrackerCard'
+import { RoutineTimeTrackerTag } from '../models/routineTimeTrackerTag'
 import type { IsoDateTime } from '@/types/models'
 
 interface RoutineTimeTrackerState {
     timeTrackerCards: TimeTrackerCard[]
     routineCards: RoutineCard[]
+    tags: RoutineTimeTrackerTag[]
     isLoading: boolean
     error: string | null
 }
@@ -22,6 +24,11 @@ interface RoutineTimeTrackerActions {
     updateRoutineCard: (id: string, updates: Partial<RoutineCard>) => void
     deleteRoutineCard: (id: string) => void
 
+    setTags: (tags: RoutineTimeTrackerTag[]) => void
+    addTag: (tag: RoutineTimeTrackerTag) => void
+    updateTag: (id: string, updates: Partial<RoutineTimeTrackerTag>) => void
+    deleteTag: (id: string) => void
+
     reset: () => void
 }
 
@@ -29,12 +36,14 @@ export const useRoutineTimeTrackerStore = create<RoutineTimeTrackerState & Routi
     immer((set) => ({
         timeTrackerCards: [],
         routineCards: [],
+        tags: [],
         isLoading: false,
         error: null,
 
         reset: () => set((state) => {
             state.timeTrackerCards = []
             state.routineCards = []
+            state.tags = []
             state.isLoading = false
             state.error = null
         }),
@@ -83,6 +92,29 @@ export const useRoutineTimeTrackerStore = create<RoutineTimeTrackerState & Routi
             if (index !== -1) {
                 state.routineCards[index].is_deleted = true
                 state.routineCards[index].updated_at = new Date().toISOString() as IsoDateTime
+            }
+        }),
+
+        setTags: (tags) => set((state) => {
+            state.tags = tags
+        }),
+
+        addTag: (tag) => set((state) => {
+            state.tags.push(tag)
+        }),
+
+        updateTag: (id, updates) => set((state) => {
+            const index = state.tags.findIndex(t => t.id === id)
+            if (index !== -1) {
+                state.tags[index] = { ...state.tags[index], ...updates, updated_at: new Date().toISOString() as IsoDateTime}
+            }
+        }),
+
+        deleteTag: (id) => set((state) => {
+            const index = state.tags.findIndex(t => t.id === id)
+            if (index !== -1) {
+                state.tags[index].is_deleted = true
+                state.tags[index].updated_at = new Date().toISOString() as IsoDateTime
             }
         }),
     }))

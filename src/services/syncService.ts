@@ -1,8 +1,9 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useRoutineTimeTrackerStore } from '@/features/routine-time-tracker/store/routineTimeTrackerStore'
-import { RoutineCard } from '@/features/routine-time-tracker/models/RoutineCard'
-import { TimeTrackerCard } from '@/features/routine-time-tracker/models/TimeTrackerCard'
+import { RoutineCard } from '@/features/routine-time-tracker/models/routineCard'
+import { TimeTrackerCard } from '@/features/routine-time-tracker/models/timeTrackerCard'
+import { RoutineTimeTrackerTag } from '@/features/routine-time-tracker/models/routineTimeTrackerTag'
 
 export class SyncService {
     private static isSyncing = false;
@@ -145,6 +146,24 @@ export class SyncService {
                         } else if (!card.is_deleted) {
                             store.addTimeTrackerCard(card);
                         }
+                    } else if (table === 'routine_tags') {
+                        await db.execute(`
+                            INSERT OR REPLACE INTO routine_tags 
+                            (id, name, color, user_id, created_at, updated_at, is_deleted)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        `, [
+                            newRecord.id, newRecord.name, newRecord.color, newRecord.user_id, 
+                            newRecord.created_at, newRecord.updated_at, newRecord.is_deleted ? 1 : 0
+                        ]);
+
+                        // Hydrate Zustand
+                        const tag = new RoutineTimeTrackerTag({ ...newRecord, is_deleted: !!newRecord.is_deleted });
+                        const existing = store.tags.find(t => t.id === tag.id);
+                        if (existing) {
+                            store.updateTag(tag.id, tag);
+                        } else if (!tag.is_deleted) {
+                            store.addTag(tag);
+                        }
                     }
                 } else if (eventType === 'DELETE') {
                     // Though we use soft deletes, we handle physical deletes for robustness
@@ -155,6 +174,9 @@ export class SyncService {
                     } else if (table === 'time_tracker_cards') {
                         await db.execute('DELETE FROM time_tracker_cards WHERE id = ?', [oldRecord.id]);
                         store.deleteTimeTrackerCard(oldRecord.id);
+                    } else if (table === 'routine_tags') {
+                        await db.execute('DELETE FROM routine_tags WHERE id = ?', [oldRecord.id]);
+                        store.deleteTag(oldRecord.id);
                     }
                 }
             })

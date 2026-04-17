@@ -1,6 +1,7 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { RoutineCard } from '../models/RoutineCard'
-import { TimeTrackerCard } from '../models/TimeTrackerCard'
+import { RoutineCard } from '../models/routineCard'
+import { TimeTrackerCard } from '../models/timeTrackerCard'
+import { RoutineTimeTrackerTag } from '../models/routineTimeTrackerTag'
 import { useRoutineTimeTrackerStore } from '../store/routineTimeTrackerStore'
 import { SyncService } from '@/services/syncService'
 import { useAuthStore } from '@/store/authStore'
@@ -35,6 +36,18 @@ export class RoutineTimeTrackerService {
                     start_at TEXT,
                     end_at TEXT,
                     tag_id TEXT,
+                    user_id TEXT,
+                    created_at TEXT,
+                    updated_at TEXT,
+                    is_deleted INTEGER DEFAULT 0
+                )
+            `)
+
+            await db.execute(`
+                CREATE TABLE IF NOT EXISTS routine_tags (
+                    id TEXT PRIMARY KEY,
+                    name TEXT,
+                    color TEXT,
                     user_id TEXT,
                     created_at TEXT,
                     updated_at TEXT,
@@ -77,9 +90,13 @@ export class RoutineTimeTrackerService {
                 'DELETE FROM time_tracker_cards WHERE is_deleted = 1 AND updated_at < ?',
                 [cutoffDate]
             )
+            const res3 = await db.execute(
+                'DELETE FROM routine_tags WHERE is_deleted = 1 AND updated_at < ?',
+                [cutoffDate]
+            )
 
-            if ((res1.changes || 0) > 0 || (res2.changes || 0) > 0) {
-                console.log(`RoutineService: Purged ${(res1.changes || 0) + (res2.changes || 0)} old records.`)
+            if ((res1.changes || 0) > 0 || (res2.changes || 0) > 0 || (res3.changes || 0) > 0) {
+                console.log(`RoutineService: Purged ${(res1.changes || 0) + (res2.changes || 0) + (res3.changes || 0)} old records.`)
             }
         } catch (error) {
             console.error("RoutineService: Failed to purge old records:", error)
@@ -105,9 +122,14 @@ export class RoutineTimeTrackerService {
                 'SELECT * FROM time_tracker_cards WHERE is_deleted = 0 AND user_id = ?', 
                 [currentUserId]
             )
+            const tagRows = await db.select<any>(
+                'SELECT * FROM routine_tags WHERE is_deleted = 0 AND user_id = ?',
+                [currentUserId]
+            )
 
             store.setRoutineCards(routineRows.map(r => new RoutineCard({ ...r, is_deleted: !!r.is_deleted })))
             store.setTimeTrackerCards(timeTrackerRows.map(r => new TimeTrackerCard({ ...r, is_deleted: !!r.is_deleted })))
+            store.setTags(tagRows.map(t => new RoutineTimeTrackerTag({ ...t, is_deleted: !!t.is_deleted })))
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
         }
@@ -167,6 +189,19 @@ export class RoutineTimeTrackerService {
         await this.addToSyncQueue('time_tracker_cards', card.id, 'UPSERT', card)
     }
 
+    static async saveTag(tag: RoutineTimeTrackerTag) {
+        const db = await getDatabase()
+        await db.execute(`
+            INSERT OR REPLACE INTO routine_tags 
+            (id, name, color, user_id, created_at, updated_at, is_deleted)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            tag.id, tag.name, tag.color, tag.user_id, tag.created_at, tag.updated_at, tag.is_deleted ? 1 : 0
+        ])
+
+        await this.addToSyncQueue('routine_tags', tag.id, 'UPSERT', tag)
+    }
+
     static async deleteRoutineCard(id: string) {
         const db = await getDatabase()
         const updatedAt = new Date().toISOString()
@@ -183,6 +218,14 @@ export class RoutineTimeTrackerService {
         await this.addToSyncQueue('time_tracker_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
     }
 
+    static async deleteTag(id: string) {
+        const db = await getDatabase()
+        const updatedAt = new Date().toISOString()
+        await db.execute('UPDATE routine_tags SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
+
+        await this.addToSyncQueue('routine_tags', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+    }
+
     // DEBUG ONLY: Clear all data (Local + Cloud) via Soft Delete
     static async clearAllData() {
         const db = await getDatabase();
@@ -193,10 +236,12 @@ export class RoutineTimeTrackerService {
             // 1. Fetch all record IDs that aren't already deleted
             const routineIds = await db.select<{id: string}>('SELECT id FROM routine_cards WHERE is_deleted = 0');
             const trackerIds = await db.select<{id: string}>('SELECT id FROM time_tracker_cards WHERE is_deleted = 0');
+            const tagIds = await db.select<{id: string}>('SELECT id FROM routine_tags WHERE is_deleted = 0');
 
             // 2. Batch update local records
             await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
             await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
+            await db.execute('UPDATE routine_tags SET is_deleted = 1, updated_at = ?', [updatedAt]);
 
             // 3. Add to sync queue for each record to propagate to Supabase
             for (const row of routineIds) {
@@ -204,6 +249,9 @@ export class RoutineTimeTrackerService {
             }
             for (const row of trackerIds) {
                 await this.addToSyncQueue('time_tracker_cards', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+            }
+            for (const row of tagIds) {
+                await this.addToSyncQueue('routine_tags', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
             }
 
             // 4. Reset Zustand store
