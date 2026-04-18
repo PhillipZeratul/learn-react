@@ -22,6 +22,7 @@ export type IsoDateTime = Brand<string, 'ISODateTime'>;
  * 所有需要与 Supabase 同步的表必须继承此接口
  */
 export interface BaseEntity {
+    user_id: UserId;               // 资源所有者 ID
     created_at: IsoDateTime;       // ISO 8601 时间戳
     updated_at: IsoDateTime;       // 用于 LWW (Last Write Wins) 冲突解决
     is_deleted: boolean;           // 铁律：绝不物理删除，全部使用软删除
@@ -45,7 +46,6 @@ export interface UserProfile extends BaseEntity {
 
 export interface Quest extends BaseEntity {
     id: QuestId;
-    user_id: UserId;
     title: string;
     difficulty: 'EASY' | 'NORMAL' | 'HARD' | 'BOSS';
     reward_exp: Experience;   // 强类型：奖励的经验值

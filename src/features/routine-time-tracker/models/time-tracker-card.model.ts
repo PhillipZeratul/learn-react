@@ -6,7 +6,6 @@ import { useAuthStore } from '@/features/auth/stores/auth.store';
 
 export interface TimeTrackerCard extends BaseEntity {
     id: TimeTrackerCardId;
-    user_id: UserId;
     title: string;
     description?: string;
     start_at: IsoDateTime;

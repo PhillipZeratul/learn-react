@@ -5,7 +5,6 @@ import { useAuthStore } from '@/features/auth/stores/auth.store';
 
 export interface RoutineTimeTrackerTag extends BaseEntity {
     id: TagId;
-    user_id: UserId;
     name: string;
     color: string;
 }

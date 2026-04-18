@@ -6,7 +6,6 @@ import { useAuthStore } from '@/features/auth/stores/auth.store';
 
 export interface RoutineCard extends BaseEntity {
     id: RoutineCardId;
-    user_id: UserId;
     title: string;
     description?: string;
     start_at: IsoDateTime;
