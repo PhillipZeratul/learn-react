@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { RoutineCardId, TagId } from './routine-time-tracker.model';
+import type { RoutineCardId, TagId, ModelConfig } from './routine-time-tracker.model';
 import type { UserId, BaseEntity, IsoDateTime} from '@/models/base.model'
 import {TEST_TAG_ID} from "@/test/test-consts";
 import { useAuthStore } from '@/features/auth/stores/auth.store';
+import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 
 export interface RoutineCard extends BaseEntity {
     id: RoutineCardId;
@@ -29,4 +30,37 @@ export const createRoutineCard = (data: Partial<RoutineCard> = {}): RoutineCard 
         updated_at: data.updated_at || now,
         is_deleted: data.is_deleted || false,
     };
+};
+
+export const routineCardConfig: ModelConfig<RoutineCard> = {
+    tableName: 'routine_cards',
+    createTableSql: `
+        CREATE TABLE IF NOT EXISTS routine_cards (
+            id TEXT PRIMARY KEY,
+            title TEXT,
+            description TEXT,
+            start_at TEXT,
+            end_at TEXT,
+            tag_id TEXT,
+            user_id TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            is_deleted INTEGER DEFAULT 0
+        )
+    `,
+    saveSql: `
+        INSERT OR REPLACE INTO routine_cards 
+        (id, title, description, start_at, end_at, tag_id, user_id, created_at, updated_at, is_deleted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    toSqlValues: (card) => [
+        card.id, card.title, card.description, card.start_at, card.end_at, 
+        card.tag_id, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
+    ],
+    fromDb: (row) => createRoutineCard({ ...row, is_deleted: !!row.is_deleted }),
+    updateStore: (items) => useRoutineTimeTrackerStore.getState().setRoutineCards(items),
+    findInStore: (id) => useRoutineTimeTrackerStore.getState().routineCards.find(c => c.id === id),
+    addToStore: (item) => useRoutineTimeTrackerStore.getState().addRoutineCard(item),
+    updateInStore: (id, item) => useRoutineTimeTrackerStore.getState().updateRoutineCard(id, item),
+    deleteFromStore: (id) => useRoutineTimeTrackerStore.getState().deleteRoutineCard(id),
 };

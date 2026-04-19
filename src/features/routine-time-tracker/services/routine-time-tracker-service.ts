@@ -1,60 +1,30 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { createRoutineCard, type RoutineCard } from '../models/routine-card.model'
-import { createTimeTrackerCard, type TimeTrackerCard } from '../models/time-tracker-card.model'
-import { createRoutineTimeTrackerTag, type RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
+import { routineCardConfig, type RoutineCard } from '../models/routine-card.model'
+import { timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model'
+import { routineTimeTrackerTagConfig, type RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store'
 import { SyncService } from '@/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useSettingsStore } from '@/stores/settings.store'
+import type { ModelConfig } from '../models/routine-time-tracker.model'
+import type { BaseEntity } from '@/models/base.model'
 
 export class RoutineTimeTrackerService {
+    private static configs: ModelConfig<any>[] = [
+        routineCardConfig,
+        timeTrackerCardConfig,
+        routineTimeTrackerTagConfig
+    ];
+
     static async initialize() {
         try {
             const db = await getDatabase()
             
-            // Initialize tables
-            await db.execute(`
-                CREATE TABLE IF NOT EXISTS routine_cards (
-                    id TEXT PRIMARY KEY,
-                    title TEXT,
-                    description TEXT,
-                    start_at TEXT,
-                    end_at TEXT,
-                    tag_id TEXT,
-                    user_id TEXT,
-                    created_at TEXT,
-                    updated_at TEXT,
-                    is_deleted INTEGER DEFAULT 0
-                )
-            `)
+            // Initialize tables from configs
+            for (const config of this.configs) {
+                await db.execute(config.createTableSql);
+            }
             
-            await db.execute(`
-                CREATE TABLE IF NOT EXISTS time_tracker_cards (
-                    id TEXT PRIMARY KEY,
-                    title TEXT,
-                    description TEXT,
-                    start_at TEXT,
-                    end_at TEXT,
-                    tag_id TEXT,
-                    user_id TEXT,
-                    created_at TEXT,
-                    updated_at TEXT,
-                    is_deleted INTEGER DEFAULT 0
-                )
-            `)
-
-            await db.execute(`
-                CREATE TABLE IF NOT EXISTS routine_time_tracker_tags (
-                    id TEXT PRIMARY KEY,
-                    name TEXT,
-                    color TEXT,
-                    user_id TEXT,
-                    created_at TEXT,
-                    updated_at TEXT,
-                    is_deleted INTEGER DEFAULT 0
-                )
-            `)
-
             // Action Queue table for Local-First sync
             await db.execute(`
                 CREATE TABLE IF NOT EXISTS sync_queue (
@@ -82,21 +52,17 @@ export class RoutineTimeTrackerService {
 
             console.log(`RoutineService: Purging soft-deleted records older than ${retentionDays} days (before ${cutoffDate})`)
 
-            const res1 = await db.execute(
-                'DELETE FROM routine_cards WHERE is_deleted = 1 AND updated_at < ?',
-                [cutoffDate]
-            )
-            const res2 = await db.execute(
-                'DELETE FROM time_tracker_cards WHERE is_deleted = 1 AND updated_at < ?',
-                [cutoffDate]
-            )
-            const res3 = await db.execute(
-                'DELETE FROM routine_time_tracker_tags WHERE is_deleted = 1 AND updated_at < ?',
-                [cutoffDate]
-            )
+            let totalPurged = 0;
+            for (const config of this.configs) {
+                const res = await db.execute(
+                    `DELETE FROM ${config.tableName} WHERE is_deleted = 1 AND updated_at < ?`,
+                    [cutoffDate]
+                );
+                totalPurged += res.changes || 0;
+            }
 
-            if ((res1.changes || 0) > 0 || (res2.changes || 0) > 0 || (res3.changes || 0) > 0) {
-                console.log(`RoutineService: Purged ${(res1.changes || 0) + (res2.changes || 0) + (res3.changes || 0)} old records.`)
+            if (totalPurged > 0) {
+                console.log(`RoutineService: Purged ${totalPurged} old records.`)
             }
         } catch (error) {
             console.error("RoutineService: Failed to purge old records:", error)
@@ -105,7 +71,6 @@ export class RoutineTimeTrackerService {
 
     static async loadAll() {
         const db = await getDatabase()
-        const store = useRoutineTimeTrackerStore.getState()
         const currentUserId = useAuthStore.getState().user?.id;
 
         if (!currentUserId) {
@@ -114,22 +79,13 @@ export class RoutineTimeTrackerService {
         }
         
         try {
-            const routineRows = await db.select<any>(
-                'SELECT * FROM routine_cards WHERE is_deleted = 0 AND user_id = ?', 
-                [currentUserId]
-            )
-            const timeTrackerRows = await db.select<any>(
-                'SELECT * FROM time_tracker_cards WHERE is_deleted = 0 AND user_id = ?', 
-                [currentUserId]
-            )
-            const tagRows = await db.select<any>(
-                'SELECT * FROM routine_time_tracker_tags WHERE is_deleted = 0 AND user_id = ?',
-                [currentUserId]
-            )
-
-            store.setRoutineCards(routineRows.map(r => createRoutineCard({ ...r, is_deleted: !!r.is_deleted })))
-            store.setTimeTrackerCards(timeTrackerRows.map(r => createTimeTrackerCard({ ...r, is_deleted: !!r.is_deleted })))
-            store.setTags(tagRows.map(t => createRoutineTimeTrackerTag({ ...t, is_deleted: !!t.is_deleted })))
+            for (const config of this.configs) {
+                const rows = await db.select<any>(
+                    `SELECT * FROM ${config.tableName} WHERE is_deleted = 0 AND user_id = ?`, 
+                    [currentUserId]
+                );
+                config.updateStore(rows.map(row => config.fromDb(row)));
+            }
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
         }
@@ -161,69 +117,41 @@ export class RoutineTimeTrackerService {
         SyncService.triggerSync();
     }
 
-    static async saveRoutineCard(card: RoutineCard) {
+    private static async saveEntity<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
         const db = await getDatabase()
-        await db.execute(`
-            INSERT OR REPLACE INTO routine_cards 
-            (id, title, description, start_at, end_at, tag_id, user_id, created_at, updated_at, is_deleted)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            card.id, card.title, card.description, card.start_at, card.end_at, 
-            card.tag_id, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
-        ])
-        
-        await this.addToSyncQueue('routine_cards', card.id, 'UPSERT', card)
+        await db.execute(config.saveSql, config.toSqlValues(entity))
+        await this.addToSyncQueue(config.tableName, entity.id, 'UPSERT', entity)
+    }
+
+    private static async deleteEntity<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
+        const db = await getDatabase()
+        const updatedAt = new Date().toISOString()
+        await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ? WHERE id = ?`, [updatedAt, id])
+        await this.addToSyncQueue(config.tableName, id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+    }
+
+    static async saveRoutineCard(card: RoutineCard) {
+        await this.saveEntity(routineCardConfig, card);
     }
 
     static async saveTimeTrackerCard(card: TimeTrackerCard) {
-        const db = await getDatabase()
-        await db.execute(`
-            INSERT OR REPLACE INTO time_tracker_cards 
-            (id, title, description, start_at, end_at, tag_id, user_id, created_at, updated_at, is_deleted)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            card.id, card.title, card.description, card.start_at, card.end_at, 
-            card.tag_id, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
-        ])
-
-        await this.addToSyncQueue('time_tracker_cards', card.id, 'UPSERT', card)
+        await this.saveEntity(timeTrackerCardConfig, card);
     }
 
     static async saveTag(tag: RoutineTimeTrackerTag) {
-        const db = await getDatabase()
-        await db.execute(`
-            INSERT OR REPLACE INTO routine_time_tracker_tags 
-            (id, name, color, user_id, created_at, updated_at, is_deleted)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [
-            tag.id, tag.name, tag.color, tag.user_id, tag.created_at, tag.updated_at, tag.is_deleted ? 1 : 0
-        ])
-
-        await this.addToSyncQueue('routine_time_tracker_tags', tag.id, 'UPSERT', tag)
+        await this.saveEntity(routineTimeTrackerTagConfig, tag);
     }
 
     static async deleteRoutineCard(id: string) {
-        const db = await getDatabase()
-        const updatedAt = new Date().toISOString()
-        await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
-        
-        await this.addToSyncQueue('routine_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+        await this.deleteEntity(routineCardConfig, id);
     }
 
     static async deleteTimeTrackerCard(id: string) {
-        const db = await getDatabase()
-        const updatedAt = new Date().toISOString()
-        await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
-        
-        await this.addToSyncQueue('time_tracker_cards', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+        await this.deleteEntity(timeTrackerCardConfig, id);
     }
 
     static async deleteTag(id: string) {
-        const db = await getDatabase()
-        const updatedAt = new Date().toISOString()
-        await db.execute('UPDATE routine_time_tracker_tags SET is_deleted = 1, updated_at = ? WHERE id = ?', [updatedAt, id])
-
-        await this.addToSyncQueue('routine_time_tracker_tags', id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
+        await this.deleteEntity(routineTimeTrackerTagConfig, id);
     }
 
     // DEBUG ONLY: Clear all data (Local + Cloud) via Soft Delete
@@ -233,25 +161,17 @@ export class RoutineTimeTrackerService {
         console.warn("RoutineService: INITIATING GLOBAL SOFT-DELETE...");
 
         try {
-            // 1. Fetch all record IDs that aren't already deleted
-            const routineIds = await db.select<{id: string}>('SELECT id FROM routine_cards WHERE is_deleted = 0');
-            const trackerIds = await db.select<{id: string}>('SELECT id FROM time_tracker_cards WHERE is_deleted = 0');
-            const tagIds = await db.select<{id: string}>('SELECT id FROM routine_time_tracker_tags WHERE is_deleted = 0');
+            for (const config of this.configs) {
+                // 1. Fetch all record IDs that aren't already deleted
+                const ids = await db.select<{id: string}>(`SELECT id FROM ${config.tableName} WHERE is_deleted = 0`);
 
-            // 2. Batch update local records
-            await db.execute('UPDATE routine_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
-            await db.execute('UPDATE time_tracker_cards SET is_deleted = 1, updated_at = ?', [updatedAt]);
-            await db.execute('UPDATE routine_time_tracker_tags SET is_deleted = 1, updated_at = ?', [updatedAt]);
+                // 2. Batch update local records
+                await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ?`, [updatedAt]);
 
-            // 3. Add to sync queue for each record to propagate to Supabase
-            for (const row of routineIds) {
-                await this.addToSyncQueue('routine_cards', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
-            }
-            for (const row of trackerIds) {
-                await this.addToSyncQueue('time_tracker_cards', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
-            }
-            for (const row of tagIds) {
-                await this.addToSyncQueue('routine_time_tracker_tags', row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+                // 3. Add to sync queue for each record to propagate to Supabase
+                for (const row of ids) {
+                    await this.addToSyncQueue(config.tableName, row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+                }
             }
 
             // 4. Reset Zustand store

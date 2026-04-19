@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { TagId } from './routine-time-tracker.model';
+import type { TagId, ModelConfig } from './routine-time-tracker.model';
 import type { UserId, BaseEntity, IsoDateTime } from '@/models/base.model';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
+import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 
 export interface RoutineTimeTrackerTag extends BaseEntity {
     id: TagId;
@@ -22,4 +23,33 @@ export const createRoutineTimeTrackerTag = (data: Partial<RoutineTimeTrackerTag>
         updated_at: data.updated_at || now,
         is_deleted: data.is_deleted || false,
     };
+};
+
+export const routineTimeTrackerTagConfig: ModelConfig<RoutineTimeTrackerTag> = {
+    tableName: 'routine_time_tracker_tags',
+    createTableSql: `
+        CREATE TABLE IF NOT EXISTS routine_time_tracker_tags (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            color TEXT,
+            user_id TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            is_deleted INTEGER DEFAULT 0
+        )
+    `,
+    saveSql: `
+        INSERT OR REPLACE INTO routine_time_tracker_tags 
+        (id, name, color, user_id, created_at, updated_at, is_deleted)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    toSqlValues: (tag) => [
+        tag.id, tag.name, tag.color, tag.user_id, tag.created_at, tag.updated_at, tag.is_deleted ? 1 : 0
+    ],
+    fromDb: (row) => createRoutineTimeTrackerTag({ ...row, is_deleted: !!row.is_deleted }),
+    updateStore: (items) => useRoutineTimeTrackerStore.getState().setTags(items),
+    findInStore: (id) => useRoutineTimeTrackerStore.getState().tags.find(t => t.id === id),
+    addToStore: (item) => useRoutineTimeTrackerStore.getState().addTag(item),
+    updateInStore: (id, item) => useRoutineTimeTrackerStore.getState().updateTag(id, item),
+    deleteFromStore: (id) => useRoutineTimeTrackerStore.getState().deleteTag(id),
 };
