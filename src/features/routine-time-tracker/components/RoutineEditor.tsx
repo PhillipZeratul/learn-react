@@ -1,0 +1,78 @@
+import { useState } from 'react';
+import type { RoutineCard } from '../models/routine-card.model';
+import { timeToISO, isoToTime } from '../utils/utils';
+
+interface RoutineEditorProps {
+    task: RoutineCard;
+    onSave: (task: RoutineCard) => Promise<void>;
+    onDelete: (id: string) => Promise<void>;
+    onCancel: () => void;
+}
+
+export const RoutineEditor = ({
+    task,
+    onSave,
+    onDelete,
+    onCancel
+}: RoutineEditorProps) => {
+    const [title, setTitle] = useState(task.title);
+    const [startAt, setStartAt] = useState(isoToTime(task.start_at));
+    const [endAt, setEndAt] = useState(isoToTime(task.end_at));
+
+    const handleSave = async () => {
+        await onSave({ 
+            ...task,
+            title, 
+            start_at: timeToISO(startAt), 
+            end_at: timeToISO(endAt) 
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">编辑常规路线 (Routine)</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">路线名称</label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="路线名称"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="text-xs text-muted-foreground mb-1 block">开始</label>
+                            <input
+                                type="time"
+                                value={startAt}
+                                onChange={(e) => setStartAt(e.target.value)}
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs text-muted-foreground mb-1 block">结束</label>
+                            <input
+                                type="time"
+                                value={endAt}
+                                onChange={(e) => setEndAt(e.target.value)}
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-8 flex flex-col gap-2">
+                    <button onClick={handleSave} className="w-full bg-primary text-primary-foreground font-medium py-2 rounded-lg hover:opacity-90 transition-opacity">保存</button>
+                    <div className="flex gap-2">
+                        <button onClick={onCancel} className="flex-1 bg-muted text-muted-foreground font-medium py-2 rounded-lg hover:bg-muted/80 transition-colors">取消</button>
+                        <button onClick={() => onDelete(task.id)} className="px-4 bg-destructive/10 text-destructive font-medium py-2 rounded-lg hover:bg-destructive/20 transition-colors">删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
