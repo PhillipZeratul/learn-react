@@ -1,24 +1,24 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { type RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
+import { type Tag } from '../models/tag.model'
 import type { IsoDateTime } from '@/models/base.model'
 
 interface TagState {
-    items: RoutineTimeTrackerTag[]
+    items: Tag[]
     isLoading: boolean
     error: string | null
 }
 
 interface TagActions {
-    set: (items: RoutineTimeTrackerTag[]) => void
-    add: (item: RoutineTimeTrackerTag) => void
-    update: (id: string, updates: Partial<RoutineTimeTrackerTag>) => void
+    set: (items: Tag[]) => void
+    add: (item: Tag) => void
+    update: (id: string, updates: Partial<Tag>) => void
     remove: (id: string) => void
     reset: () => void
-    ensureDefault: (saveFn: (tag: RoutineTimeTrackerTag) => Promise<void>) => Promise<void>
+    ensureDefault: (saveFn: (tag: Tag) => Promise<void>) => Promise<void>
 }
 
-export const useRoutineTimeTrackerTagStore = create<TagState & TagActions>()(
+export const useTagStore = create<TagState & TagActions>()(
     immer((set, get) => ({
         items: [],
         isLoading: false,
@@ -56,8 +56,8 @@ export const useRoutineTimeTrackerTagStore = create<TagState & TagActions>()(
         ensureDefault: async (saveFn) => {
             const { items } = get()
             if (items.length === 0) {
-                const { createRoutineTimeTrackerTag } = await import('../models/routine-time-tracker-tag.model')
-                const defaultTag = createRoutineTimeTrackerTag({})
+                const { createTag } = await import('../models/tag.model')
+                const defaultTag = createTag({})
                 
                 await saveFn(defaultTag)
                 

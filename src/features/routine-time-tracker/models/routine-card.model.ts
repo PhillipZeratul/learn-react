@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { RoutineCardId, TagId, ModelConfig } from './routine-time-tracker.model';
-import { DEFAULT_TAG_ID } from './routine-time-tracker-tag.model'
+import { DEFAULT_TAG_ID } from './tag.model'
 import type { UserId, BaseEntity, IsoDateTime} from '@/models/base.model'
 import { useRoutineCardStore } from '../stores/routine-card.store';
 import { useAuthStore } from '@/features/auth/stores/auth.store';

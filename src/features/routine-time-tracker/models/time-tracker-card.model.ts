@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { TimeTrackerCardId, TagId, ModelConfig } from './routine-time-tracker.model';
 import type { UserId, BaseEntity, IsoDateTime} from '@/models/base.model'
-import { DEFAULT_TAG_ID } from './routine-time-tracker-tag.model'
+import { DEFAULT_TAG_ID } from './tag.model'
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 

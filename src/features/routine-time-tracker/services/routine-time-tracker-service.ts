@@ -1,10 +1,10 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { routineCardConfig } from '../models/routine-card.model'
 import { timeTrackerCardConfig } from '../models/time-tracker-card.model'
-import { routineTimeTrackerTagConfig } from '../models/routine-time-tracker-tag.model'
+import { tagConfig } from '../models/tag.model'
 import { useRoutineCardStore } from '../stores/routine-card.store'
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store'
-import { useRoutineTimeTrackerTagStore } from '../stores/routine-time-tracker-tag.store'
+import { useTagStore } from '../stores/tag.store'
 import { SyncService } from '@/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useSettingsStore } from '@/stores/settings.store'
@@ -15,7 +15,7 @@ export class RoutineTimeTrackerService {
     private static configs: ModelConfig<any>[] = [
         routineCardConfig,
         timeTrackerCardConfig,
-        routineTimeTrackerTagConfig
+        tagConfig
     ];
 
     static async initialize() {
@@ -89,8 +89,8 @@ export class RoutineTimeTrackerService {
                 config.updateStore(rows.map(row => config.fromDb(row)));
             }
 
-            await useRoutineTimeTrackerTagStore.getState().ensureDefault(
-                (tag) => this.save(routineTimeTrackerTagConfig, tag)
+            await useTagStore.getState().ensureDefault(
+                (tag) => this.save(tagConfig, tag)
             );
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
@@ -159,7 +159,7 @@ export class RoutineTimeTrackerService {
             // 4. Reset Zustand stores
             useRoutineCardStore.getState().reset();
             useTimeTrackerCardStore.getState().reset();
-            useRoutineTimeTrackerTagStore.getState().reset();
+            useTagStore.getState().reset();
 
             // 5. Force immediate sync
             console.log("RoutineService: Triggering immediate cloud sync for clear operation...");

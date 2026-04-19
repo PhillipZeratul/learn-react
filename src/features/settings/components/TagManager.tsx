@@ -1,30 +1,30 @@
 import { useState } from 'react';
-import { useRoutineTimeTrackerTagStore } from '@/features/routine-time-tracker/stores/routine-time-tracker-tag.store';
-import { createRoutineTimeTrackerTag, routineTimeTrackerTagConfig } from '@/features/routine-time-tracker/models/routine-time-tracker-tag.model';
+import { useTagStore } from '@/features/routine-time-tracker/stores/tag.store';
+import { createTag, tagConfig } from '@/features/routine-time-tracker/models/tag.model';
 import { RoutineTimeTrackerService } from '@/features/routine-time-tracker/services/routine-time-tracker-service';
 import { Button } from '@/components/ui/Button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusSignIcon, Delete02Icon } from '@hugeicons/core-free-icons';
 
 export const TagManager = () => {
-    const { items: tags, add: addTag, remove: deleteTag } = useRoutineTimeTrackerTagStore();
+    const { items: tags, add: addTag, remove: deleteTag } = useTagStore();
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#787878');
 
     const handleAddTag = async () => {
         if (!newTagName.trim()) return;
-        const tag = createRoutineTimeTrackerTag({
+        const tag = createTag({
             name: newTagName,
             color: newTagColor,
         });
         addTag(tag);
-        await RoutineTimeTrackerService.save(routineTimeTrackerTagConfig, tag);
+        await RoutineTimeTrackerService.save(tagConfig, tag);
         setNewTagName('');
     };
 
     const handleDeleteTag = async (id: string) => {
         deleteTag(id);
-        await RoutineTimeTrackerService.delete(routineTimeTrackerTagConfig, id);
+        await RoutineTimeTrackerService.delete(tagConfig, id);
     };
 
     const activeTags = tags.filter(tag => !tag.is_deleted);

@@ -4,7 +4,7 @@ import { createRoutineCard, routineCardConfig, type RoutineCard } from '../model
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
-import { useRoutineTimeTrackerTagStore } from '../stores/routine-time-tracker-tag.store';
+import { useTagStore } from '../stores/tag.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 
 const PIXELS_PER_MINUTE = 1;
@@ -41,7 +41,7 @@ export default function RoutineTimeTrackerWidget() {
         remove: deleteRoutineCard 
     } = useRoutineCardStore();
 
-    const { items: tags } = useRoutineTimeTrackerTagStore();
+    const { items: tags } = useTagStore();
     
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [currentTime, setCurrentTime] = useState(new Date());

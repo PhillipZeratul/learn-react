@@ -2,7 +2,7 @@ import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { routineCardConfig } from '@/features/routine-time-tracker/models/routine-card.model'
 import { timeTrackerCardConfig } from '@/features/routine-time-tracker/models/time-tracker-card.model'
-import { routineTimeTrackerTagConfig } from '@/features/routine-time-tracker/models/routine-time-tracker-tag.model'
+import { tagConfig } from '@/features/routine-time-tracker/models/tag.model'
 import type { ModelConfig } from '@/features/routine-time-tracker/models/routine-time-tracker.model'
 
 export class SyncService {
@@ -12,7 +12,7 @@ export class SyncService {
     private static configs: ModelConfig<any>[] = [
         routineCardConfig,
         timeTrackerCardConfig,
-        routineTimeTrackerTagConfig
+        tagConfig
     ];
 
     static initialize() {
