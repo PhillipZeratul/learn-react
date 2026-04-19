@@ -311,7 +311,7 @@ function RoutineEditor({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+            <div className="w-full max-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
                 <h3 className="text-lg font-semibold mb-4 text-foreground">编辑常规路线 (Routine)</h3>
                 <div className="space-y-4">
                     <div>
@@ -384,7 +384,7 @@ function TimeTrackerEditor({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+            <div className="w-full max-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
                 <h3 className="text-lg font-semibold mb-4 text-foreground">记录时间 (Time Tracker)</h3>
                 <div className="space-y-4">
                     <div>
