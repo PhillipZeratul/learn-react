@@ -86,6 +86,22 @@ export class RoutineTimeTrackerService {
                 );
                 config.updateStore(rows.map(row => config.fromDb(row)));
             }
+
+            // Ensure at least one tag exists for the user
+            const tags = useRoutineTimeTrackerStore.getState().tags;
+            if (tags.length === 0) {
+                const { TEST_TAG_ID } = await import('@/test/test-consts');
+                const { createRoutineTimeTrackerTag } = await import('../models/routine-time-tracker-tag.model');
+                
+                const defaultTag = createRoutineTimeTrackerTag({
+                    id: TEST_TAG_ID,
+                    name: 'Default',
+                    color: '#787878'
+                });
+                
+                await this.save(routineTimeTrackerTagConfig, defaultTag);
+                useRoutineTimeTrackerStore.getState().addTag(defaultTag);
+            }
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
         }

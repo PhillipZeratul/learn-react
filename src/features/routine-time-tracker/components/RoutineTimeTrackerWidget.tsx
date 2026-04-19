@@ -28,6 +28,7 @@ export default function RoutineTimeTrackerWidget() {
     const { 
         timeTrackerCards, 
         routineCards, 
+        tags,
         addTimeTrackerCard, 
         addRoutineCard, 
         updateTimeTrackerCard, 
@@ -41,6 +42,11 @@ export default function RoutineTimeTrackerWidget() {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
+
+    const getTagColor = (tagId: string) => {
+        const tag = tags.find(t => t.id === tagId);
+        return tag?.color || '#94a3b8'; // Fallback to slate-400 if tag not found
+    };
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -174,7 +180,7 @@ export default function RoutineTimeTrackerWidget() {
                                 return (
                                     <div
                                         key={task.id}
-                                        className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer"
+                                        className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden"
                                         style={{
                                             top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
                                             height: `${duration * PIXELS_PER_MINUTE}px`,
@@ -183,6 +189,10 @@ export default function RoutineTimeTrackerWidget() {
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onClick={() => setEditingState({ type: 'timeTracker', task })}
                                     >
+                                        <div 
+                                            className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
+                                            style={{ backgroundColor: getTagColor(task.tag_id) }} 
+                                        />
                                         <div className="font-medium text-sm text-foreground">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
                                             {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
@@ -216,7 +226,7 @@ export default function RoutineTimeTrackerWidget() {
                                 return (
                                     <div
                                         key={task.id}
-                                        className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer"
+                                        className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden"
                                         style={{
                                             top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
                                             height: `${duration * PIXELS_PER_MINUTE}px`,
@@ -225,6 +235,10 @@ export default function RoutineTimeTrackerWidget() {
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onClick={() => setEditingState({ type: 'routine', task })}
                                     >
+                                        <div 
+                                            className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
+                                            style={{ backgroundColor: getTagColor(task.tag_id) }} 
+                                        />
                                         <div className="font-medium text-sm text-foreground">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
                                             {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
@@ -332,7 +346,7 @@ function RoutineEditor({
                                 type="time"
                                 value={startAt}
                                 onChange={(e) => setStartAt(e.target.value)}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div className="flex-1">
@@ -341,7 +355,7 @@ function RoutineEditor({
                                 type="time"
                                 value={endAt}
                                 onChange={(e) => setEndAt(e.target.value)}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                     </div>
@@ -405,7 +419,7 @@ function TimeTrackerEditor({
                                 type="time"
                                 value={startAt}
                                 onChange={(e) => setStartAt(e.target.value)}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div className="flex-1">
@@ -414,7 +428,7 @@ function TimeTrackerEditor({
                                 type="time"
                                 value={endAt}
                                 onChange={(e) => setEndAt(e.target.value)}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                     </div>

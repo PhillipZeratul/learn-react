@@ -4,6 +4,8 @@ import type { UserId, BaseEntity, IsoDateTime } from '@/models/base.model';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 
+export const DEFAULT_TAG_ID = 'b0ec7c88-ddd7-40ad-8fdd-478f02ac1941' as TagId;
+
 export interface RoutineTimeTrackerTag extends BaseEntity {
     id: TagId;
     name: string;
@@ -16,7 +18,7 @@ export const createRoutineTimeTrackerTag = (data: Partial<RoutineTimeTrackerTag>
 
     return {
         id: data.id || uuidv4() as TagId,
-        name: data.name || "New Tag",
+        name: data.name || "Default",
         color: data.color || "#787878",
         user_id: data.user_id || currentUserId,
         created_at: data.created_at || now,
