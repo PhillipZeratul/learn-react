@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/models/base.model";
-import { createRoutineCard, type RoutineCard } from '../models/routine-card.model';
-import { createTimeTrackerCard, type TimeTrackerCard } from '../models/time-tracker-card.model';
+import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
+import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 
@@ -90,14 +90,14 @@ export default function RoutineTimeTrackerWidget() {
                 end_at: timeToISO(endTime),
             });
             addTimeTrackerCard(newCard);
-            await RoutineTimeTrackerService.saveTimeTrackerCard(newCard);
+            await RoutineTimeTrackerService.save(timeTrackerCardConfig, newCard);
         } else {
             const newCard = createRoutineCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
             addRoutineCard(newCard);
-            await RoutineTimeTrackerService.saveRoutineCard(newCard);
+            await RoutineTimeTrackerService.save(routineCardConfig, newCard);
         }
     };
 
@@ -253,12 +253,12 @@ export default function RoutineTimeTrackerWidget() {
                     task={editingState.task}
                     onSave={async (updated) => {
                         updateRoutineCard(updated.id, updated);
-                        await RoutineTimeTrackerService.saveRoutineCard(updated);
+                        await RoutineTimeTrackerService.save(routineCardConfig, updated);
                         setEditingState(null);
                     }}
                     onDelete={async (id) => {
                         deleteRoutineCard(id);
-                        await RoutineTimeTrackerService.deleteRoutineCard(id);
+                        await RoutineTimeTrackerService.delete(routineCardConfig, id);
                         setEditingState(null);
                     }}
                     onCancel={() => setEditingState(null)}
@@ -270,12 +270,12 @@ export default function RoutineTimeTrackerWidget() {
                     task={editingState.task}
                     onSave={async (updated) => {
                         updateTimeTrackerCard(updated.id, updated);
-                        await RoutineTimeTrackerService.saveTimeTrackerCard(updated);
+                        await RoutineTimeTrackerService.save(timeTrackerCardConfig, updated);
                         setEditingState(null);
                     }}
                     onDelete={async (id) => {
                         deleteTimeTrackerCard(id);
-                        await RoutineTimeTrackerService.deleteTimeTrackerCard(id);
+                        await RoutineTimeTrackerService.delete(timeTrackerCardConfig, id);
                         setEditingState(null);
                     }}
                     onCancel={() => setEditingState(null)}

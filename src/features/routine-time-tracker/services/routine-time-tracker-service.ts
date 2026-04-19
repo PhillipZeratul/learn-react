@@ -1,7 +1,7 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { routineCardConfig, type RoutineCard } from '../models/routine-card.model'
-import { timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model'
-import { routineTimeTrackerTagConfig, type RoutineTimeTrackerTag } from '../models/routine-time-tracker-tag.model'
+import { routineCardConfig } from '../models/routine-card.model'
+import { timeTrackerCardConfig } from '../models/time-tracker-card.model'
+import { routineTimeTrackerTagConfig } from '../models/routine-time-tracker-tag.model'
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store'
 import { SyncService } from '@/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
@@ -117,41 +117,17 @@ export class RoutineTimeTrackerService {
         SyncService.triggerSync();
     }
 
-    private static async saveEntity<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
+    static async save<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
         const db = await getDatabase()
         await db.execute(config.saveSql, config.toSqlValues(entity))
         await this.addToSyncQueue(config.tableName, entity.id, 'UPSERT', entity)
     }
 
-    private static async deleteEntity<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
+    static async delete<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
         const db = await getDatabase()
         const updatedAt = new Date().toISOString()
         await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ? WHERE id = ?`, [updatedAt, id])
         await this.addToSyncQueue(config.tableName, id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
-    }
-
-    static async saveRoutineCard(card: RoutineCard) {
-        await this.saveEntity(routineCardConfig, card);
-    }
-
-    static async saveTimeTrackerCard(card: TimeTrackerCard) {
-        await this.saveEntity(timeTrackerCardConfig, card);
-    }
-
-    static async saveTag(tag: RoutineTimeTrackerTag) {
-        await this.saveEntity(routineTimeTrackerTagConfig, tag);
-    }
-
-    static async deleteRoutineCard(id: string) {
-        await this.deleteEntity(routineCardConfig, id);
-    }
-
-    static async deleteTimeTrackerCard(id: string) {
-        await this.deleteEntity(timeTrackerCardConfig, id);
-    }
-
-    static async deleteTag(id: string) {
-        await this.deleteEntity(routineTimeTrackerTagConfig, id);
     }
 
     // DEBUG ONLY: Clear all data (Local + Cloud) via Soft Delete
