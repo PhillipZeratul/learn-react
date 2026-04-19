@@ -89,17 +89,9 @@ export class RoutineTimeTrackerService {
                 config.updateStore(rows.map(row => config.fromDb(row)));
             }
 
-            // TODO: Maybe move this to be managed by Tag itself.
-            // Ensure at least one tag exists for the user
-            const tags = useRoutineTimeTrackerTagStore.getState().items;
-            if (tags.length === 0) {
-                const { createRoutineTimeTrackerTag } = await import('../models/routine-time-tracker-tag.model');
-                
-                const defaultTag = createRoutineTimeTrackerTag({});
-                
-                await this.save(routineTimeTrackerTagConfig, defaultTag);
-                useRoutineTimeTrackerTagStore.getState().add(defaultTag);
-            }
+            await useRoutineTimeTrackerTagStore.getState().ensureDefault(
+                (tag) => this.save(routineTimeTrackerTagConfig, tag)
+            );
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
         }

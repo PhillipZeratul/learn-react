@@ -15,10 +15,11 @@ interface TagActions {
     update: (id: string, updates: Partial<RoutineTimeTrackerTag>) => void
     remove: (id: string) => void
     reset: () => void
+    ensureDefault: (saveFn: (tag: RoutineTimeTrackerTag) => Promise<void>) => Promise<void>
 }
 
 export const useRoutineTimeTrackerTagStore = create<TagState & TagActions>()(
-    immer((set) => ({
+    immer((set, get) => ({
         items: [],
         isLoading: false,
         error: null,
@@ -51,5 +52,19 @@ export const useRoutineTimeTrackerTagStore = create<TagState & TagActions>()(
             state.isLoading = false
             state.error = null
         }),
+
+        ensureDefault: async (saveFn) => {
+            const { items } = get()
+            if (items.length === 0) {
+                const { createRoutineTimeTrackerTag } = await import('../models/routine-time-tracker-tag.model')
+                const defaultTag = createRoutineTimeTrackerTag({})
+                
+                await saveFn(defaultTag)
+                
+                set((state) => {
+                    state.items.push(defaultTag)
+                })
+            }
+        }
     }))
 )
