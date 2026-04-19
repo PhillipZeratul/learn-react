@@ -90,15 +90,8 @@ export class RoutineTimeTrackerService {
             // Ensure at least one tag exists for the user
             const tags = useRoutineTimeTrackerStore.getState().tags;
             if (tags.length === 0) {
-                const { TEST_TAG_ID } = await import('@/test/test-consts');
                 const { createRoutineTimeTrackerTag } = await import('../models/routine-time-tracker-tag.model');
-                
-                const defaultTag = createRoutineTimeTrackerTag({
-                    id: TEST_TAG_ID,
-                    name: 'Default',
-                    color: '#787878'
-                });
-                
+                const defaultTag = createRoutineTimeTrackerTag({});
                 await this.save(routineTimeTrackerTagConfig, defaultTag);
                 useRoutineTimeTrackerStore.getState().addTag(defaultTag);
             }
