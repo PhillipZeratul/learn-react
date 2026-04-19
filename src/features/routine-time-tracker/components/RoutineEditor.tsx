@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { RoutineCard } from '../models/routine-card.model';
 import { timeToISO, isoToTime } from '../utils/utils';
+import { useTagStore } from '../stores/tag.store';
 
 interface RoutineEditorProps {
     task: RoutineCard;
@@ -15,16 +16,21 @@ export const RoutineEditor = ({
     onDelete,
     onCancel
 }: RoutineEditorProps) => {
+    const { items: tags } = useTagStore();
     const [title, setTitle] = useState(task.title);
     const [startAt, setStartAt] = useState(isoToTime(task.start_at));
     const [endAt, setEndAt] = useState(isoToTime(task.end_at));
+    const [tagId, setTagId] = useState(task.tag_id);
+
+    const activeTags = tags.filter(tag => !tag.is_deleted);
 
     const handleSave = async () => {
         await onSave({ 
             ...task,
             title, 
             start_at: timeToISO(startAt), 
-            end_at: timeToISO(endAt) 
+            end_at: timeToISO(endAt),
+            tag_id: tagId
         });
     };
 
@@ -62,6 +68,28 @@ export const RoutineEditor = ({
                                 onChange={(e) => setEndAt(e.target.value)}
                                 className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">标签</label>
+                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                            {activeTags.map((tag) => (
+                                <button
+                                    key={tag.id}
+                                    onClick={() => setTagId(tag.id)}
+                                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all border ${
+                                        tagId === tag.id 
+                                            ? 'bg-primary/10 border-primary' 
+                                            : 'bg-muted border-transparent hover:border-muted-foreground/30'
+                                    }`}
+                                >
+                                    <div 
+                                        className="w-2 h-2 rounded-full" 
+                                        style={{ backgroundColor: tag.color }} 
+                                    />
+                                    {tag.name}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
