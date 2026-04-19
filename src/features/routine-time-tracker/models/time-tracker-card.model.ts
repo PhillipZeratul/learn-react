@@ -3,7 +3,7 @@ import type { TimeTrackerCardId, TagId, ModelConfig } from './routine-time-track
 import type { UserId, BaseEntity, IsoDateTime} from '@/models/base.model'
 import { DEFAULT_TAG_ID } from './routine-time-tracker-tag.model'
 import { useAuthStore } from '@/features/auth/stores/auth.store';
-import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
+import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 
 export interface TimeTrackerCard extends BaseEntity {
     id: TimeTrackerCardId;
@@ -58,9 +58,9 @@ export const timeTrackerCardConfig: ModelConfig<TimeTrackerCard> = {
         card.tag_id, card.user_id, card.created_at, card.updated_at, card.is_deleted ? 1 : 0
     ],
     fromDb: (row) => createTimeTrackerCard({ ...row, is_deleted: !!row.is_deleted }),
-    updateStore: (items) => useRoutineTimeTrackerStore.getState().setTimeTrackerCards(items),
-    findInStore: (id) => useRoutineTimeTrackerStore.getState().timeTrackerCards.find(c => c.id === id),
-    addToStore: (item) => useRoutineTimeTrackerStore.getState().addTimeTrackerCard(item),
-    updateInStore: (id, item) => useRoutineTimeTrackerStore.getState().updateTimeTrackerCard(id, item),
-    deleteFromStore: (id) => useRoutineTimeTrackerStore.getState().deleteTimeTrackerCard(id),
+    updateStore: (items) => useTimeTrackerCardStore.getState().set(items),
+    findInStore: (id) => useTimeTrackerCardStore.getState().items.find(c => c.id === id),
+    addToStore: (item) => useTimeTrackerCardStore.getState().add(item),
+    updateInStore: (id, item) => useTimeTrackerCardStore.getState().update(id, item),
+    deleteFromStore: (id) => useTimeTrackerCardStore.getState().remove(id),
 };

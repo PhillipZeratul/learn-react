@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRoutineTimeTrackerStore } from '@/features/routine-time-tracker/stores/routine-time-tracker.store';
+import { useRoutineTimeTrackerTagStore } from '@/features/routine-time-tracker/stores/routine-time-tracker-tag.store';
 import { createRoutineTimeTrackerTag, routineTimeTrackerTagConfig } from '@/features/routine-time-tracker/models/routine-time-tracker-tag.model';
 import { RoutineTimeTrackerService } from '@/features/routine-time-tracker/services/routine-time-tracker-service';
 import { Button } from '@/components/ui/Button';
@@ -7,7 +7,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusSignIcon, Delete02Icon } from '@hugeicons/core-free-icons';
 
 export const TagManager = () => {
-    const { tags, addTag, deleteTag } = useRoutineTimeTrackerStore();
+    const { items: tags, add: addTag, remove: deleteTag } = useRoutineTimeTrackerTagStore();
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#787878');
 

@@ -2,7 +2,9 @@ import { getDatabase } from '@/lib/db/sqlite'
 import { routineCardConfig } from '../models/routine-card.model'
 import { timeTrackerCardConfig } from '../models/time-tracker-card.model'
 import { routineTimeTrackerTagConfig } from '../models/routine-time-tracker-tag.model'
-import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store'
+import { useRoutineCardStore } from '../stores/routine-card.store'
+import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store'
+import { useRoutineTimeTrackerTagStore } from '../stores/routine-time-tracker-tag.store'
 import { SyncService } from '@/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useSettingsStore } from '@/stores/settings.store'
@@ -87,13 +89,16 @@ export class RoutineTimeTrackerService {
                 config.updateStore(rows.map(row => config.fromDb(row)));
             }
 
+            // TODO: Maybe move this to be managed by Tag itself.
             // Ensure at least one tag exists for the user
-            const tags = useRoutineTimeTrackerStore.getState().tags;
+            const tags = useRoutineTimeTrackerTagStore.getState().items;
             if (tags.length === 0) {
                 const { createRoutineTimeTrackerTag } = await import('../models/routine-time-tracker-tag.model');
+                
                 const defaultTag = createRoutineTimeTrackerTag({});
+                
                 await this.save(routineTimeTrackerTagConfig, defaultTag);
-                useRoutineTimeTrackerStore.getState().addTag(defaultTag);
+                useRoutineTimeTrackerTagStore.getState().add(defaultTag);
             }
         } catch (error) {
             console.error("Failed to load cards from DB:", error)
@@ -159,8 +164,10 @@ export class RoutineTimeTrackerService {
                 }
             }
 
-            // 4. Reset Zustand store
-            useRoutineTimeTrackerStore.getState().reset();
+            // 4. Reset Zustand stores
+            useRoutineCardStore.getState().reset();
+            useTimeTrackerCardStore.getState().reset();
+            useRoutineTimeTrackerTagStore.getState().reset();
 
             // 5. Force immediate sync
             console.log("RoutineService: Triggering immediate cloud sync for clear operation...");

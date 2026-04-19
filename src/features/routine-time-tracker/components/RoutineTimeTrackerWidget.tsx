@@ -2,7 +2,9 @@ import React, {useState, useEffect, useRef} from 'react';
 import type {IsoDateTime} from "@/models/base.model";
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
-import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
+import { useRoutineCardStore } from '../stores/routine-card.store';
+import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
+import { useRoutineTimeTrackerTagStore } from '../stores/routine-time-tracker-tag.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 
 const PIXELS_PER_MINUTE = 1;
@@ -26,16 +28,20 @@ type EditingState =
 
 export default function RoutineTimeTrackerWidget() {
     const { 
-        timeTrackerCards, 
-        routineCards, 
-        tags,
-        addTimeTrackerCard, 
-        addRoutineCard, 
-        updateTimeTrackerCard, 
-        updateRoutineCard, 
-        deleteTimeTrackerCard, 
-        deleteRoutineCard 
-    } = useRoutineTimeTrackerStore();
+        items: timeTrackerCards, 
+        add: addTimeTrackerCard, 
+        update: updateTimeTrackerCard, 
+        remove: deleteTimeTrackerCard 
+    } = useTimeTrackerCardStore();
+    
+    const { 
+        items: routineCards, 
+        add: addRoutineCard, 
+        update: updateRoutineCard, 
+        remove: deleteRoutineCard 
+    } = useRoutineCardStore();
+
+    const { items: tags } = useRoutineTimeTrackerTagStore();
     
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -346,7 +352,7 @@ function RoutineEditor({
                                 type="time"
                                 value={startAt}
                                 onChange={(e) => setStartAt(e.target.value)}
-                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div className="flex-1">
@@ -355,7 +361,7 @@ function RoutineEditor({
                                 type="time"
                                 value={endAt}
                                 onChange={(e) => setEndAt(e.target.value)}
-                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                     </div>
@@ -428,7 +434,7 @@ function TimeTrackerEditor({
                                 type="time"
                                 value={endAt}
                                 onChange={(e) => setEndAt(e.target.value)}
-                                className="h-full w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                     </div>
