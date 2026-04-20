@@ -186,7 +186,7 @@ export default function RoutineTimeTrackerWidget() {
                                             className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
                                             style={{ backgroundColor: getTagColor(task.tag_id) }} 
                                         />
-                                        <div className="font-medium text-sm text-foreground">{task.title}</div>
+                                        <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
                                             {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
                                         </div>
@@ -232,7 +232,7 @@ export default function RoutineTimeTrackerWidget() {
                                             className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
                                             style={{ backgroundColor: getTagColor(task.tag_id) }} 
                                         />
-                                        <div className="font-medium text-sm text-foreground">{task.title}</div>
+                                        <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
                                         <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
                                             {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
                                         </div>
