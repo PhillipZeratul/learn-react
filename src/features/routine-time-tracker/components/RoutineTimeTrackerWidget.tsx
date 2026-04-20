@@ -78,7 +78,8 @@ const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: Tas
     const startMin = isoToMinutes(task.start_at);
     const duration = isoToMinutes(task.end_at) - startMin;
 
-    const defaultTop = `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`;
+    // GPU-Accelerated Positioning
+    const defaultTransform = `translateY(${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px)`;
     const defaultHeight = `${duration * PIXELS_PER_MINUTE}px`;
 
     useEffect(() => {
@@ -86,7 +87,8 @@ const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: Tas
 
         const dispose = effect(() => {
             if (cardRef.current) {
-                cardRef.current.style.top = `${dragTopSignal.value}px`;
+                // Apply the transform directly. scale(1.02) is appended because inline transforms override Tailwind's scale utilities.
+                cardRef.current.style.transform = `translateY(${dragTopSignal.value}px) scale(1.02)`;
                 cardRef.current.style.height = `${dragHeightSignal.value}px`;
             }
 
@@ -109,13 +111,21 @@ const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: Tas
         return () => dispose();
     }, [isDragging]);
 
+    // Fix the Transition Trap: strictly separate idle (with transitions) from dragging styles
+    const baseClasses = "task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 pointer-events-auto overflow-hidden";
+    const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm"; 
+    const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
+
     return (
         <div
             ref={cardRef}
-            className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
+            className={`${baseClasses} ${isDragging ? draggingClasses : idleClasses}`}
             style={{
-                top: isDragging ? undefined : defaultTop,
+                top: 0, // Anchor to top, let transform handle movement
+                transform: isDragging ? undefined : defaultTransform,
                 height: isDragging ? undefined : defaultHeight,
+                // Hardware Hinting: dedicated GPU layer for the card
+                willChange: isDragging ? 'transform, height' : 'auto', 
             }}
             onMouseDown={onPress}
             onTouchStart={onPress}
