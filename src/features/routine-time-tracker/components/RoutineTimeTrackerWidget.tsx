@@ -1,6 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import { signal, batch } from '@preact/signals-react';
-import { useSignals } from '@preact/signals-react/runtime';
+import { signal, batch, effect } from '@preact/signals-react';
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
@@ -35,6 +34,34 @@ interface DragState {
 const dragTopSignal = signal(0);
 const dragHeightSignal = signal(0);
 
+const CurrentTimeIndicator = () => {
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const currentTimeString = currentTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+
+    return (
+        <div
+            className="absolute left-0 right-0 flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
+            style={{top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px`}}
+        >
+            <div className="w-full border-t-2 border-primary/50"/>
+            <span className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                {currentTimeString}
+            </span>
+        </div>
+    );
+};
+
 interface TaskCardProps {
     task: RoutineCard | TimeTrackerCard;
     type: 'routine' | 'timeTracker';
@@ -45,40 +72,51 @@ interface TaskCardProps {
 }
 
 const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
-    useSignals(); // Hook into signal updates
+    const cardRef = useRef<HTMLDivElement>(null);
+    const timeLabelRef = useRef<HTMLDivElement>(null);
 
     const startMin = isoToMinutes(task.start_at);
     const duration = isoToMinutes(task.end_at) - startMin;
 
-    const style = isDragging ? {
-        top: `${dragTopSignal.value}px`,
-        height: `${dragHeightSignal.value}px`,
-    } : {
-        top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
-        height: `${duration * PIXELS_PER_MINUTE}px`,
-    };
+    const defaultTop = `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`;
+    const defaultHeight = `${duration * PIXELS_PER_MINUTE}px`;
 
-    const displayTimeRange = () => {
-        if (!isDragging) return `${isoToTime(task.start_at)} - ${isoToTime(task.end_at)}`;
-        
-        const top = dragTopSignal.value;
-        const height = dragHeightSignal.value;
-        const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-        const currentEndMin = Math.round((top + height - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-        
-        const formatMin = (m: number) => {
-            const h = Math.floor(m / 60);
-            const mm = m % 60;
-            return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-        };
-        
-        return `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
-    };
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const dispose = effect(() => {
+            if (cardRef.current) {
+                cardRef.current.style.top = `${dragTopSignal.value}px`;
+                cardRef.current.style.height = `${dragHeightSignal.value}px`;
+            }
+
+            if (timeLabelRef.current) {
+                const top = dragTopSignal.value;
+                const height = dragHeightSignal.value;
+                const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+                const currentEndMin = Math.round((top + height - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+                
+                const formatMin = (m: number) => {
+                    const h = Math.floor(m / 60);
+                    const mm = m % 60;
+                    return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                };
+                
+                timeLabelRef.current.innerText = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
+            }
+        });
+
+        return () => dispose();
+    }, [isDragging]);
 
     return (
         <div
+            ref={cardRef}
             className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
-            style={style}
+            style={{
+                top: isDragging ? undefined : defaultTop,
+                height: isDragging ? undefined : defaultHeight,
+            }}
             onMouseDown={onPress}
             onTouchStart={onPress}
             onClick={onClick}
@@ -88,16 +126,14 @@ const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: Tas
                 style={{ backgroundColor: getTagColor(task.tag_id) }} 
             />
             <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
-            <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                {displayTimeRange()}
+            <div ref={timeLabelRef} className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                {!isDragging && `${isoToTime(task.start_at)} - ${isoToTime(task.end_at)}`}
             </div>
         </div>
     );
 };
 
 export default function RoutineTimeTrackerWidget() {
-    useSignals(); // Also make the widget signal-aware for consistent state
-
     const { 
         items: timeTrackerCards, 
         add: addTimeTrackerCard, 
@@ -116,7 +152,6 @@ export default function RoutineTimeTrackerWidget() {
     
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [dragState, setDragState] = useState<DragState | null>(null);
-    const [currentTime, setCurrentTime] = useState(new Date());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
@@ -126,20 +161,6 @@ export default function RoutineTimeTrackerWidget() {
         const tag = tags.find(t => t.id === tagId);
         return tag?.color || '#94a3b8'; // Fallback to slate-400 if tag not found
     };
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-    const currentTimeString = currentTime.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    });
 
     const handleCreateTask = async (clientX: number, clientY: number) => {
         if (!scrollContainerRef.current) return;
@@ -399,16 +420,7 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
                     </div>
 
-                    <div
-                        className="absolute left-0 right-0 flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
-                        style={{top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px`}}
-                    >
-                        <div className="w-full border-t-2 border-primary/50"/>
-                        <span
-                            className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
-                            {currentTimeString}
-                        </span>
-                    </div>
+                    <CurrentTimeIndicator />
                 </div>
             </div>
 
