@@ -1,4 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
+import { signal, batch } from '@preact/signals-react';
+import { useSignals } from '@preact/signals-react/runtime';
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
@@ -29,7 +31,73 @@ interface DragState {
     mode: DragMode;
 }
 
+// Signals for high-frequency dragging updates
+const dragTopSignal = signal(0);
+const dragHeightSignal = signal(0);
+
+interface TaskCardProps {
+    task: RoutineCard | TimeTrackerCard;
+    type: 'routine' | 'timeTracker';
+    isDragging: boolean;
+    getTagColor: (tagId: string) => string;
+    onPress: (e: React.MouseEvent | React.TouchEvent) => void;
+    onClick: () => void;
+}
+
+const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
+    useSignals(); // Hook into signal updates
+
+    const startMin = isoToMinutes(task.start_at);
+    const duration = isoToMinutes(task.end_at) - startMin;
+
+    const style = isDragging ? {
+        top: `${dragTopSignal.value}px`,
+        height: `${dragHeightSignal.value}px`,
+    } : {
+        top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
+        height: `${duration * PIXELS_PER_MINUTE}px`,
+    };
+
+    const displayTimeRange = () => {
+        if (!isDragging) return `${isoToTime(task.start_at)} - ${isoToTime(task.end_at)}`;
+        
+        const top = dragTopSignal.value;
+        const height = dragHeightSignal.value;
+        const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+        const currentEndMin = Math.round((top + height - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+        
+        const formatMin = (m: number) => {
+            const h = Math.floor(m / 60);
+            const mm = m % 60;
+            return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+        };
+        
+        return `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
+    };
+
+    return (
+        <div
+            className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
+            style={style}
+            onMouseDown={onPress}
+            onTouchStart={onPress}
+            onClick={onClick}
+        >
+            <div 
+                className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
+                style={{ backgroundColor: getTagColor(task.tag_id) }} 
+            />
+            <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
+            <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                {displayTimeRange()}
+            </div>
+        </div>
+    );
+};
+
 export default function RoutineTimeTrackerWidget() {
+    useSignals(); // Also make the widget signal-aware for consistent state
+
     const { 
         items: timeTrackerCards, 
         add: addTimeTrackerCard, 
@@ -129,10 +197,18 @@ export default function RoutineTimeTrackerWidget() {
         else if (relativeY > height * 0.75) mode = 'bottom';
 
         longPressTimer.current = setTimeout(() => {
+            const startMin = isoToMinutes(task.start_at);
+            const duration = isoToMinutes(task.end_at) - startMin;
+            
+            batch(() => {
+                dragTopSignal.value = startMin * PIXELS_PER_MINUTE + TOP_MARGIN;
+                dragHeightSignal.value = duration * PIXELS_PER_MINUTE;
+            });
+
             setDragState({
                 type,
                 card: task,
-                initialStartMin: isoToMinutes(task.start_at),
+                initialStartMin: startMin,
                 initialEndMin: isoToMinutes(task.end_at),
                 initialMouseY: clientY,
                 mode
@@ -164,12 +240,25 @@ export default function RoutineTimeTrackerWidget() {
         if (dragState) {
             wasDragged.current = true;
 
+            // Calculate final snapped times
+            const finalTop = dragTopSignal.value;
+            const finalHeight = dragHeightSignal.value;
+            const finalStartMin = Math.round((finalTop - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+            const finalEndMin = Math.round((finalTop + finalHeight - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+
+            const finalCard = {
+                ...dragState.card,
+                start_at: timeToISO(`${String(Math.floor(finalStartMin / 60)).padStart(2, '0')}:${String(finalStartMin % 60).padStart(2, '0')}`),
+                end_at: timeToISO(`${String(Math.floor(finalEndMin / 60)).padStart(2, '0')}:${String(finalEndMin % 60).padStart(2, '0')}`),
+            };
+
+            // Sync the final dragged state to the global store
             if (dragState.type === 'routine') {
-                const routineCard = dragState.card as RoutineCard;
-                await RoutineTimeTrackerService.save(routineCardConfig, routineCard);
+                updateRoutineCard(finalCard.id, finalCard as RoutineCard);
+                await RoutineTimeTrackerService.save(routineCardConfig, finalCard as RoutineCard);
             } else {
-                const timeTrackerCard = dragState.card as TimeTrackerCard;
-                await RoutineTimeTrackerService.save(timeTrackerCardConfig, timeTrackerCard);
+                updateTimeTrackerCard(finalCard.id, finalCard as TimeTrackerCard);
+                await RoutineTimeTrackerService.save(timeTrackerCardConfig, finalCard as TimeTrackerCard);
             }
             setDragState(null);
         }
@@ -182,36 +271,33 @@ export default function RoutineTimeTrackerWidget() {
         if (dragState) {
             wasDragged.current = true;
             const deltaY = clientY - dragState.initialMouseY;
-            const deltaMin = Math.round(deltaY / PIXELS_PER_MINUTE / 5) * 5; // Snap to 5 mins
-
-            let newStartMin = dragState.initialStartMin;
-            let newEndMin = dragState.initialEndMin;
+            
+            let newTop = dragState.initialStartMin * PIXELS_PER_MINUTE + TOP_MARGIN;
+            let newHeight = (dragState.initialEndMin - dragState.initialStartMin) * PIXELS_PER_MINUTE;
 
             if (dragState.mode === 'top') {
-                newStartMin = Math.min(dragState.initialEndMin - 5, Math.max(0, dragState.initialStartMin + deltaMin));
+                const requestedTop = (dragState.initialStartMin * PIXELS_PER_MINUTE + TOP_MARGIN) + deltaY;
+                const minTop = TOP_MARGIN;
+                const maxTop = (dragState.initialEndMin - 5) * PIXELS_PER_MINUTE + TOP_MARGIN;
+                newTop = Math.max(minTop, Math.min(maxTop, requestedTop));
+                newHeight = ((dragState.initialEndMin * PIXELS_PER_MINUTE + TOP_MARGIN) - newTop);
             } else if (dragState.mode === 'bottom') {
-                newEndMin = Math.max(dragState.initialStartMin + 5, Math.min(24 * 60, dragState.initialEndMin + deltaMin));
+                const requestedHeight = ((dragState.initialEndMin - dragState.initialStartMin) * PIXELS_PER_MINUTE) + deltaY;
+                const minHeight = 5 * PIXELS_PER_MINUTE;
+                const maxHeight = (24 * 60 - dragState.initialStartMin) * PIXELS_PER_MINUTE;
+                newHeight = Math.max(minHeight, Math.min(maxHeight, requestedHeight));
             } else {
-                const duration = dragState.initialEndMin - dragState.initialStartMin;
-                newStartMin = Math.max(0, Math.min(24 * 60 - duration, dragState.initialStartMin + deltaMin));
-                newEndMin = newStartMin + duration;
+                const requestedTop = (dragState.initialStartMin * PIXELS_PER_MINUTE + TOP_MARGIN) + deltaY;
+                const duration = (dragState.initialEndMin - dragState.initialStartMin) * PIXELS_PER_MINUTE;
+                const minTop = TOP_MARGIN;
+                const maxTop = (24 * 60 * PIXELS_PER_MINUTE + TOP_MARGIN) - duration;
+                newTop = Math.max(minTop, Math.min(maxTop, requestedTop));
             }
 
-            const updatedCard = {
-                ...dragState.card,
-                start_at: timeToISO(`${String(Math.floor(newStartMin / 60)).padStart(2, '0')}:${String(newStartMin % 60).padStart(2, '0')}`),
-                end_at: timeToISO(`${String(Math.floor(newEndMin / 60)).padStart(2, '0')}:${String(newEndMin % 60).padStart(2, '0')}`),
-            };
-
-            if (dragState.type === 'routine') {
-                const routineCard = updatedCard as RoutineCard;
-                updateRoutineCard(updatedCard.id, routineCard);
-            } else {
-                const timeTrackerCard = updatedCard as TimeTrackerCard;
-                updateTimeTrackerCard(updatedCard.id, timeTrackerCard);
-            }
-
-            setDragState({ ...dragState, card: updatedCard as any });
+            batch(() => {
+                dragTopSignal.value = newTop;
+                dragHeightSignal.value = newHeight;
+            });
             return;
         }
 
@@ -234,7 +320,7 @@ export default function RoutineTimeTrackerWidget() {
         <div className="h-full w-full relative overflow-hidden">
             <div
                 ref={scrollContainerRef}
-                className="h-full w-full overflow-y-auto bg-background relative scrollbar-hide select-none"
+                className={`h-full w-full bg-background relative scrollbar-hide select-none ${dragState ? 'overflow-hidden' : 'overflow-y-auto'}`}
                 onMouseDown={startPress}
                 onMouseUp={endPress}
                 onMouseLeave={endPress}
@@ -260,37 +346,21 @@ export default function RoutineTimeTrackerWidget() {
                     <div className="absolute inset-0 flex">
                         {/* Time Tracker Column */}
                         <div className="relative flex-1 h-full">
-                            {timeTrackerCards.filter(t => !t.is_deleted).map(task => {
-                                const startMin = isoToMinutes(task.start_at);
-                                const duration = isoToMinutes(task.end_at) - startMin;
-                                const isDragging = dragState?.card.id === task.id;
-                                return (
-                                    <div
-                                        key={task.id}
-                                        className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
-                                        style={{
-                                            top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
-                                            height: `${duration * PIXELS_PER_MINUTE}px`,
-                                        }}
-                                        onMouseDown={(e) => handleCardPress(e, 'timeTracker', task)}
-                                        onTouchStart={(e) => handleCardPress(e, 'timeTracker', task)}
-                                        onClick={() => {
-                                            if (!wasDragged.current) {
-                                                setEditingState({ type: 'timeTracker', card: task });
-                                            }
-                                        }}
-                                    >
-                                        <div 
-                                            className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
-                                            style={{ backgroundColor: getTagColor(task.tag_id) }} 
-                                        />
-                                        <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
-                                        <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                                            {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            {timeTrackerCards.filter(t => !t.is_deleted).map(task => (
+                                <TaskCard
+                                    key={task.id}
+                                    task={task}
+                                    type="timeTracker"
+                                    isDragging={dragState?.card.id === task.id}
+                                    getTagColor={getTagColor}
+                                    onPress={(e) => handleCardPress(e, 'timeTracker', task)}
+                                    onClick={() => {
+                                        if (!wasDragged.current) {
+                                            setEditingState({ type: 'timeTracker', card: task });
+                                        }
+                                    }}
+                                />
+                            ))}
                         </div>
 
                         {/* Center Timeline */}
@@ -311,37 +381,21 @@ export default function RoutineTimeTrackerWidget() {
 
                         {/* Routine Column */}
                         <div className="relative flex-1 h-full">
-                            {routineCards.filter(t => !t.is_deleted).map(task => {
-                                const startMin = isoToMinutes(task.start_at);
-                                const duration = isoToMinutes(task.end_at) - startMin;
-                                const isDragging = dragState?.card.id === task.id;
-                                return (
-                                    <div
-                                        key={task.id}
-                                        className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
-                                        style={{
-                                            top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
-                                            height: `${duration * PIXELS_PER_MINUTE}px`,
-                                        }}
-                                        onMouseDown={(e) => handleCardPress(e, 'routine', task)}
-                                        onTouchStart={(e) => handleCardPress(e, 'routine', task)}
-                                        onClick={() => {
-                                            if (!wasDragged.current) {
-                                                setEditingState({ type: 'routine', card: task });
-                                            }
-                                        }}
-                                    >
-                                        <div 
-                                            className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
-                                            style={{ backgroundColor: getTagColor(task.tag_id) }} 
-                                        />
-                                        <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
-                                        <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                                            {isoToTime(task.start_at)} - {isoToTime(task.end_at)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            {routineCards.filter(t => !t.is_deleted).map(task => (
+                                <TaskCard
+                                    key={task.id}
+                                    task={task}
+                                    type="routine"
+                                    isDragging={dragState?.card.id === task.id}
+                                    getTagColor={getTagColor}
+                                    onPress={(e) => handleCardPress(e, 'routine', task)}
+                                    onClick={() => {
+                                        if (!wasDragged.current) {
+                                            setEditingState({ type: 'routine', card: task });
+                                        }
+                                    }}
+                                />
+                            ))}
                         </div>
                     </div>
 
