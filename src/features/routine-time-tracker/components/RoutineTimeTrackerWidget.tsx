@@ -14,9 +14,20 @@ const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 64;
 
 type EditingState = 
-    | { type: 'routine'; task: RoutineCard }
-    | { type: 'timeTracker'; task: TimeTrackerCard }
+    | { type: 'routine'; card: RoutineCard }
+    | { type: 'timeTracker'; card: TimeTrackerCard }
     | null;
+
+type DragMode = 'top' | 'center' | 'bottom';
+
+interface DragState {
+    type: 'routine' | 'timeTracker';
+    card: RoutineCard | TimeTrackerCard;
+    initialStartMin: number;
+    initialEndMin: number;
+    initialMouseY: number;
+    mode: DragMode;
+}
 
 export default function RoutineTimeTrackerWidget() {
     const { 
@@ -36,10 +47,12 @@ export default function RoutineTimeTrackerWidget() {
     const { items: tags } = useTagStore();
     
     const [editingState, setEditingState] = useState<EditingState>(null);
+    const [dragState, setDragState] = useState<DragState | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
+    const wasDragged = useRef(false);
 
     const getTagColor = (tagId: string) => {
         const tag = tags.find(t => t.id === tagId);
@@ -88,14 +101,44 @@ export default function RoutineTimeTrackerWidget() {
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
-            setEditingState({ type: 'timeTracker', task: newCard });
+            setEditingState({ type: 'timeTracker', card: newCard });
         } else {
             const newCard = createRoutineCard({
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             });
-            setEditingState({ type: 'routine', task: newCard });
+            setEditingState({ type: 'routine', card: newCard });
         }
+    };
+
+    const handleCardPress = (e: React.MouseEvent | React.TouchEvent, type: 'routine' | 'timeTracker', task: RoutineCard | TimeTrackerCard) => {
+        e.stopPropagation();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        
+        lastTouchPos.current = { x: clientX, y: clientY };
+        wasDragged.current = false;
+
+        const cardElement = (e.currentTarget as HTMLElement);
+        const rect = cardElement.getBoundingClientRect();
+        const relativeY = clientY - rect.top;
+        const height = rect.height;
+
+        let mode: DragMode = 'center';
+        if (relativeY < height * 0.25) mode = 'top';
+        else if (relativeY > height * 0.75) mode = 'bottom';
+
+        longPressTimer.current = setTimeout(() => {
+            setDragState({
+                type,
+                card: task,
+                initialStartMin: isoToMinutes(task.start_at),
+                initialEndMin: isoToMinutes(task.end_at),
+                initialMouseY: clientY,
+                mode
+            });
+            longPressTimer.current = null;
+        }, 500);
     };
 
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
@@ -112,18 +155,67 @@ export default function RoutineTimeTrackerWidget() {
         }, 500);
     };
 
-    const endPress = () => {
+    const endPress = async () => {
         if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
         }
+
+        if (dragState) {
+            wasDragged.current = true;
+
+            if (dragState.type === 'routine') {
+                const routineCard = dragState.card as RoutineCard;
+                await RoutineTimeTrackerService.save(routineCardConfig, routineCard);
+            } else {
+                const timeTrackerCard = dragState.card as TimeTrackerCard;
+                await RoutineTimeTrackerService.save(timeTrackerCardConfig, timeTrackerCard);
+            }
+            setDragState(null);
+        }
     };
 
     const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!longPressTimer.current || !lastTouchPos.current) return;
-
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+        if (dragState) {
+            wasDragged.current = true;
+            const deltaY = clientY - dragState.initialMouseY;
+            const deltaMin = Math.round(deltaY / PIXELS_PER_MINUTE / 5) * 5; // Snap to 5 mins
+
+            let newStartMin = dragState.initialStartMin;
+            let newEndMin = dragState.initialEndMin;
+
+            if (dragState.mode === 'top') {
+                newStartMin = Math.min(dragState.initialEndMin - 5, Math.max(0, dragState.initialStartMin + deltaMin));
+            } else if (dragState.mode === 'bottom') {
+                newEndMin = Math.max(dragState.initialStartMin + 5, Math.min(24 * 60, dragState.initialEndMin + deltaMin));
+            } else {
+                const duration = dragState.initialEndMin - dragState.initialStartMin;
+                newStartMin = Math.max(0, Math.min(24 * 60 - duration, dragState.initialStartMin + deltaMin));
+                newEndMin = newStartMin + duration;
+            }
+
+            const updatedCard = {
+                ...dragState.card,
+                start_at: timeToISO(`${String(Math.floor(newStartMin / 60)).padStart(2, '0')}:${String(newStartMin % 60).padStart(2, '0')}`),
+                end_at: timeToISO(`${String(Math.floor(newEndMin / 60)).padStart(2, '0')}:${String(newEndMin % 60).padStart(2, '0')}`),
+            };
+
+            if (dragState.type === 'routine') {
+                const routineCard = updatedCard as RoutineCard;
+                updateRoutineCard(updatedCard.id, routineCard);
+            } else {
+                const timeTrackerCard = updatedCard as TimeTrackerCard;
+                updateTimeTrackerCard(updatedCard.id, timeTrackerCard);
+            }
+
+            setDragState({ ...dragState, card: updatedCard as any });
+            return;
+        }
+
+        if (!longPressTimer.current || !lastTouchPos.current) return;
 
         const dist = Math.sqrt(
             Math.pow(clientX - lastTouchPos.current.x, 2) +
@@ -131,7 +223,10 @@ export default function RoutineTimeTrackerWidget() {
         );
 
         if (dist > 10) {
-            endPress();
+            if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
         }
     };
 
@@ -168,17 +263,22 @@ export default function RoutineTimeTrackerWidget() {
                             {timeTrackerCards.filter(t => !t.is_deleted).map(task => {
                                 const startMin = isoToMinutes(task.start_at);
                                 const duration = isoToMinutes(task.end_at) - startMin;
+                                const isDragging = dragState?.card.id === task.id;
                                 return (
                                     <div
                                         key={task.id}
-                                        className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden"
+                                        className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
                                         style={{
                                             top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
                                             height: `${duration * PIXELS_PER_MINUTE}px`,
                                         }}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        onTouchStart={(e) => e.stopPropagation()}
-                                        onClick={() => setEditingState({ type: 'timeTracker', task })}
+                                        onMouseDown={(e) => handleCardPress(e, 'timeTracker', task)}
+                                        onTouchStart={(e) => handleCardPress(e, 'timeTracker', task)}
+                                        onClick={() => {
+                                            if (!wasDragged.current) {
+                                                setEditingState({ type: 'timeTracker', card: task });
+                                            }
+                                        }}
                                     >
                                         <div 
                                             className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
@@ -214,17 +314,22 @@ export default function RoutineTimeTrackerWidget() {
                             {routineCards.filter(t => !t.is_deleted).map(task => {
                                 const startMin = isoToMinutes(task.start_at);
                                 const duration = isoToMinutes(task.end_at) - startMin;
+                                const isDragging = dragState?.card.id === task.id;
                                 return (
                                     <div
                                         key={task.id}
-                                        className="task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden"
+                                        className={`task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 shadow-sm transition-all hover:shadow-md pointer-events-auto cursor-pointer overflow-hidden ${isDragging ? 'z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 scale-[1.02]' : ''}`}
                                         style={{
                                             top: `${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
                                             height: `${duration * PIXELS_PER_MINUTE}px`,
                                         }}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        onTouchStart={(e) => e.stopPropagation()}
-                                        onClick={() => setEditingState({ type: 'routine', task })}
+                                        onMouseDown={(e) => handleCardPress(e, 'routine', task)}
+                                        onTouchStart={(e) => handleCardPress(e, 'routine', task)}
+                                        onClick={() => {
+                                            if (!wasDragged.current) {
+                                                setEditingState({ type: 'routine', card: task });
+                                            }
+                                        }}
                                     >
                                         <div 
                                             className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
@@ -255,7 +360,7 @@ export default function RoutineTimeTrackerWidget() {
 
             {editingState?.type === 'routine' && (
                 <RoutineEditor
-                    task={editingState.task}
+                    task={editingState.card}
                     onSave={async (updated) => {
                         const exists = routineCards.some(c => c.id === updated.id);
                         if (exists) {
@@ -280,7 +385,7 @@ export default function RoutineTimeTrackerWidget() {
 
             {editingState?.type === 'timeTracker' && (
                 <TimeTrackerEditor
-                    task={editingState.task}
+                    task={editingState.card}
                     onSave={async (updated) => {
                         const exists = timeTrackerCards.some(c => c.id === updated.id);
                         if (exists) {
