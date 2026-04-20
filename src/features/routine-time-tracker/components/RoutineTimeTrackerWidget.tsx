@@ -63,20 +63,19 @@ const CurrentTimeIndicator = () => {
 };
 
 interface TaskCardProps {
-    task: RoutineCard | TimeTrackerCard;
-    type: 'routine' | 'timeTracker';
+    card: RoutineCard | TimeTrackerCard;
     isDragging: boolean;
     getTagColor: (tagId: string) => string;
     onPress: (e: React.MouseEvent | React.TouchEvent) => void;
     onClick: () => void;
 }
 
-const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
+const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const timeLabelRef = useRef<HTMLDivElement>(null);
 
-    const startMin = isoToMinutes(task.start_at);
-    const duration = isoToMinutes(task.end_at) - startMin;
+    const startMin = isoToMinutes(card.start_at);
+    const duration = isoToMinutes(card.end_at) - startMin;
 
     // GPU-Accelerated Positioning
     const defaultTransform = `translateY(${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px)`;
@@ -133,11 +132,11 @@ const TaskCard = ({ task, type, isDragging, getTagColor, onPress, onClick }: Tas
         >
             <div 
                 className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
-                style={{ backgroundColor: getTagColor(task.tag_id) }} 
+                style={{ backgroundColor: getTagColor(card.tag_id) }} 
             />
-            <div className="font-medium text-sm text-foreground truncate">{task.title}</div>
+            <div className="font-medium text-sm text-foreground truncate">{card.title}</div>
             <div ref={timeLabelRef} className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                {!isDragging && `${isoToTime(task.start_at)} - ${isoToTime(task.end_at)}`}
+                {!isDragging && `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
             </div>
         </div>
     );
@@ -380,8 +379,7 @@ export default function RoutineTimeTrackerWidget() {
                             {timeTrackerCards.filter(t => !t.is_deleted).map(task => (
                                 <TaskCard
                                     key={task.id}
-                                    task={task}
-                                    type="timeTracker"
+                                    card={task}
                                     isDragging={dragState?.card.id === task.id}
                                     getTagColor={getTagColor}
                                     onPress={(e) => handleCardPress(e, 'timeTracker', task)}
@@ -415,8 +413,7 @@ export default function RoutineTimeTrackerWidget() {
                             {routineCards.filter(t => !t.is_deleted).map(task => (
                                 <TaskCard
                                     key={task.id}
-                                    task={task}
-                                    type="routine"
+                                    card={task}
                                     isDragging={dragState?.card.id === task.id}
                                     getTagColor={getTagColor}
                                     onPress={(e) => handleCardPress(e, 'routine', task)}
