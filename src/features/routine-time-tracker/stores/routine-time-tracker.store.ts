@@ -15,7 +15,7 @@ export const useRoutineTimeTrackerStore = create<RoutineTimeTrackerState>()(
             resetTracker: () => set({ activeTimeTrackerId: null }),
         }),
         {
-            name: 'routine-time-tracker-settings',
+            name: 'routine-time-tracker-storage', // Unique name for persistence
         }
     )
 )

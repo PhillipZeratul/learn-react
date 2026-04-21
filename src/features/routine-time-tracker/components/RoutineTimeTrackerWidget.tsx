@@ -115,10 +115,11 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
 
     const startMin = isoToMinutes(card.start_at);
     const duration = isoToMinutes(card.end_at) - startMin;
+    const height = duration * PIXELS_PER_MINUTE;
 
     // GPU-Accelerated Positioning
     const defaultTransform = `translateY(${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px)`;
-    const defaultHeight = `${duration * PIXELS_PER_MINUTE}px`;
+    const defaultHeight = `${height}px`;
 
     const draggingTextSignal = useSignal("");
 
@@ -133,9 +134,9 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
             }
 
             const top = dragTopSignal.value;
-            const height = dragHeightSignal.value;
+            const h = dragHeightSignal.value;
             const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-            const currentEndMin = Math.round((top + height - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+            const currentEndMin = Math.round((top + h - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
 
             const formatMin = (m: number) => {
                 const h = Math.floor(m / 60);
@@ -150,9 +151,14 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
     }, [isDragging]);
 
     // Fix the Transition Trap: strictly separate idle (with transitions) from dragging styles
-    const baseClasses = "task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 pointer-events-auto overflow-hidden";
+    const baseClasses = "task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm px-3 pointer-events-auto overflow-hidden flex flex-col justify-center";
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
+
+    // Dynamic content display based on height
+    // Minimum height for title: ~16px, for time: ~12px. Total: ~32px (with padding).
+    const showTitle = height >= 16;
+    const showTime = height >= 48;
 
     return (
         <div
@@ -162,6 +168,8 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 top: 0, // Anchor to top, let transform handle movement
                 transform: isDragging ? undefined : defaultTransform,
                 height: isDragging ? undefined : defaultHeight,
+                paddingTop: showTime ? '0.75rem' : '0',
+                paddingBottom: showTime ? '0.75rem' : '0',
                 // Hardware Hinting: dedicated GPU layer for the card
                 willChange: isDragging ? 'transform, height' : 'auto',
             }}
@@ -173,10 +181,16 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 className="absolute left-0 top-0 bottom-0 w-1.5 z-10"
                 style={{ backgroundColor: getTagColor(card.tag_id) }}
             />
-            <div className="font-medium text-sm text-foreground truncate">{card.title}</div>
-            <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                {isDragging? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
-            </div>
+            {showTitle && (
+                <div className={`font-medium text-sm text-foreground truncate`}>
+                    {card.title}
+                </div>
+            )}
+            {(showTime || isDragging) && (
+                <div className="text-[10px] text-muted-foreground mt-1 tabular-nums truncate">
+                    {isDragging? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
+                </div>
+            )}
         </div>
     );
 };
