@@ -112,6 +112,8 @@ interface TaskCardProps {
 
 const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
+    const titleRef = useRef<HTMLDivElement>(null);
+    const timeRef = useRef<HTMLDivElement>(null);
 
     const startMin = isoToMinutes(card.start_at);
     const duration = isoToMinutes(card.end_at) - startMin;
@@ -127,14 +129,34 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
         if (!isDragging) return;
 
         const dispose = effect(() => {
+            const h = dragHeightSignal.value;
+            const top = dragTopSignal.value;
+            
             if (cardRef.current) {
-                // Apply the transform directly. scale(1.02) is appended because inline transforms override Tailwind's scale utilities.
-                cardRef.current.style.transform = `translateY(${dragTopSignal.value}px) scale(1.02)`;
-                cardRef.current.style.height = `${dragHeightSignal.value}px`;
+                cardRef.current.style.transform = `translateY(${top}px) scale(1.02)`;
+                cardRef.current.style.height = `${h}px`;
+                
+                // Direct layout updates to avoid re-renders
+                const showTitle = h >= 20;
+                const showTime = h >= 44;
+
+                if (titleRef.current) {
+                    titleRef.current.style.display = showTitle ? 'block' : 'none';
+                    if (!showTime) {
+                        titleRef.current.classList.add('leading-none');
+                    } else {
+                        titleRef.current.classList.remove('leading-none');
+                    }
+                }
+
+                if (timeRef.current) {
+                    timeRef.current.style.display = showTime ? 'block' : 'none';
+                }
+
+                cardRef.current.style.paddingTop = showTime ? '0.5rem' : '0';
+                cardRef.current.style.paddingBottom = showTime ? '0.5rem' : '0';
             }
 
-            const top = dragTopSignal.value;
-            const h = dragHeightSignal.value;
             const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
             const currentEndMin = Math.round((top + h - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
 
@@ -156,9 +178,9 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
 
     // Dynamic content display based on height
-    // Minimum height for title: ~16px, for time: ~12px. Total: ~32px (with padding).
-    const showTitle = height >= 16;
-    const showTime = height >= 48;
+    // Minimum height for title: ~18px, for time: ~12px. Total: ~30px + padding.
+    const showTitleInitially = height >= 20;
+    const showTimeInitially = height >= 44;
 
     return (
         <div
@@ -168,8 +190,8 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 top: 0, // Anchor to top, let transform handle movement
                 transform: isDragging ? undefined : defaultTransform,
                 height: isDragging ? undefined : defaultHeight,
-                paddingTop: showTime ? '0.75rem' : '0',
-                paddingBottom: showTime ? '0.75rem' : '0',
+                paddingTop: isDragging ? undefined : (showTimeInitially ? '0.5rem' : '0'),
+                paddingBottom: isDragging ? undefined : (showTimeInitially ? '0.5rem' : '0'),
                 // Hardware Hinting: dedicated GPU layer for the card
                 willChange: isDragging ? 'transform, height' : 'auto',
             }}
@@ -181,16 +203,20 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 className="absolute left-0 top-0 bottom-0 w-1.5 z-10"
                 style={{ backgroundColor: getTagColor(card.tag_id) }}
             />
-            {showTitle && (
-                <div className={`font-medium text-sm text-foreground truncate`}>
-                    {card.title}
-                </div>
-            )}
-            {(showTime || isDragging) && (
-                <div className="text-[10px] text-muted-foreground mt-1 tabular-nums truncate">
-                    {isDragging? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
-                </div>
-            )}
+            <div 
+                ref={titleRef}
+                className={`card-title font-medium text-sm text-foreground truncate flex-shrink-0`}
+                style={{ display: showTitleInitially || isDragging ? 'block' : 'none' }}
+            >
+                {card.title}
+            </div>
+            <div 
+                ref={timeRef}
+                className="card-time text-[10px] text-muted-foreground tabular-nums truncate flex-shrink-0"
+                style={{ display: showTimeInitially || isDragging ? 'block' : 'none' }}
+            >
+                {isDragging? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
+            </div>
         </div>
     );
 };
