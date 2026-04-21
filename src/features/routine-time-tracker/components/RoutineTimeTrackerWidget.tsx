@@ -7,7 +7,6 @@ import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 import { useTagStore } from '../stores/tag.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 import { timeToISO, isoToTime, isoToMinutes, isTouchEvent } from '../utils/utils';
-import { useSettingsStore } from '@/stores/settings.store';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
