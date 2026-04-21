@@ -35,13 +35,7 @@ interface DragState {
 const dragTopSignal = signal(0);
 const dragHeightSignal = signal(0);
 
-const CurrentTimeIndicator = ({ 
-    activeTimeTrackerId, 
-    onAction 
-}: { 
-    activeTimeTrackerId: string | null;
-    onAction: () => void;
-}) => {
+const CurrentTimeIndicator = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -65,21 +59,45 @@ const CurrentTimeIndicator = ({
             <span className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
                 {currentTimeString}
             </span>
-            <div className="absolute left-8 top-4 pointer-events-auto">
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onAction();
-                    }}
-                    className={`text-[10px] font-semibold px-3 py-1.5 rounded-full shadow-md transition-all active:scale-95 ${
-                        activeTimeTrackerId
-                            ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    }`}
-                >
-                    {activeTimeTrackerId ? 'Finished' : 'Begin'}
-                </button>
-            </div>
+        </div>
+    );
+};
+
+const TimeTrackerActionButton = ({ 
+    activeTimeTrackerId, 
+    onAction 
+}: { 
+    activeTimeTrackerId: string | null;
+    onAction: () => void;
+}) => {
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+
+    return (
+        <div
+            className="absolute left-0 right-0 flex justify-center z-30 pointer-events-none"
+            style={{ top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN + 24}px` }}
+        >
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onAction();
+                }}
+                className={`pointer-events-auto text-[10px] font-bold px-4 py-2 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-1.5 ${
+                    activeTimeTrackerId
+                        ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-destructive/20'
+                        : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20'
+                }`}
+            >
+                <div className={`w-2 h-2 rounded-full ${activeTimeTrackerId ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
+                {activeTimeTrackerId ? 'FINISH' : 'BEGIN'}
+            </button>
         </div>
     );
 };
@@ -475,6 +493,10 @@ export default function RoutineTimeTrackerWidget() {
                                     }}
                                 />
                             ))}
+                            <TimeTrackerActionButton 
+                                activeTimeTrackerId={activeTimeTrackerId}
+                                onAction={handleTimeTrackerAction}
+                            />
                         </div>
 
                         {/* Center Timeline */}
@@ -512,10 +534,7 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
                     </div>
 
-                    <CurrentTimeIndicator 
-                        activeTimeTrackerId={activeTimeTrackerId}
-                        onAction={handleTimeTrackerAction} 
-                    />
+                    <CurrentTimeIndicator />
                 </div>
             </div>
 
