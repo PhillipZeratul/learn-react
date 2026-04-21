@@ -1,12 +1,12 @@
-import React, {useState, useEffect, useRef} from 'react';
-import { signal, batch, effect } from '@preact/signals-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { signal, batch, effect, useSignal } from '@preact/signals-react';
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 import { useTagStore } from '../stores/tag.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
-import { timeToISO, isoToTime, isoToMinutes } from '../utils/utils';
+import { timeToISO, isoToTime, isoToMinutes, isTouchEvent } from '../utils/utils';
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
 
@@ -14,7 +14,7 @@ const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 64;
 
-type EditingState = 
+type EditingState =
     | { type: 'routine'; card: RoutineCard }
     | { type: 'timeTracker'; card: TimeTrackerCard }
     | null;
@@ -52,9 +52,9 @@ const CurrentTimeIndicator = () => {
     return (
         <div
             className="absolute left-0 right-0 flex items-center justify-center z-20 pointer-events-none -translate-y-1/2"
-            style={{top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px`}}
+            style={{ top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
         >
-            <div className="w-full border-t-2 border-primary/50"/>
+            <div className="w-full border-t-2 border-primary/50" />
             <span className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
                 {currentTimeString}
             </span>
@@ -72,7 +72,6 @@ interface TaskCardProps {
 
 const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
-    const timeLabelRef = useRef<HTMLDivElement>(null);
 
     const startMin = isoToMinutes(card.start_at);
     const duration = isoToMinutes(card.end_at) - startMin;
@@ -80,6 +79,8 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
     // GPU-Accelerated Positioning
     const defaultTransform = `translateY(${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px)`;
     const defaultHeight = `${duration * PIXELS_PER_MINUTE}px`;
+
+    const draggingTextSignal = useSignal("");
 
     useEffect(() => {
         if (!isDragging) return;
@@ -91,20 +92,18 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 cardRef.current.style.height = `${dragHeightSignal.value}px`;
             }
 
-            if (timeLabelRef.current) {
-                const top = dragTopSignal.value;
-                const height = dragHeightSignal.value;
-                const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-                const currentEndMin = Math.round((top + height - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-                
-                const formatMin = (m: number) => {
-                    const h = Math.floor(m / 60);
-                    const mm = m % 60;
-                    return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-                };
-                
-                timeLabelRef.current.innerText = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
-            }
+            const top = dragTopSignal.value;
+            const height = dragHeightSignal.value;
+            const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+            const currentEndMin = Math.round((top + height - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+
+            const formatMin = (m: number) => {
+                const h = Math.floor(m / 60);
+                const mm = m % 60;
+                return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+            };
+
+            draggingTextSignal.value = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
         });
 
         return () => dispose();
@@ -112,7 +111,7 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
 
     // Fix the Transition Trap: strictly separate idle (with transitions) from dragging styles
     const baseClasses = "task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-3 pointer-events-auto overflow-hidden";
-    const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm"; 
+    const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
 
     return (
@@ -124,41 +123,41 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 transform: isDragging ? undefined : defaultTransform,
                 height: isDragging ? undefined : defaultHeight,
                 // Hardware Hinting: dedicated GPU layer for the card
-                willChange: isDragging ? 'transform, height' : 'auto', 
+                willChange: isDragging ? 'transform, height' : 'auto',
             }}
             onMouseDown={onPress}
             onTouchStart={onPress}
             onClick={onClick}
         >
-            <div 
-                className="absolute left-0 top-0 bottom-0 w-1.5 z-10" 
-                style={{ backgroundColor: getTagColor(card.tag_id) }} 
+            <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 z-10"
+                style={{ backgroundColor: getTagColor(card.tag_id) }}
             />
             <div className="font-medium text-sm text-foreground truncate">{card.title}</div>
-            <div ref={timeLabelRef} className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                {!isDragging && `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
+            <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                {isDragging? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
             </div>
         </div>
     );
 };
 
 export default function RoutineTimeTrackerWidget() {
-    const { 
-        items: timeTrackerCards, 
-        add: addTimeTrackerCard, 
-        update: updateTimeTrackerCard, 
-        remove: deleteTimeTrackerCard 
+    const {
+        items: timeTrackerCards,
+        add: addTimeTrackerCard,
+        update: updateTimeTrackerCard,
+        remove: deleteTimeTrackerCard
     } = useTimeTrackerCardStore();
-    
-    const { 
-        items: routineCards, 
-        add: addRoutineCard, 
-        update: updateRoutineCard, 
-        remove: deleteRoutineCard 
+
+    const {
+        items: routineCards,
+        add: addRoutineCard,
+        update: updateRoutineCard,
+        remove: deleteRoutineCard
     } = useRoutineCardStore();
 
     const { items: tags } = useTagStore();
-    
+
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [dragState, setDragState] = useState<DragState | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -211,9 +210,9 @@ export default function RoutineTimeTrackerWidget() {
 
     const handleCardPress = (e: React.MouseEvent | React.TouchEvent, type: 'routine' | 'timeTracker', task: RoutineCard | TimeTrackerCard) => {
         e.stopPropagation();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
+        const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
+        const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
+
         lastTouchPos.current = { x: clientX, y: clientY };
         wasDragged.current = false;
 
@@ -229,7 +228,7 @@ export default function RoutineTimeTrackerWidget() {
         longPressTimer.current = setTimeout(() => {
             const startMin = isoToMinutes(task.start_at);
             const duration = isoToMinutes(task.end_at) - startMin;
-            
+
             batch(() => {
                 dragTopSignal.value = startMin * PIXELS_PER_MINUTE + TOP_MARGIN;
                 dragHeightSignal.value = duration * PIXELS_PER_MINUTE;
@@ -250,10 +249,10 @@ export default function RoutineTimeTrackerWidget() {
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
         if ((e.target as HTMLElement).closest('.task-card')) return;
 
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
+        const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
 
-        lastTouchPos.current = {x: clientX, y: clientY};
+        lastTouchPos.current = { x: clientX, y: clientY };
 
         longPressTimer.current = setTimeout(() => {
             handleCreateTask(clientX, clientY);
@@ -295,13 +294,13 @@ export default function RoutineTimeTrackerWidget() {
     };
 
     const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
+        const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
 
         if (dragState) {
             wasDragged.current = true;
             const deltaY = clientY - dragState.initialMouseY;
-            
+
             let newTop = dragState.initialStartMin * PIXELS_PER_MINUTE + TOP_MARGIN;
             let newHeight = (dragState.initialEndMin - dragState.initialStartMin) * PIXELS_PER_MINUTE;
 
@@ -369,7 +368,7 @@ export default function RoutineTimeTrackerWidget() {
                         <div
                             key={`line-${i}`}
                             className="absolute left-0 right-0 border-t border-border border-dashed -translate-y-1/2"
-                            style={{top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px`}}
+                            style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                         />
                     ))}
 
@@ -399,7 +398,7 @@ export default function RoutineTimeTrackerWidget() {
                                 <div
                                     key={`time-${i}`}
                                     className="absolute left-1/2 -translate-x-1/2 text-muted-foreground text-xs font-mono -translate-y-1/2 z-10"
-                                    style={{top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px`}}
+                                    style={{ top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px` }}
                                 >
                                     <span className="bg-background px-2 tabular-nums">
                                         {String(i).padStart(2, '0')}:00

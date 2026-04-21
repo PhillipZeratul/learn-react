@@ -14,3 +14,7 @@ export const isoToMinutes = (isoStr: string) => {
     const date = new Date(isoStr);
     return date.getHours() * 60 + date.getMinutes();
 };
+
+export const isTouchEvent = (e: React.MouseEvent | React.TouchEvent): e is React.TouchEvent => {
+    return 'touches' in e;
+};
