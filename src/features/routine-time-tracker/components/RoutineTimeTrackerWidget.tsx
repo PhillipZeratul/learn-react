@@ -14,6 +14,8 @@ import { TimeTrackerEditor } from './TimeTrackerEditor';
 const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 64;
+const SHOW_CARD_TITLE_HEIGHT = 20;
+const SHOW_CARD_TIME_HEIGHT = 44;
 
 type EditingState =
     | { type: 'routine'; card: RoutineCard }
@@ -126,39 +128,45 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
     const draggingTextSignal = useSignal("");
 
     useEffect(() => {
-        if (!isDragging) return;
+        if (!isDragging) {
+            if (cardRef.current) {
+                cardRef.current.style.paddingTop = '';
+                cardRef.current.style.paddingBottom = '';
+            }
+            if (titleRef.current) {
+                titleRef.current.style.lineHeight = '';
+            }
+            return;
+        }
 
         const dispose = effect(() => {
-            const h = dragHeightSignal.value;
+            const dragHeight = dragHeightSignal.value;
             const top = dragTopSignal.value;
             
             if (cardRef.current) {
                 cardRef.current.style.transform = `translateY(${top}px) scale(1.02)`;
-                cardRef.current.style.height = `${h}px`;
+                cardRef.current.style.height = `${dragHeight}px`;
                 
                 // Direct layout updates to avoid re-renders
-                const showTitle = h >= 20;
-                const showTime = h >= 44;
+                const showTitle = dragHeight >= SHOW_CARD_TITLE_HEIGHT;
+                const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT;
+
+                // Update padding directly on the card ref
+                cardRef.current.style.paddingTop = showTime ? '0.5rem' : '0';
+                cardRef.current.style.paddingBottom = showTime ? '0.5rem' : '0';
 
                 if (titleRef.current) {
                     titleRef.current.style.display = showTitle ? 'block' : 'none';
-                    if (!showTime) {
-                        titleRef.current.classList.add('leading-none');
-                    } else {
-                        titleRef.current.classList.remove('leading-none');
-                    }
+                    titleRef.current.style.lineHeight = showTime ? '1.25rem' : '1'; 
                 }
 
                 if (timeRef.current) {
                     timeRef.current.style.display = showTime ? 'block' : 'none';
                 }
-
-                cardRef.current.style.paddingTop = showTime ? '0.5rem' : '0';
-                cardRef.current.style.paddingBottom = showTime ? '0.5rem' : '0';
             }
 
             const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-            const currentEndMin = Math.round((top + h - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+            const currentEndMin = Math.round((top + dragHeight - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
 
             const formatMin = (m: number) => {
                 const h = Math.floor(m / 60);
@@ -172,26 +180,23 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
         return () => dispose();
     }, [isDragging]);
 
-    // Fix the Transition Trap: strictly separate idle (with transitions) from dragging styles
     const baseClasses = "task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm px-3 pointer-events-auto overflow-hidden flex flex-col justify-center";
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
 
-    // Dynamic content display based on height
-    // Minimum height for title: ~18px, for time: ~12px. Total: ~30px + padding.
-    const showTitleInitially = height >= 20;
-    const showTimeInitially = height >= 44;
+    const showTitle = height >= SHOW_CARD_TITLE_HEIGHT;
+    const showTime = height >= SHOW_CARD_TIME_HEIGHT;
 
     return (
         <div
             ref={cardRef}
             className={`${baseClasses} ${isDragging ? draggingClasses : idleClasses}`}
             style={{
-                top: 0, // Anchor to top, let transform handle movement
+                top: 0,
                 transform: isDragging ? undefined : defaultTransform,
                 height: isDragging ? undefined : defaultHeight,
-                paddingTop: isDragging ? undefined : (showTimeInitially ? '0.5rem' : '0'),
-                paddingBottom: isDragging ? undefined : (showTimeInitially ? '0.5rem' : '0'),
+                paddingTop: isDragging ? undefined : (showTime ? '0.5rem' : '0'),
+                paddingBottom: isDragging ? undefined : (showTime ? '0.5rem' : '0'),
                 // Hardware Hinting: dedicated GPU layer for the card
                 willChange: isDragging ? 'transform, height' : 'auto',
             }}
@@ -205,17 +210,20 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
             />
             <div 
                 ref={titleRef}
-                className={`card-title font-medium text-sm text-foreground truncate flex-shrink-0`}
-                style={{ display: showTitleInitially || isDragging ? 'block' : 'none' }}
+                className="card-title font-medium text-sm text-foreground truncate flex-shrink-0"
+                style={{ 
+                    display: showTitle || isDragging ? 'block' : 'none',
+                    lineHeight: showTime ? '1.25rem' : '1'
+                }}
             >
                 {card.title}
             </div>
             <div 
                 ref={timeRef}
                 className="card-time text-[10px] text-muted-foreground tabular-nums truncate flex-shrink-0"
-                style={{ display: showTimeInitially || isDragging ? 'block' : 'none' }}
+                style={{ display: showTime || isDragging ? 'block' : 'none' }}
             >
-                {isDragging? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
+                {isDragging ? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
             </div>
         </div>
     );
