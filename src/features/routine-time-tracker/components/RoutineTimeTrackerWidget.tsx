@@ -7,6 +7,7 @@ import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 import { useTagStore } from '../stores/tag.store';
 import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
 import { timeToISO, isoToTime, isoToMinutes, isTouchEvent } from '../utils/utils';
+import { useSettingsStore } from '@/stores/settings.store';
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
 
@@ -34,7 +35,13 @@ interface DragState {
 const dragTopSignal = signal(0);
 const dragHeightSignal = signal(0);
 
-const CurrentTimeIndicator = () => {
+const CurrentTimeIndicator = ({ 
+    activeTimeTrackerId, 
+    onAction 
+}: { 
+    activeTimeTrackerId: string | null;
+    onAction: () => void;
+}) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -58,6 +65,21 @@ const CurrentTimeIndicator = () => {
             <span className="absolute bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
                 {currentTimeString}
             </span>
+            <div className="absolute left-8 top-4 pointer-events-auto">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onAction();
+                    }}
+                    className={`text-[10px] font-semibold px-3 py-1.5 rounded-full shadow-md transition-all active:scale-95 ${
+                        activeTimeTrackerId
+                            ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    }`}
+                >
+                    {activeTimeTrackerId ? 'Finished' : 'Begin'}
+                </button>
+            </div>
         </div>
     );
 };
@@ -157,6 +179,7 @@ export default function RoutineTimeTrackerWidget() {
     } = useRoutineCardStore();
 
     const { items: tags } = useTagStore();
+    const { activeTimeTrackerId, setActiveTimeTrackerId } = useSettingsStore();
 
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [dragState, setDragState] = useState<DragState | null>(null);
@@ -164,6 +187,69 @@ export default function RoutineTimeTrackerWidget() {
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
     const wasDragged = useRef(false);
+
+    useEffect(() => {
+        if (!activeTimeTrackerId) return;
+
+        const task = timeTrackerCards.find(c => c.id === activeTimeTrackerId);
+        if (!task || task.is_deleted) {
+            setActiveTimeTrackerId(null);
+            return;
+        }
+
+        const timer = setInterval(() => {
+            const now = new Date();
+            const endHour = now.getHours();
+            const endMin = now.getMinutes();
+            const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+            
+            const updatedCard = {
+                ...task,
+                end_at: timeToISO(endTime)
+            };
+            
+            updateTimeTrackerCard(task.id, updatedCard);
+            RoutineTimeTrackerService.save(timeTrackerCardConfig, updatedCard).catch(console.error);
+        }, 60000);
+
+        return () => clearInterval(timer);
+    }, [activeTimeTrackerId, timeTrackerCards, updateTimeTrackerCard, setActiveTimeTrackerId]);
+
+    const handleTimeTrackerAction = () => {
+        if (activeTimeTrackerId) {
+            const task = timeTrackerCards.find(c => c.id === activeTimeTrackerId);
+            if (task && !task.is_deleted) {
+                setActiveTimeTrackerId(null);
+                
+                const now = new Date();
+                const startHour = now.getHours();
+                const startMin = now.getMinutes();
+                const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+                
+                const endHour = Math.min(24, startHour + 1);
+                const endTime = `${String(endHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+
+                const newCard = createTimeTrackerCard({
+                    start_at: timeToISO(startTime),
+                    end_at: timeToISO(endTime),
+                });
+                setEditingState({ type: 'timeTracker', card: newCard });
+            }
+        } else {
+            const now = new Date();
+            const startHour = now.getHours();
+            const startMin = now.getMinutes();
+            const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+            
+            const endTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+
+            const newCard = createTimeTrackerCard({
+                start_at: timeToISO(startTime),
+                end_at: timeToISO(endTime),
+            });
+            setEditingState({ type: 'timeTracker', card: newCard });
+        }
+    };
 
     const getTagColor = (tagId: string) => {
         const tag = tags.find(t => t.id === tagId);
@@ -426,7 +512,10 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
                     </div>
 
-                    <CurrentTimeIndicator />
+                    <CurrentTimeIndicator 
+                        activeTimeTrackerId={activeTimeTrackerId}
+                        onAction={handleTimeTrackerAction} 
+                    />
                 </div>
             </div>
 
@@ -464,6 +553,9 @@ export default function RoutineTimeTrackerWidget() {
                             updateTimeTrackerCard(updated.id, updated);
                         } else {
                             addTimeTrackerCard(updated);
+                            if (!activeTimeTrackerId) {
+                                setActiveTimeTrackerId(updated.id);
+                            }
                         }
                         await RoutineTimeTrackerService.save(timeTrackerCardConfig, updated);
                         setEditingState(null);
