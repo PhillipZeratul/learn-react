@@ -23,7 +23,7 @@ code $projectPath
 # Note: To run Tauri dev server, you can manually run 'npx tauri dev' in a new terminal tab.
 
 Write-Host "`nStarting Windows Terminal with development environment..." -ForegroundColor Cyan
-Start-Process pwsh -ArgumentList "-NoExit -Command gemini"
+Start-Process pwsh -ArgumentList '-NoExit -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process; gemini"'
 Start-Process pwsh -ArgumentList "-NoExit -Command npm run dev"
 Start-Process pwsh -ArgumentList "-NoExit -Command npm run storybook"
 
