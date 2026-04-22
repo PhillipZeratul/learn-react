@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { TimeTrackerCard } from '../models/time-tracker-card.model';
 import { timeToISO, isoToTime } from '../utils/utils';
 import { useTagStore } from '../stores/tag.store';
+import { DEFAULT_TAG_ID } from '../models/tag.model';
 
 interface TimeTrackerEditorProps {
     task: TimeTrackerCard;
@@ -25,12 +26,18 @@ export const TimeTrackerEditor = ({
     const activeTags = tags.filter(tag => !tag.is_deleted);
 
     const handleSave = async () => {
+        let finalTitle = title.trim();
+        if (!finalTitle) {
+            const selectedTag = tags.find(t => t.id === tagId);
+            finalTitle = selectedTag?.name || 'Time Tracker';
+        }
+
         await onSave({ 
             ...task,
-            title, 
+            title: finalTitle, 
             start_at: timeToISO(startAt), 
             end_at: timeToISO(endAt),
-            tag_id: tagId
+            tag_id: tagId || DEFAULT_TAG_ID
         });
     };
 
@@ -46,7 +53,7 @@ export const TimeTrackerEditor = ({
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="What are you doing?"
+                            placeholder={tags.find(t => t.id === tagId)?.name || "Time Tracker"}
                             autoFocus
                         />
                     </div>

@@ -20,8 +20,8 @@ export const createTimeTrackerCard = (data: Partial<TimeTrackerCard> = {}): Time
 
     return {
         id: data.id || uuidv4() as TimeTrackerCardId,
-        title: data.title || "New TimeTracker Card",
-        description: data.description || "New TimeTracker Card Description.",
+        title: data.title ?? "",
+        description: data.description || "",
         start_at: data.start_at || now,
         end_at: data.end_at || now,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
