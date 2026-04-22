@@ -1,4 +1,4 @@
-# Project: learn-react
+# Project Context
 
 ## General Instructions
 
