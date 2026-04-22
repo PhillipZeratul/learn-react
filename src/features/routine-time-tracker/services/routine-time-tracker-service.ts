@@ -5,11 +5,11 @@ import { tagConfig } from '../models/tag.model'
 import { useRoutineCardStore } from '../stores/routine-card.store'
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store'
 import { useTagStore } from '../stores/tag.store'
-import { SyncService } from '@/services/sync-service'
+import { SyncService } from '@/shared/services/sync-service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { useSettingsStore } from '@/stores/settings.store'
+import { useSettingsStore } from '@/features/settings/stores/settings.store'
 import type { ModelConfig } from '../models/routine-time-tracker.model'
-import type { BaseEntity } from '@/models/base.model'
+import type { BaseEntity } from '@/shared/models/base.model'
 
 export class RoutineTimeTrackerService {
     private static configs: ModelConfig<any>[] = [

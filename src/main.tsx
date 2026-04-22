@@ -6,7 +6,7 @@ import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/ThemeProvider.tsx"
 import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routine-time-tracker-service.ts"
-import { SyncService } from "@/services/sync-service"
+import { SyncService } from "@/shared/services/sync-service.ts"
 import { useAuthStore } from "@/features/auth/stores/auth.store.ts"
 import { supabase } from "@/lib/supabase"
 

@@ -1,4 +1,4 @@
-import type { IsoDateTime } from "@/models/base.model";
+import type { IsoDateTime } from "@/shared/models/base.model";
 
 export const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
     const date = dateStr || new Date().toISOString().split('T')[0];

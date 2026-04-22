@@ -1,4 +1,4 @@
-import type {Brand, BaseEntity} from "@/models/base.model";
+import type {Brand, BaseEntity} from "@/shared/models/base.model";
 
 export type RoutineCardId = Brand<string, 'TaskId'>;
 export type TimeTrackerCardId = Brand<string, 'TimeTrackerBlockId'>;

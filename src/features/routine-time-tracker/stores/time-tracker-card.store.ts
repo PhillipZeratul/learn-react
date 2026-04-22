@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { type TimeTrackerCard } from '../models/time-tracker-card.model'
-import type { IsoDateTime } from '@/models/base.model'
+import type { IsoDateTime } from '@/shared/models/base.model'
 
 interface TimeTrackerCardState {
     items: TimeTrackerCard[]

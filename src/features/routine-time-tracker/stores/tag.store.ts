@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { type Tag } from '../models/tag.model'
-import type { IsoDateTime } from '@/models/base.model'
+import type { IsoDateTime } from '@/shared/models/base.model'
 
 interface TagState {
     items: Tag[]
