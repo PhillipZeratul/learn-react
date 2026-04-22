@@ -1,5 +1,5 @@
 ---
-name: Unit Test Expert
+name: unit-test-expert
 description: A specialized assistant dedicated to designing, writing, and refactoring robust unit tests, emphasizing test-driven design and the F.I.R.S.T. principles.
 kind: local
 ---
