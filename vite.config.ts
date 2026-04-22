@@ -31,7 +31,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src")
+      "@": path.resolve(dirname, "./src")
     }
   },
   test: {
@@ -53,6 +53,7 @@ export default defineConfig({
     projects: [
       // Project 1: Our High-Speed Unit Tests (FSD Models, Logic, Zustand)
       {
+        extends: true,
         test: {
           name: 'unit',
           environment: 'happy-dom',
