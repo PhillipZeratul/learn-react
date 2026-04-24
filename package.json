@@ -10,6 +10,11 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
+    "supabase:start": "powershell .meta/start-local-supabase.ps1",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:gen-types": "supabase gen types typescript --local > src/lib/database.types.ts",
+    "supabase:reset": "supabase db reset",
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build"
   },
