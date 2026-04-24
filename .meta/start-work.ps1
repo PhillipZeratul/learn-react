@@ -10,3 +10,6 @@ wezterm cli set-tab-title --pane-id $paneId "Vite"
 
 $paneId = (wezterm cli spawn --cwd $rootFolder -- pwsh -NoExit -Command "npm run storybook").Trim()
 wezterm cli set-tab-title --pane-id $paneId "Storybook"
+
+$paneId = (wezterm cli spawn --cwd $rootFolder -- pwsh -NoExit -Command "./.meta/start-local-supabase.ps1").Trim()
+wezterm cli set-tab-title --pane-id $paneId "Supabase"
