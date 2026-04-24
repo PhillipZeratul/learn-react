@@ -3,17 +3,7 @@ $dockerProcess = Get-Process "Docker Desktop" -ErrorAction SilentlyContinue
 
 if (-not $dockerProcess) {
     Write-Host "Docker Desktop is not running. Starting it now..." -ForegroundColor Yellow
-    
     docker desktop start
-    # Standard installation path for Docker on Windows
-    # $dockerPath = "C:\Program Files\Docker\Docker\frontend\Docker Desktop.exe"
-    
-    # if (Test-Path $dockerPath) {
-    #     # Start-Process -FilePath $dockerPath
-    # } else {
-    #     Write-Host "Error: Could not find Docker Desktop at $dockerPath. Please verify your installation path." -ForegroundColor Red
-    #     return
-    # }
 } else {
     Write-Host "Docker Desktop process is already active." -ForegroundColor Green
 }
