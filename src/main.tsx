@@ -5,8 +5,8 @@ import "@preact/signals-react/runtime";
 import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/ThemeProvider.tsx"
-import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routine-time-tracker-service.ts"
-import { SyncService } from "@/shared/services/sync-service.ts"
+import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routine-time-tracker.service.ts"
+import { SyncService } from "@/shared/services/sync.service.ts"
 import { DatabaseMaintenanceService } from "@/shared/services/database-maintenance.service.ts"
 import { useAuthStore } from "@/features/auth/stores/auth.store.ts"
 import { supabase } from "@/lib/supabase"
@@ -39,7 +39,7 @@ function Root() {
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
                 await RoutineTimeTrackerService.initialize();
-                SyncService.initialize();
+                await SyncService.initialize();
 
                 // Debug helper
                 (window as any).__DEBUG__ = {

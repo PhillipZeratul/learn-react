@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RoutineTimeTrackerService } from './routine-time-tracker-service';
+import { RoutineTimeTrackerService } from './routine-time-tracker.service';
 import { getDatabase } from '@/lib/db/sqlite';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { useSettingsStore } from '@/features/settings/stores/settings.store';
-import { SyncService } from '@/shared/services/sync-service';
+import { SyncService } from '@/shared/services/sync.service';
 import { routineCardConfig } from '../models/routine-card.model';
 
 // Mock dependencies

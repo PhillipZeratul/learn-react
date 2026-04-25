@@ -1,5 +1,5 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { SyncService } from './sync-service'
+import { SyncService } from './sync.service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useSettingsStore } from '@/features/settings/stores/settings.store'
 

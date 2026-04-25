@@ -1,5 +1,5 @@
 import { getDatabase } from '@/lib/db/sqlite'
-import { SyncService } from '@/shared/services/sync-service'
+import { SyncService } from '@/shared/services/sync.service'
 import { routineCardConfig } from '../models/routine-card.model'
 import { timeTrackerCardConfig } from '../models/time-tracker-card.model'
 import { tagConfig } from '../models/tag.model'
