@@ -1,27 +1,47 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { routineCardConfig } from '@/features/routine-time-tracker/models/routine-card.model'
-import { timeTrackerCardConfig } from '@/features/routine-time-tracker/models/time-tracker-card.model'
-import { tagConfig } from '@/features/routine-time-tracker/models/tag.model'
-import type { ModelConfig } from '@/features/routine-time-tracker/models/routine-time-tracker.model'
+import type { ModelConfig, BaseEntity } from '@/shared/models/base.model'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 
 export class SyncService {
     private static isSyncing = false;
     private static debounceTimer: any = null;
+    private static configs: ModelConfig<any>[] = [];
 
-    private static configs: ModelConfig<any>[] = [
-        routineCardConfig,
-        timeTrackerCardConfig,
-        tagConfig
-    ];
+    /**
+     * Registers a model config with the sync service.
+     * Features should call this in their initialization.
+     */
+    static registerConfig(config: ModelConfig<any>) {
+        if (!this.configs.find(c => c.tableName === config.tableName)) {
+            this.configs.push(config);
+        }
+    }
 
-    static initialize() {
+    static getConfigs() {
+        return this.configs;
+    }
+
+    static async initialize() {
         if (!isSupabaseConfigured) {
             console.warn("SyncService: Supabase not configured, skipping initialization.");
             return;
         }
 
         console.log("SyncService: Initializing event-driven sync...");
+
+        // Infrastructure: Ensure sync queue exists
+        const db = await getDatabase();
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS sync_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                table_name TEXT,
+                row_id TEXT,
+                action TEXT, -- 'UPSERT', 'SOFT_DELETE'
+                payload TEXT,
+                created_at TEXT
+            )
+        `);
 
         // Upstream Lifecycle: Reconnect
         window.addEventListener('online', () => {
@@ -56,6 +76,99 @@ export class SyncService {
         }
     }
 
+    /**
+     * Generic save method that handles SQLite persistence and sync queuing.
+     */
+    static async save<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
+        const db = await getDatabase();
+        const currentUserId = useAuthStore.getState().user?.id;
+        
+        // Defensive RLS: ensure user_id is injected
+        if (!entity.user_id && currentUserId) {
+            (entity as any).user_id = currentUserId;
+        }
+
+        await db.execute(config.saveSql, config.toSqlValues(entity));
+        await this.addToQueue(config.tableName, entity.id, 'UPSERT', entity);
+    }
+
+    /**
+     * Generic soft-delete method that handles SQLite persistence and sync queuing.
+     * Fetches full record first to satisfy RLS requirements.
+     */
+    static async delete<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
+        const db = await getDatabase();
+        const updatedAt = new Date().toISOString();
+        
+        const rows = await db.select<any>(`SELECT * FROM ${config.tableName} WHERE id = ?`, [id]);
+        if (rows.length === 0) return;
+
+        const entity = config.fromDb(rows[0]);
+        const updatedEntity = { 
+            ...entity, 
+            is_deleted: true, 
+            updated_at: updatedAt 
+        };
+
+        await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ? WHERE id = ?`, [updatedAt, id]);
+        await this.addToQueue(config.tableName, id, 'SOFT_DELETE', updatedEntity);
+    }
+
+    /**
+     * Generic loader to hydrate all registered model stores from local SQLite.
+     */
+    static async loadAll() {
+        const db = await getDatabase();
+        const currentUserId = useAuthStore.getState().user?.id;
+
+        if (!currentUserId) {
+            console.warn("SyncService: No user signed in, skipping load.");
+            return;
+        }
+        
+        console.log(`SyncService: Hydrating stores for ${this.configs.length} registered models...`);
+
+        try {
+            for (const config of this.configs) {
+                const rows = await db.select<any>(
+                    `SELECT * FROM ${config.tableName} WHERE is_deleted = 0 AND user_id = ?`, 
+                    [currentUserId]
+                );
+                config.updateStore(rows.map(row => config.fromDb(row)));
+            }
+        } catch (error) {
+            console.error("SyncService: Failed to hydrate stores from local DB:", error);
+        }
+    }
+
+    /**
+     * Adds an action to the local sync queue and triggers a sync.
+     * Merges pending actions for the same record to minimize traffic.
+     */
+    static async addToQueue(tableName: string, rowId: string, action: string, payload: any) {
+        const db = await getDatabase();
+        
+        const existing = await db.select<any>(
+            'SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1',
+            [tableName, rowId]
+        );
+
+        if (existing.length > 0) {
+            await db.execute(`
+                UPDATE sync_queue 
+                SET action = ?, payload = ?, created_at = ?
+                WHERE id = ?
+            `, [action, JSON.stringify(payload), new Date().toISOString(), existing[0].id]);
+        } else {
+            await db.execute(`
+                INSERT INTO sync_queue (table_name, row_id, action, payload, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            `, [tableName, rowId, action, JSON.stringify(payload), new Date().toISOString()]);
+        }
+        
+        this.triggerSync();
+    }
+
     static async sync() {
         if (!isSupabaseConfigured || !supabase || this.isSyncing) return;
         this.isSyncing = true;
@@ -71,7 +184,6 @@ export class SyncService {
 
             console.log(`SyncService: Found ${queue.length} pending actions. Starting bulk push...`);
 
-            // Phase 1: Group by table for Bulk Push
             const tables = Array.from(new Set(queue.map((item: any) => item.table_name)));
 
             for (const table of tables as string[]) {
@@ -80,11 +192,10 @@ export class SyncService {
                 const actionIds = tableActions.map((item: any) => item.id);
 
                 const { error } = await supabase
-                    .from(table)
+                    .from(table as any)
                     .upsert(payloads);
 
                 if (!error) {
-                    // Batch delete from local queue
                     const placeholders = actionIds.map(() => '?').join(',');
                     await db.execute(`DELETE FROM sync_queue WHERE id IN (${placeholders})`, actionIds);
                     console.log(`SyncService: Successfully synced ${tableActions.length} records to ${table}`);
@@ -113,17 +224,15 @@ export class SyncService {
 
                 const config = this.configs.find(c => c.tableName === table);
                 if (!config) {
-                    console.warn(`SyncService: No config found for table ${table}`);
+                    // This is expected if the feature hasn't registered its config yet
                     return;
                 }
 
                 console.log(`SyncService: Received ${eventType} event from ${table}`);
 
                 if (eventType === 'INSERT' || eventType === 'UPDATE') {
-                    // Apply to SQLite
                     await db.execute(config.saveSql, config.toSqlValues(config.fromDb(newRecord)));
                     
-                    // Hydrate Zustand
                     const entity = config.fromDb(newRecord);
                     const existing = config.findInStore(entity.id);
                     if (existing) {
@@ -132,7 +241,6 @@ export class SyncService {
                         config.addToStore(entity);
                     }
                 } else if (eventType === 'DELETE') {
-                    // Though we use soft deletes, we handle physical deletes for robustness
                     await db.execute(`DELETE FROM ${config.tableName} WHERE id = ?`, [oldRecord.id]);
                     config.deleteFromStore(oldRecord.id);
                 }

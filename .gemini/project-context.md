@@ -35,6 +35,7 @@
 - Build & Compilation (Mobile): Capacitor for iOS/Android.
 - Engineering (Testing/Catalog): Storybook.js for component testing and UI cataloging.
 - Engineering (Optimization): Using Vite environment variables (`import.meta.env`) for Tree Shaking and conditional compilation to exclude platform-specific code.
+- The default shell is Powershell.
 
 ## Architectural Rules
 

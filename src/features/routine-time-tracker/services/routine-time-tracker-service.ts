@@ -1,173 +1,72 @@
 import { getDatabase } from '@/lib/db/sqlite'
+import { SyncService } from '@/shared/services/sync-service'
+import { DatabaseMaintenanceService } from '@/shared/services/database-maintenance.service'
 import { routineCardConfig } from '../models/routine-card.model'
 import { timeTrackerCardConfig } from '../models/time-tracker-card.model'
 import { tagConfig } from '../models/tag.model'
-import { useRoutineCardStore } from '../stores/routine-card.store'
-import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store'
 import { useTagStore } from '../stores/tag.store'
-import { SyncService } from '@/shared/services/sync-service'
-import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { useSettingsStore } from '@/features/settings/stores/settings.store'
-import type { ModelConfig } from '../models/routine-time-tracker.model'
-import type { BaseEntity } from '@/shared/models/base.model'
 
 export class RoutineTimeTrackerService {
-    private static configs: ModelConfig<any>[] = [
-        routineCardConfig,
-        timeTrackerCardConfig,
-        tagConfig
-    ];
-
+    /**
+     * Initializes the routine-time-tracker feature.
+     * Registers models with the generic SyncService.
+     */
     static async initialize() {
         try {
-            const db = await getDatabase()
+            const db = await getDatabase();
             
-            // Initialize tables from configs
-            for (const config of this.configs) {
+            // 1. Register feature models with SyncService
+            SyncService.registerConfig(routineCardConfig);
+            SyncService.registerConfig(timeTrackerCardConfig);
+            SyncService.registerConfig(tagConfig);
+
+            // 2. Initialize feature-specific tables
+            const configs = [routineCardConfig, timeTrackerCardConfig, tagConfig];
+            for (const config of configs) {
                 await db.execute(config.createTableSql);
             }
-            
-            // Action Queue table for Local-First sync
-            await db.execute(`
-                CREATE TABLE IF NOT EXISTS sync_queue (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    table_name TEXT,
-                    row_id TEXT,
-                    action TEXT, -- 'UPSERT', 'SOFT_DELETE'
-                    payload TEXT,
-                    created_at TEXT
-                )
-            `)
 
-            await this.purgeOldDeletedRecords()
-            await this.loadAll()
-        } catch (error) {
-            console.error("RoutineService Initialization failed:", error)
-        }
-    }
+            // 3. Run feature-specific migrations
+            await this.migrateSchema();
 
-    static async purgeOldDeletedRecords() {
-        try {
-            const db = await getDatabase()
-            const retentionDays = useSettingsStore.getState().syncRetentionDays
-            const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString()
+            // 4. Run generic maintenance (purge old local records)
+            await DatabaseMaintenanceService.purgeOldDeletedRecords();
 
-            console.log(`RoutineService: Purging soft-deleted records older than ${retentionDays} days (before ${cutoffDate})`)
+            // 5. Hydrate stores from local database via SyncService
+            await SyncService.loadAll();
 
-            let totalPurged = 0;
-            for (const config of this.configs) {
-                const res = await db.execute(
-                    `DELETE FROM ${config.tableName} WHERE is_deleted = 1 AND updated_at < ?`,
-                    [cutoffDate]
-                );
-                totalPurged += res.changes || 0;
-            }
-
-            if (totalPurged > 0) {
-                console.log(`RoutineService: Purged ${totalPurged} old records.`)
-            }
-        } catch (error) {
-            console.error("RoutineService: Failed to purge old records:", error)
-        }
-    }
-
-    static async loadAll() {
-        const db = await getDatabase()
-        const currentUserId = useAuthStore.getState().user?.id;
-
-        if (!currentUserId) {
-            console.warn("RoutineService: No user signed in, skipping load.");
-            return;
-        }
-        
-        try {
-            for (const config of this.configs) {
-                const rows = await db.select<any>(
-                    `SELECT * FROM ${config.tableName} WHERE is_deleted = 0 AND user_id = ?`, 
-                    [currentUserId]
-                );
-                config.updateStore(rows.map(row => config.fromDb(row)));
-            }
-
+            // 6. Feature-specific defaults
             await useTagStore.getState().ensureDefault(
-                (tag) => this.save(tagConfig, tag)
+                (tag) => SyncService.save(tagConfig, tag)
             );
         } catch (error) {
-            console.error("Failed to load cards from DB:", error)
+            console.error("RoutineTimeTrackerService: Initialization failed:", error);
         }
     }
 
-    private static async addToSyncQueue(tableName: string, rowId: string, action: string, payload: any) {
-        const db = await getDatabase()
-        
-        // Check if there's already a pending action for this record to merge
-        const existing = await db.select<any>(
-            'SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1',
-            [tableName, rowId]
-        )
-
-        if (existing.length > 0) {
-            await db.execute(`
-                UPDATE sync_queue 
-                SET action = ?, payload = ?, created_at = ?
-                WHERE id = ?
-            `, [action, JSON.stringify(payload), new Date().toISOString(), existing[0].id])
-        } else {
-            await db.execute(`
-                INSERT INTO sync_queue (table_name, row_id, action, payload, created_at)
-                VALUES (?, ?, ?, ?, ?)
-            `, [tableName, rowId, action, JSON.stringify(payload), new Date().toISOString()])
-        }
-        
-        // Trigger event-driven sync
-        SyncService.triggerSync();
-    }
-
-    static async save<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
-        const db = await getDatabase()
-        await db.execute(config.saveSql, config.toSqlValues(entity))
-        await this.addToSyncQueue(config.tableName, entity.id, 'UPSERT', entity)
-    }
-
-    static async delete<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
-        const db = await getDatabase()
-        const updatedAt = new Date().toISOString()
-        await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ? WHERE id = ?`, [updatedAt, id])
-        await this.addToSyncQueue(config.tableName, id, 'SOFT_DELETE', { id, is_deleted: 1, updated_at: updatedAt })
-    }
-
-    // DEBUG ONLY: Clear all data (Local + Cloud) via Soft Delete
-    static async clearAllData() {
+    /**
+     * Feature-specific migration logic for Routine Cards.
+     */
+    private static async migrateSchema() {
         const db = await getDatabase();
-        const updatedAt = new Date().toISOString();
-        console.warn("RoutineService: INITIATING GLOBAL SOFT-DELETE...");
-
         try {
-            for (const config of this.configs) {
-                // 1. Fetch all record IDs that aren't already deleted
-                const ids = await db.select<{id: string}>(`SELECT id FROM ${config.tableName} WHERE is_deleted = 0`);
+            const tableInfo = await db.select<any>("PRAGMA table_info(routine_cards)");
+            const columns = tableInfo.map((c: any) => c.name);
 
-                // 2. Batch update local records
-                await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ?`, [updatedAt]);
+            const migrations = [
+                { name: 'rrule', sql: 'ALTER TABLE routine_cards ADD COLUMN rrule TEXT' },
+                { name: 'parent_routine_id', sql: 'ALTER TABLE routine_cards ADD COLUMN parent_routine_id TEXT' },
+                { name: 'original_recurrence_date', sql: 'ALTER TABLE routine_cards ADD COLUMN original_recurrence_date TEXT' }
+            ];
 
-                // 3. Add to sync queue for each record to propagate to Supabase
-                for (const row of ids) {
-                    await this.addToSyncQueue(config.tableName, row.id, 'SOFT_DELETE', { id: row.id, is_deleted: 1, updated_at: updatedAt });
+            for (const m of migrations) {
+                if (!columns.includes(m.name)) {
+                    console.log(`RoutineTimeTrackerService: Migrating local DB - Adding column ${m.name}`);
+                    await db.execute(m.sql);
                 }
             }
-
-            // 4. Reset Zustand stores
-            useRoutineCardStore.getState().reset();
-            useTimeTrackerCardStore.getState().reset();
-            useTagStore.getState().reset();
-
-            // 5. Force immediate sync
-            console.log("RoutineService: Triggering immediate cloud sync for clear operation...");
-            SyncService.triggerSync(true);
-
-            console.log("RoutineService: Local data cleared. Sync in progress.");
-        } catch (error) {
-            console.error("RoutineService: Failed to clear all data:", error);
+        } catch (err) {
+            console.error("RoutineTimeTrackerService: Migration failed", err);
         }
     }
 }

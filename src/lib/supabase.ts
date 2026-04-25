@@ -11,7 +11,10 @@ export const supabase = isSupabaseConfigured
     ? createClient<Database>(supabaseUrl, supabasePublishableKey)
     : null;
 
-if (!isSupabaseConfigured) {
+if (isSupabaseConfigured) {
+    const isLocal = supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1');
+    console.log(`Supabase initialized using ${isLocal ? 'LOCAL' : 'CLOUD'} instance: ${supabaseUrl}`);
+} else {
     console.warn("Supabase is not configured. Cloud sync will be disabled. Please check your .env file.");
 }
 

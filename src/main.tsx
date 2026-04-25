@@ -7,6 +7,7 @@ import App from "./App.tsx"
 import { ThemeProvider } from "@/components/ThemeProvider.tsx"
 import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routine-time-tracker-service.ts"
 import { SyncService } from "@/shared/services/sync-service.ts"
+import { DatabaseMaintenanceService } from "@/shared/services/database-maintenance.service.ts"
 import { useAuthStore } from "@/features/auth/stores/auth.store.ts"
 import { supabase } from "@/lib/supabase"
 
@@ -42,7 +43,8 @@ function Root() {
 
                 // Debug helper
                 (window as any).__DEBUG__ = {
-                    clearData: () => RoutineTimeTrackerService.clearAllData(),
+                    clearData: () => DatabaseMaintenanceService.clearAllData(),
+                    clearTable: (tableName: string) => DatabaseMaintenanceService.clearTableData(tableName),
                     syncNow: () => SyncService.triggerSync(true),
                 };
 
