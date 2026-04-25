@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTagStore } from '@/features/routine-time-tracker/stores/tag.store';
 import { createTag, tagConfig } from '@/features/routine-time-tracker/models/tag.model';
-import { RoutineTimeTrackerService } from '@/features/routine-time-tracker/services/routine-time-tracker-service';
+import { RoutineTimeTrackerService } from '@/features/routine-time-tracker/services/routine-time-tracker.service';
 import { Button } from '@/components/ui/Button';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { PlusSignIcon, Delete02Icon } from '@hugeicons/core-free-icons';
+import { SyncService } from '@/shared/services/sync.service';
 
 export const TagManager = () => {
     const { items: tags, add: addTag, remove: deleteTag } = useTagStore();
@@ -18,13 +18,13 @@ export const TagManager = () => {
             color: newTagColor,
         });
         addTag(tag);
-        await RoutineTimeTrackerService.save(tagConfig, tag);
+        await SyncService.save(tagConfig, tag);
         setNewTagName('');
     };
 
     const handleDeleteTag = async (id: string) => {
         deleteTag(id);
-        await RoutineTimeTrackerService.delete(tagConfig, id);
+        await SyncService.delete(tagConfig, id);
     };
 
     const activeTags = tags.filter(tag => !tag.is_deleted);

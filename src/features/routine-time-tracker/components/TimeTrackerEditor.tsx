@@ -3,6 +3,8 @@ import type { TimeTrackerCard } from '../models/time-tracker-card.model';
 import { timeToISO, isoToTime } from '../utils/utils';
 import { useTagStore } from '../stores/tag.store';
 import { DEFAULT_TAG_ID } from '../models/tag.model';
+import { SyncService } from '@/shared/services/sync.service';
+import { timeTrackerCardConfig } from '../models/time-tracker-card.model';
 
 interface TimeTrackerEditorProps {
     task: TimeTrackerCard;

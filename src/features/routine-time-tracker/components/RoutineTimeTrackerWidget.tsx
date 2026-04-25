@@ -1,15 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { signal, batch, effect, useSignal } from '@preact/signals-react';
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 import { useTagStore } from '../stores/tag.store';
-import { RoutineTimeTrackerService } from '../services/routine-time-tracker-service';
+import { SyncService } from '@/shared/services/sync.service';
 import { timeToISO, isoToTime, isoToMinutes, isTouchEvent } from '../utils/utils';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
+import { getRoutineInstancesForDate } from '../utils/routine-expansion';
+import { Button } from '@/components/ui/Button';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 
 const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
@@ -37,13 +41,52 @@ interface DragState {
 const dragTopSignal = signal(0);
 const dragHeightSignal = signal(0);
 
-const CurrentTimeIndicator = () => {
+const DateNavigator = ({ date, onDateChange }: { date: Date, onDateChange: (d: Date) => void }) => {
+    const isToday = new Date().toDateString() === date.toDateString();
+    
+    const changeDate = (days: number) => {
+        const newDate = new Date(date);
+        newDate.setDate(date.getDate() + days);
+        onDateChange(newDate);
+    };
+
+    return (
+        <div className="flex items-center justify-between px-4 py-2 bg-background border-b sticky top-0 z-40">
+            <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => changeDate(-1)} className="h-8 w-8">
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+                </Button>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => onDateChange(new Date())}
+                    className={`text-xs font-bold ${isToday ? 'text-primary' : ''}`}
+                >
+                    {isToday ? 'TODAY' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => changeDate(1)} className="h-8 w-8">
+                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                </Button>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <HugeiconsIcon icon={Calendar03Icon} size={16} />
+                <span className="text-[10px] font-medium uppercase tracking-wider">
+                    {date.toLocaleDateString(undefined, { weekday: 'short' })}
+                </span>
+            </div>
+        </div>
+    );
+};
+
+const CurrentTimeIndicator = ({ isCurrentDay }: { isCurrentDay: boolean }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    if (!isCurrentDay) return null;
 
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
     const currentTimeString = currentTime.toLocaleTimeString([], {
@@ -67,10 +110,12 @@ const CurrentTimeIndicator = () => {
 
 const TimeTrackerActionButton = ({ 
     activeTimeTrackerId, 
-    onAction 
+    onAction,
+    isCurrentDay
 }: { 
     activeTimeTrackerId: string | null;
     onAction: () => void;
+    isCurrentDay: boolean;
 }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -78,6 +123,8 @@ const TimeTrackerActionButton = ({
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    if (!isCurrentDay) return null;
 
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
 
@@ -180,7 +227,10 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
         return () => dispose();
     }, [isDragging]);
 
-    const baseClasses = "task-card absolute left-2 right-2 rounded-xl border border-border bg-card/50 backdrop-blur-sm px-3 pointer-events-auto overflow-hidden flex flex-col justify-center";
+    const isVirtual = (card as RoutineCard)._isVirtual;
+    const baseClasses = `task-card absolute left-2 right-2 rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center ${
+        isVirtual ? 'bg-card/30 border-dashed opacity-80' : 'bg-card/50 backdrop-blur-sm'
+    }`;
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
 
@@ -231,14 +281,14 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
 
 export default function RoutineTimeTrackerWidget() {
     const {
-        items: timeTrackerCards,
+        items: allTimeTrackerCards,
         add: addTimeTrackerCard,
         update: updateTimeTrackerCard,
         remove: deleteTimeTrackerCard
     } = useTimeTrackerCardStore();
 
     const {
-        items: routineCards,
+        items: allRoutineCards,
         add: addRoutineCard,
         update: updateRoutineCard,
         remove: deleteRoutineCard
@@ -246,6 +296,18 @@ export default function RoutineTimeTrackerWidget() {
 
     const { items: tags } = useTagStore();
     const { activeTimeTrackerId, setActiveTimeTrackerId } = useRoutineTimeTrackerStore();
+
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const isCurrentDay = new Date().toDateString() === currentDate.toDateString();
+
+    const filteredTimeTrackerCards = useMemo(() => {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        return allTimeTrackerCards.filter(c => !c.is_deleted && c.start_at.startsWith(dateStr));
+    }, [allTimeTrackerCards, currentDate]);
+
+    const expandedRoutineCards = useMemo(() => {
+        return getRoutineInstancesForDate(allRoutineCards, currentDate);
+    }, [allRoutineCards, currentDate]);
 
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [dragState, setDragState] = useState<DragState | null>(null);
@@ -257,7 +319,7 @@ export default function RoutineTimeTrackerWidget() {
     useEffect(() => {
         if (!activeTimeTrackerId) return;
 
-        const task = timeTrackerCards.find(c => c.id === activeTimeTrackerId);
+        const task = allTimeTrackerCards.find(c => c.id === activeTimeTrackerId);
         if (!task || task.is_deleted) {
             setActiveTimeTrackerId(null);
             return;
@@ -275,15 +337,15 @@ export default function RoutineTimeTrackerWidget() {
             };
             
             updateTimeTrackerCard(task.id, updatedCard);
-            RoutineTimeTrackerService.save(timeTrackerCardConfig, updatedCard).catch(console.error);
+            SyncService.save(timeTrackerCardConfig, updatedCard).catch(console.error);
         }, 60000);
 
         return () => clearInterval(timer);
-    }, [activeTimeTrackerId, timeTrackerCards, updateTimeTrackerCard, setActiveTimeTrackerId]);
+    }, [activeTimeTrackerId, allTimeTrackerCards, updateTimeTrackerCard, setActiveTimeTrackerId]);
 
     const handleTimeTrackerAction = () => {
         if (activeTimeTrackerId) {
-            const task = timeTrackerCards.find(c => c.id === activeTimeTrackerId);
+            const task = allTimeTrackerCards.find(c => c.id === activeTimeTrackerId);
             if (task && !task.is_deleted) {
                 setActiveTimeTrackerId(null);
                 
@@ -336,25 +398,29 @@ export default function RoutineTimeTrackerWidget() {
         const roundedMinutes = Math.round(minutes / 30) * 30;
         const startHour = Math.floor(roundedMinutes / 60);
         const startMin = roundedMinutes % 60;
+        
+        const dateStr = currentDate.toISOString().split('T')[0];
         const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+        const startIso = timeToISO(startTime, dateStr);
 
         const endMinutes = roundedMinutes + 60;
         const endHour = Math.floor(endMinutes / 60);
         const endMin = endMinutes % 60;
         const endTime = `${String(Math.min(24, endHour)).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+        const endIso = timeToISO(endTime, dateStr);
 
         const isTimeTrackerBlock = relativeX < contentWidth / 2;
 
         if (isTimeTrackerBlock) {
             const newCard = createTimeTrackerCard({
-                start_at: timeToISO(startTime),
-                end_at: timeToISO(endTime),
+                start_at: startIso,
+                end_at: endIso,
             });
             setEditingState({ type: 'timeTracker', card: newCard });
         } else {
             const newCard = createRoutineCard({
-                start_at: timeToISO(startTime),
-                end_at: timeToISO(endTime),
+                start_at: startIso,
+                end_at: endIso,
             });
             setEditingState({ type: 'routine', card: newCard });
         }
@@ -362,6 +428,9 @@ export default function RoutineTimeTrackerWidget() {
 
     const handleCardPress = (e: React.MouseEvent | React.TouchEvent, type: 'routine' | 'timeTracker', task: RoutineCard | TimeTrackerCard) => {
         e.stopPropagation();
+        // Virtual cards cannot be dragged directly; they must be edited to become detached first.
+        if ((task as RoutineCard)._isVirtual) return;
+
         const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
         const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
 
@@ -427,19 +496,20 @@ export default function RoutineTimeTrackerWidget() {
             const finalStartMin = Math.round((finalTop - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
             const finalEndMin = Math.round((finalTop + finalHeight - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
 
+            const dateStr = new Date(dragState.card.start_at).toISOString().split('T')[0];
             const finalCard = {
                 ...dragState.card,
-                start_at: timeToISO(`${String(Math.floor(finalStartMin / 60)).padStart(2, '0')}:${String(finalStartMin % 60).padStart(2, '0')}`),
-                end_at: timeToISO(`${String(Math.floor(finalEndMin / 60)).padStart(2, '0')}:${String(finalEndMin % 60).padStart(2, '0')}`),
+                start_at: timeToISO(`${String(Math.floor(finalStartMin / 60)).padStart(2, '0')}:${String(finalStartMin % 60).padStart(2, '0')}`, dateStr),
+                end_at: timeToISO(`${String(Math.floor(finalEndMin / 60)).padStart(2, '0')}:${String(finalEndMin % 60).padStart(2, '0')}`, dateStr),
             };
 
             // Sync the final dragged state to the global store
             if (dragState.type === 'routine') {
                 updateRoutineCard(finalCard.id, finalCard as RoutineCard);
-                await RoutineTimeTrackerService.save(routineCardConfig, finalCard as RoutineCard);
+                await SyncService.save(routineCardConfig, finalCard as RoutineCard);
             } else {
                 updateTimeTrackerCard(finalCard.id, finalCard as TimeTrackerCard);
-                await RoutineTimeTrackerService.save(timeTrackerCardConfig, finalCard as TimeTrackerCard);
+                await SyncService.save(timeTrackerCardConfig, finalCard as TimeTrackerCard);
             }
             setDragState(null);
         }
@@ -498,10 +568,12 @@ export default function RoutineTimeTrackerWidget() {
     };
 
     return (
-        <div className="h-full w-full relative overflow-hidden">
+        <div className="h-full w-full relative flex flex-col overflow-hidden">
+            <DateNavigator date={currentDate} onDateChange={setCurrentDate} />
+            
             <div
                 ref={scrollContainerRef}
-                className={`h-full w-full bg-background relative scrollbar-hide select-none ${dragState ? 'overflow-hidden' : 'overflow-y-auto'}`}
+                className={`flex-1 w-full bg-background relative scrollbar-hide select-none ${dragState ? 'overflow-hidden' : 'overflow-y-auto'}`}
                 onMouseDown={startPress}
                 onMouseUp={endPress}
                 onMouseLeave={endPress}
@@ -527,7 +599,7 @@ export default function RoutineTimeTrackerWidget() {
                     <div className="absolute inset-0 flex">
                         {/* Time Tracker Column */}
                         <div className="relative flex-1 h-full">
-                            {timeTrackerCards.filter(t => !t.is_deleted).map(task => (
+                            {filteredTimeTrackerCards.map(task => (
                                 <TaskCard
                                     key={task.id}
                                     card={task}
@@ -544,6 +616,7 @@ export default function RoutineTimeTrackerWidget() {
                             <TimeTrackerActionButton 
                                 activeTimeTrackerId={activeTimeTrackerId}
                                 onAction={handleTimeTrackerAction}
+                                isCurrentDay={isCurrentDay}
                             />
                         </div>
 
@@ -565,7 +638,7 @@ export default function RoutineTimeTrackerWidget() {
 
                         {/* Routine Column */}
                         <div className="relative flex-1 h-full">
-                            {routineCards.filter(t => !t.is_deleted).map(task => (
+                            {expandedRoutineCards.filter(t => !t.is_deleted).map(task => (
                                 <TaskCard
                                     key={task.id}
                                     card={task}
@@ -582,7 +655,7 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
                     </div>
 
-                    <CurrentTimeIndicator />
+                    <CurrentTimeIndicator isCurrentDay={isCurrentDay} />
                 </div>
             </div>
 
@@ -590,20 +663,20 @@ export default function RoutineTimeTrackerWidget() {
                 <RoutineEditor
                     task={editingState.card}
                     onSave={async (updated) => {
-                        const exists = routineCards.some(c => c.id === updated.id);
+                        const exists = allRoutineCards.some(c => c.id === updated.id);
                         if (exists) {
                             updateRoutineCard(updated.id, updated);
                         } else {
                             addRoutineCard(updated);
                         }
-                        await RoutineTimeTrackerService.save(routineCardConfig, updated);
+                        await SyncService.save(routineCardConfig, updated);
                         setEditingState(null);
                     }}
                     onDelete={async (id) => {
-                        const exists = routineCards.some(c => c.id === id);
+                        const exists = allRoutineCards.some(c => c.id === id);
                         if (exists) {
                             deleteRoutineCard(id);
-                            await RoutineTimeTrackerService.delete(routineCardConfig, id);
+                            await SyncService.delete(routineCardConfig, id);
                         }
                         setEditingState(null);
                     }}
@@ -615,23 +688,23 @@ export default function RoutineTimeTrackerWidget() {
                 <TimeTrackerEditor
                     task={editingState.card}
                     onSave={async (updated) => {
-                        const exists = timeTrackerCards.some(c => c.id === updated.id);
+                        const exists = allTimeTrackerCards.some(c => c.id === updated.id);
                         if (exists) {
                             updateTimeTrackerCard(updated.id, updated);
                         } else {
                             addTimeTrackerCard(updated);
-                            if (!activeTimeTrackerId) {
+                            if (!activeTimeTrackerId && isCurrentDay) {
                                 setActiveTimeTrackerId(updated.id);
                             }
                         }
-                        await RoutineTimeTrackerService.save(timeTrackerCardConfig, updated);
+                        await SyncService.save(timeTrackerCardConfig, updated);
                         setEditingState(null);
                     }}
                     onDelete={async (id) => {
-                        const exists = timeTrackerCards.some(c => c.id === id);
+                        const exists = allTimeTrackerCards.some(c => c.id === id);
                         if (exists) {
                             deleteTimeTrackerCard(id);
-                            await RoutineTimeTrackerService.delete(timeTrackerCardConfig, id);
+                            await SyncService.delete(timeTrackerCardConfig, id);
                         }
                         setEditingState(null);
                     }}
