@@ -3,6 +3,8 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { ModelConfig, BaseEntity } from '@/shared/models/base.model'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 
+import { DatabaseMaintenanceService } from './database-maintenance.service'
+
 export class SyncService {
     private static isSyncing = false;
     private static debounceTimer: any = null;
@@ -22,11 +24,26 @@ export class SyncService {
         return this.configs;
     }
 
+    /**
+     * Generic table initialization for all registered models.
+     * Ensures feature-specific tables exist before migrations or hydration.
+     */
+    static async initializeTables() {
+        const db = await getDatabase();
+        console.log(`SyncService: Initializing tables for ${this.configs.length} registered models...`);
+        for (const config of this.configs) {
+            await db.execute(config.createTableSql);
+        }
+    }
+
     static async initialize() {
         if (!isSupabaseConfigured) {
             console.warn("SyncService: Supabase not configured, skipping initialization.");
             return;
         }
+
+        await SyncService.initializeTables();
+        await SyncService.loadAll();
 
         console.log("SyncService: Initializing event-driven sync...");
 
@@ -116,6 +133,7 @@ export class SyncService {
 
     /**
      * Generic loader to hydrate all registered model stores from local SQLite.
+     * Also triggers generic maintenance (purging old records) before loading.
      */
     static async loadAll() {
         const db = await getDatabase();
@@ -125,6 +143,9 @@ export class SyncService {
             console.warn("SyncService: No user signed in, skipping load.");
             return;
         }
+
+        // Generic maintenance: purge local soft-deleted records that have already synced
+        await DatabaseMaintenanceService.purgeOldDeletedRecords();
         
         console.log(`SyncService: Hydrating stores for ${this.configs.length} registered models...`);
 

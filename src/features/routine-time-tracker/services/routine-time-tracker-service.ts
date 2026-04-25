@@ -1,6 +1,5 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { SyncService } from '@/shared/services/sync-service'
-import { DatabaseMaintenanceService } from '@/shared/services/database-maintenance.service'
 import { routineCardConfig } from '../models/routine-card.model'
 import { timeTrackerCardConfig } from '../models/time-tracker-card.model'
 import { tagConfig } from '../models/tag.model'
@@ -13,29 +12,12 @@ export class RoutineTimeTrackerService {
      */
     static async initialize() {
         try {
-            const db = await getDatabase();
-            
-            // 1. Register feature models with SyncService
             SyncService.registerConfig(routineCardConfig);
             SyncService.registerConfig(timeTrackerCardConfig);
             SyncService.registerConfig(tagConfig);
 
-            // 2. Initialize feature-specific tables
-            const configs = [routineCardConfig, timeTrackerCardConfig, tagConfig];
-            for (const config of configs) {
-                await db.execute(config.createTableSql);
-            }
-
-            // 3. Run feature-specific migrations
             await this.migrateSchema();
 
-            // 4. Run generic maintenance (purge old local records)
-            await DatabaseMaintenanceService.purgeOldDeletedRecords();
-
-            // 5. Hydrate stores from local database via SyncService
-            await SyncService.loadAll();
-
-            // 6. Feature-specific defaults
             await useTagStore.getState().ensureDefault(
                 (tag) => SyncService.save(tagConfig, tag)
             );
