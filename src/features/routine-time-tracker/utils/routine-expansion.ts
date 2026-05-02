@@ -1,4 +1,4 @@
-import { RRule, rrulestr } from 'rrule';
+import { RRule } from 'rrule';
 import type { RoutineCard } from '../models/routine-card.model';
 import type { IsoDateTime } from '@/shared/models/base.model';
 

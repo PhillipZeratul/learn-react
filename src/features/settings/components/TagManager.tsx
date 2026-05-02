@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTagStore } from '@/features/routine-time-tracker/stores/tag.store';
 import { createTag, tagConfig } from '@/features/routine-time-tracker/models/tag.model';
-import { RoutineTimeTrackerService } from '@/features/routine-time-tracker/services/routine-time-tracker.service';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusSignIcon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { SyncService } from '@/shared/services/sync.service';
 
 export const TagManager = () => {
