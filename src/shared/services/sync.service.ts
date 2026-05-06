@@ -106,7 +106,13 @@ export class SyncService {
         }
 
         await db.execute(config.saveSql, config.toSqlValues(entity));
-        await this.addToQueue(config.tableName, entity.id, 'UPSERT', entity);
+        
+        // Only sync to cloud if user_id is present
+        if (entity.user_id) {
+            await this.addToQueue(config.tableName, entity.id, 'UPSERT', entity);
+        } else {
+            console.warn(`SyncService: Item saved locally but skipped cloud sync (no user_id): ${config.tableName}/${entity.id}`);
+        }
     }
 
     /**
@@ -192,9 +198,18 @@ export class SyncService {
 
     static async sync() {
         if (!isSupabaseConfigured || !supabase || this.isSyncing) return;
+        
         this.isSyncing = true;
 
         try {
+            // Defensive: Check for authenticated session before syncing
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.log("SyncService: No active session, skipping sync.");
+                this.isSyncing = false;
+                return;
+            }
+
             const db = await getDatabase();
             const queue = await db.select<any>('SELECT * FROM sync_queue ORDER BY created_at ASC');
             

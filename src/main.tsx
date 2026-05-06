@@ -28,10 +28,17 @@ function Root() {
                     setSession(session);
                     setUser(session?.user ?? null);
                     
-                    supabase.auth.onAuthStateChange((_event, session) => {
+                    supabase.auth.onAuthStateChange(async (_event, session) => {
+                        const user = session?.user ?? null;
                         setSession(session);
-                        setUser(session?.user ?? null);
+                        setUser(user);
                         setLoading(false);
+
+                        if (user) {
+                            console.log("Root: User authenticated, triggering data hydration...");
+                            await SyncService.loadAll();
+                            await RoutineTimeTrackerService.initialize();
+                        }
                     });
                 }
                 
