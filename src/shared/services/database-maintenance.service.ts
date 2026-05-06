@@ -105,7 +105,6 @@ export class DatabaseMaintenanceService {
             for (const config of configs) {
                 await this.clearTableData(config.tableName);
             }
-            await this.clearSyncQueue();
             console.log("DatabaseMaintenanceService: All local data cleared. Sync in progress.");
         } catch (error) {
             console.error("DatabaseMaintenanceService: Failed to clear all data:", error);
