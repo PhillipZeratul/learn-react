@@ -55,14 +55,24 @@ export const useTagStore = create<TagState & TagActions>()(
 
         ensureDefault: async (saveFn) => {
             const { items } = get()
-            if (items.length === 0) {
-                const { createTag } = await import('../models/tag.model')
-                const defaultTag = createTag({})
+            // Ensure exactly one "Default" tag exists by checking the name
+            const hasDefault = items.some(t => t.name === "Default" && !t.is_deleted)
+            
+            if (!hasDefault) {
+                const { createTag, DEFAULT_TAG_ID } = await import('../models/tag.model')
+                const defaultTag = createTag({ 
+                    id: DEFAULT_TAG_ID,
+                    name: "Default",
+                    color: "#787878"
+                })
                 
                 await saveFn(defaultTag)
                 
                 set((state) => {
-                    state.items.push(defaultTag)
+                    // Double check to prevent race conditions
+                    if (!state.items.some(t => t.name === "Default" && !t.is_deleted)) {
+                        state.items.push(defaultTag)
+                    }
                 })
             }
         }

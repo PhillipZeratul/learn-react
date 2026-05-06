@@ -45,8 +45,8 @@ function Root() {
                 // Short delay to allow loading UI to show up
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
-                await RoutineTimeTrackerService.initialize();
                 await SyncService.initialize();
+                await RoutineTimeTrackerService.initialize();
 
                 // Debug helper
                 (window as any).__DEBUG__ = {
