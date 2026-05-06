@@ -50,8 +50,10 @@ function Root() {
 
                 // Debug helper
                 (window as any).__DEBUG__ = {
-                    clearData: () => DatabaseMaintenanceService.clearAllData(),
-                    clearTable: (tableName: string) => DatabaseMaintenanceService.clearTableData(tableName),
+                    clearAllData: () => DatabaseMaintenanceService.clearAllData(),
+                    clearTableData: (tableName: string) => DatabaseMaintenanceService.clearTableData(tableName),
+                    clearSyncQueue: () => DatabaseMaintenanceService.clearSyncQueue(),
+                    pullCloud: () => DatabaseMaintenanceService.pullFromCloud(),
                     syncNow: () => SyncService.triggerSync(true),
                 };
 

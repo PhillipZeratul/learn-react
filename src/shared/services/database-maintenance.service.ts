@@ -2,6 +2,7 @@ import { getDatabase } from '@/lib/db/sqlite'
 import { SyncService } from './sync.service'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useSettingsStore } from '@/features/settings/stores/settings.store'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 export class DatabaseMaintenanceService {
     /**
@@ -104,9 +105,70 @@ export class DatabaseMaintenanceService {
             for (const config of configs) {
                 await this.clearTableData(config.tableName);
             }
+            await this.clearSyncQueue();
             console.log("DatabaseMaintenanceService: All local data cleared. Sync in progress.");
         } catch (error) {
             console.error("DatabaseMaintenanceService: Failed to clear all data:", error);
+        }
+    }
+
+    /**
+     * DEBUG ONLY: Clears the local sync queue.
+     */
+    static async clearSyncQueue() {
+        try {
+            const db = await getDatabase();
+            await db.execute('DELETE FROM sync_queue');
+            console.log("DatabaseMaintenanceService: Local sync queue cleared.");
+        } catch (error) {
+            console.error("DatabaseMaintenanceService: Failed to clear sync queue:", error);
+        }
+    }
+
+    /**
+     * DEBUG ONLY: Force a full pull from Supabase for all registered models.
+     * Updates local SQLite and hydrates stores.
+     */
+    static async pullFromCloud() {
+        if (!isSupabaseConfigured || !supabase) return;
+
+        const currentUserId = useAuthStore.getState().user?.id;
+        if (!currentUserId) {
+            console.error("DatabaseMaintenanceService: Cannot pull from cloud - no user logged in.");
+            return;
+        }
+
+        console.log(`DatabaseMaintenanceService: INITIATING FULL CLOUD PULL for user ${currentUserId}...`);
+
+        try {
+            const db = await getDatabase();
+            const configs = SyncService.getConfigs();
+            for (const config of configs) {
+                console.log(`DatabaseMaintenanceService: Pulling ${config.tableName}...`);
+                const { data, error } = await supabase
+                    .from(config.tableName as any)
+                    .select('*')
+                    .eq('user_id', currentUserId);
+
+                if (error) {
+                    console.error(`DatabaseMaintenanceService: Failed to pull ${config.tableName}:`, error);
+                    continue;
+                }
+
+                if (data && data.length > 0) {
+                    for (const row of data) {
+                        const entity = config.fromDb(row);
+                        await db.execute(config.saveSql, config.toSqlValues(entity));
+                    }
+                    console.log(`DatabaseMaintenanceService: Pulled ${data.length} records for ${config.tableName}`);
+                }
+            }
+            
+            // Re-hydrate stores from the now-updated local DB
+            await SyncService.loadAll();
+            console.log("DatabaseMaintenanceService: Cloud pull and local hydration complete.");
+        } catch (err) {
+            console.error("DatabaseMaintenanceService: Cloud pull failed:", err);
         }
     }
 }
