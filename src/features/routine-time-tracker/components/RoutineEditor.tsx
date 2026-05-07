@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { RoutineCard } from '../models/routine-card.model';
-import { timeToISO, isoToTime } from '../utils/utils';
+import { timeToISO, isoToTime, formatLocalDate } from '../utils/utils';
 import { useTagStore } from '../stores/tag.store';
 import type { RoutineCardId, TagId } from '../models/routine-time-tracker.model';
 import type { IsoDateTime } from '@/shared/models/base.model';
@@ -43,7 +43,7 @@ export const RoutineEditor = ({
             finalTitle = selectedTag?.name || 'Routine';
         }
 
-        const datePart = task.start_at.split('T')[0];
+        const datePart = formatLocalDate(new Date(task.start_at));
         const newStartAt = timeToISO(startAt, datePart);
         const newEndAt = timeToISO(endAt, datePart);
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TimeTrackerCard } from '../models/time-tracker-card.model';
-import { timeToISO, isoToTime } from '../utils/utils';
+import { timeToISO, isoToTime, formatLocalDate } from '../utils/utils';
 import { useTagStore } from '../stores/tag.store';
 import { DEFAULT_TAG_ID } from '../models/tag.model';
 
@@ -32,11 +32,13 @@ export const TimeTrackerEditor = ({
             finalTitle = selectedTag?.name || 'Time Tracker';
         }
 
+        const datePart = formatLocalDate(new Date(task.start_at));
+
         await onSave({ 
             ...task,
             title: finalTitle, 
-            start_at: timeToISO(startAt), 
-            end_at: timeToISO(endAt),
+            start_at: timeToISO(startAt, datePart), 
+            end_at: timeToISO(endAt, datePart),
             tag_id: tagId || DEFAULT_TAG_ID
         });
     };

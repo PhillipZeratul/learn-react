@@ -1,26 +1,35 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { timeToISO, isoToTime, isoToMinutes, isTouchEvent } from './utils';
+import { timeToISO, isoToTime, isoToMinutes, isTouchEvent, formatLocalDate } from './utils';
 
 describe('routine-time-tracker utils', () => {
+    describe('formatLocalDate', () => {
+        it('should format date as YYYY-MM-DD in local time', () => {
+            const date = new Date(2026, 4, 7); // May 7, 2026
+            expect(formatLocalDate(date)).toBe('2026-05-07');
+        });
+    });
+
     describe('timeToISO', () => {
         beforeEach(() => {
             vi.useFakeTimers();
-            vi.setSystemTime(new Date('2026-04-22T10:00:00Z'));
+            // Mocking system time to a specific local time
+            vi.setSystemTime(new Date(2026, 3, 22, 10, 0, 0)); // April 22, 2026, 10:00:00 Local
         });
 
         afterEach(() => {
             vi.useRealTimers();
         });
 
-        it('should convert time string to ISO with current date by default', () => {
+        it('should convert time string to ISO with current local date by default', () => {
             const result = timeToISO('14:30');
-            // Assuming system timezone is UTC for tests
-            expect(result).toBe(new Date('2026-04-22T14:30:00').toISOString());
+            const expected = new Date(2026, 3, 22, 14, 30, 0).toISOString();
+            expect(result).toBe(expected);
         });
 
         it('should convert time string to ISO with specified date', () => {
             const result = timeToISO('09:15', '2026-12-25');
-            expect(result).toBe(new Date('2026-12-25T09:15:00').toISOString());
+            const expected = new Date(2026, 11, 25, 9, 15, 0).toISOString();
+            expect(result).toBe(expected);
         });
     });
 

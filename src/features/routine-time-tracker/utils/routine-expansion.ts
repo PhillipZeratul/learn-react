@@ -17,9 +17,9 @@ export const getRoutineInstancesForDate = (
     allCards: RoutineCard[],
     date: Date
 ): RoutineCard[] => {
-    // startOfDay and endOfDay in UTC to match how we handle dates elsewhere
-    const startOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
-    const endOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+    // startOfDay and endOfDay defined by the LOCAL date's boundaries
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 
     const masterCards = allCards.filter(c => !c.parent_routine_id);
     const exceptions = allCards.filter(c => !!c.parent_routine_id);

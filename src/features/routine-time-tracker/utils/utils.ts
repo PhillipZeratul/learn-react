@@ -1,8 +1,20 @@
 import type { IsoDateTime } from "@/shared/models/base.model";
 
+export const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
-    const date = dateStr || new Date().toISOString().split('T')[0];
-    return new Date(`${date}T${timeStr}:00`).toISOString() as IsoDateTime;
+    const datePart = dateStr || formatLocalDate(new Date());
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timeStr.split(':').map(Number);
+    
+    // Create date in local time
+    const date = new Date(year, month - 1, day, hour, minute);
+    return date.toISOString() as IsoDateTime;
 };
 
 export const isoToTime = (isoStr: string): string => {

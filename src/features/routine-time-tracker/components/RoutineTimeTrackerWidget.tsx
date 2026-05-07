@@ -6,7 +6,7 @@ import { useRoutineCardStore } from '../stores/routine-card.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 import { useTagStore } from '../stores/tag.store';
 import { SyncService } from '@/shared/services/sync.service';
-import { timeToISO, isoToTime, isoToMinutes, isTouchEvent } from '../utils/utils';
+import { timeToISO, isoToTime, isoToMinutes, isTouchEvent, formatLocalDate } from '../utils/utils';
 import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
@@ -300,12 +300,12 @@ export default function RoutineTimeTrackerWidget() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const isCurrentDay = new Date().toDateString() === currentDate.toDateString();
 
-    const filteredTimeTrackerCards = useMemo(() => {
-        const dateStr = currentDate.toISOString().split('T')[0];
+    const currentDateTimeTrackerCards = useMemo(() => {
+        const dateStr = formatLocalDate(currentDate);
         return allTimeTrackerCards.filter(c => !c.is_deleted && c.start_at.startsWith(dateStr));
     }, [allTimeTrackerCards, currentDate]);
 
-    const expandedRoutineCards = useMemo(() => {
+    const currentDateRoutineCards = useMemo(() => {
         return getRoutineInstancesForDate(allRoutineCards, currentDate);
     }, [allRoutineCards, currentDate]);
 
@@ -399,7 +399,7 @@ export default function RoutineTimeTrackerWidget() {
         const startHour = Math.floor(roundedMinutes / 60);
         const startMin = roundedMinutes % 60;
         
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = formatLocalDate(currentDate);
         const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
         const startIso = timeToISO(startTime, dateStr);
 
@@ -496,7 +496,7 @@ export default function RoutineTimeTrackerWidget() {
             const finalStartMin = Math.round((finalTop - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
             const finalEndMin = Math.round((finalTop + finalHeight - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
 
-            const dateStr = new Date(dragState.card.start_at).toISOString().split('T')[0];
+            const dateStr = formatLocalDate(new Date(dragState.card.start_at));
             const finalCard = {
                 ...dragState.card,
                 start_at: timeToISO(`${String(Math.floor(finalStartMin / 60)).padStart(2, '0')}:${String(finalStartMin % 60).padStart(2, '0')}`, dateStr),
@@ -599,7 +599,7 @@ export default function RoutineTimeTrackerWidget() {
                     <div className="absolute inset-0 flex">
                         {/* Time Tracker Column */}
                         <div className="relative flex-1 h-full">
-                            {filteredTimeTrackerCards.map(task => (
+                            {currentDateTimeTrackerCards.map(task => (
                                 <TaskCard
                                     key={task.id}
                                     card={task}
@@ -638,7 +638,7 @@ export default function RoutineTimeTrackerWidget() {
 
                         {/* Routine Column */}
                         <div className="relative flex-1 h-full">
-                            {expandedRoutineCards.filter(t => !t.is_deleted).map(task => (
+                            {currentDateRoutineCards.filter(t => !t.is_deleted).map(task => (
                                 <TaskCard
                                     key={task.id}
                                     card={task}
