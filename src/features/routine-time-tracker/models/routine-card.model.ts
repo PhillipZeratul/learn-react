@@ -74,4 +74,5 @@ export const routineCardConfig: ModelConfig<RoutineCard> = {
     addToStore: (item) => useRoutineCardStore.getState().add(item),
     updateInStore: (id, item) => useRoutineCardStore.getState().update(id, item),
     deleteFromStore: (id) => useRoutineCardStore.getState().remove(id),
+    loadFilter: 'AND (is_deleted = 0 OR parent_routine_id IS NOT NULL)',
 };

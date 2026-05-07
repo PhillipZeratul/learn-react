@@ -157,8 +157,9 @@ export class SyncService {
 
         try {
             for (const config of this.configs) {
+                const filter = config.loadFilter || 'AND is_deleted = 0';
                 const rows = await db.select<any>(
-                    `SELECT * FROM ${config.tableName} WHERE user_id = ?`, 
+                    `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`, 
                     [currentUserId]
                 );
                 config.updateStore(rows.map(row => config.fromDb(row)));

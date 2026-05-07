@@ -82,4 +82,10 @@ export interface ModelConfig<T extends BaseEntity> {
     addToStore: (item: T) => void;
     updateInStore: (id: string, item: T) => void;
     deleteFromStore: (id: string) => void;
+    /**
+     * Optional SQL filter for loadAll. 
+     * If provided, it will be used in the WHERE clause after 'user_id = ?'.
+     * Example: 'AND (is_deleted = 0 OR parent_routine_id IS NOT NULL)'
+     */
+    loadFilter?: string;
 }

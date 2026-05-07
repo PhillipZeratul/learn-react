@@ -84,23 +84,45 @@ describe('SyncService', () => {
     });
 
     describe('loadAll', () => {
-        it('should load all records including soft-deleted ones', async () => {
+        it('should load only active records by default', async () => {
             const mockRows = [
-                { id: '1', name: 'Active', is_deleted: 0, user_id: 'user-123' },
-                { id: '2', name: 'Deleted', is_deleted: 1, user_id: 'user-123' }
+                { id: '1', name: 'Active', is_deleted: 0, user_id: 'user-123' }
             ];
             mockDb.select.mockResolvedValue(mockRows);
 
             await SyncService.loadAll();
 
-            // Verify the query does NOT filter by is_deleted
+            // Verify the query defaults to is_deleted = 0
             expect(mockDb.select).toHaveBeenCalledWith(
-                expect.stringMatching(/SELECT \* FROM test_table WHERE user_id = \?/),
+                expect.stringMatching(/SELECT \* FROM test_table WHERE user_id = \? AND is_deleted = 0/),
                 ['user-123']
             );
             
-            // Should call updateStore with both records
             expect(mockConfig.updateStore).toHaveBeenCalledWith(mockRows);
+        });
+
+        it('should respect custom loadFilter', async () => {
+            const filteredConfig = {
+                ...mockConfig,
+                tableName: 'filtered_table',
+                loadFilter: 'AND (is_deleted = 0 OR special_flag = 1)'
+            };
+            (SyncService as any).configs = [filteredConfig];
+            
+            const mockRows = [
+                { id: '1', is_deleted: 0, user_id: 'user-123' },
+                { id: '2', is_deleted: 1, special_flag: 1, user_id: 'user-123' }
+            ];
+            mockDb.select.mockResolvedValue(mockRows);
+
+            await SyncService.loadAll();
+
+            expect(mockDb.select).toHaveBeenCalledWith(
+                expect.stringMatching(/SELECT \* FROM filtered_table WHERE user_id = \? AND \(is_deleted = 0 OR special_flag = 1\)/),
+                ['user-123']
+            );
+            
+            expect(filteredConfig.updateStore).toHaveBeenCalledWith(mockRows);
         });
     });
 });
