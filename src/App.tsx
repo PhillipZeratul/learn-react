@@ -23,7 +23,7 @@ export function App() {
         <div className="h-svh w-full overflow-hidden flex justify-center relative">
             <RoutineTimeTrackerWidget/>
             
-            <div className="absolute top-4 right-4 z-40">
+            <div className="absolute top-14 right-4 z-40">
                 <Button 
                     variant="secondary" 
                     size="icon" 

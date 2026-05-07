@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTagStore } from '@/features/routine-time-tracker/stores/tag.store';
 import { createTag, tagConfig } from '@/features/routine-time-tracker/models/tag.model';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusSignIcon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { SyncService } from '@/shared/services/sync.service';

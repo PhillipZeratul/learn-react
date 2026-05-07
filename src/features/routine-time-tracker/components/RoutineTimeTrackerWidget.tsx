@@ -11,7 +11,7 @@ import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
 import { getRoutineInstancesForDate } from '../utils/routine-expansion';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 
