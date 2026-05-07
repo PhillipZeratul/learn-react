@@ -158,7 +158,7 @@ export class SyncService {
         try {
             for (const config of this.configs) {
                 const rows = await db.select<any>(
-                    `SELECT * FROM ${config.tableName} WHERE is_deleted = 0 AND user_id = ?`, 
+                    `SELECT * FROM ${config.tableName} WHERE user_id = ?`, 
                     [currentUserId]
                 );
                 config.updateStore(rows.map(row => config.fromDb(row)));
@@ -273,7 +273,7 @@ export class SyncService {
                     const existing = config.findInStore(entity.id);
                     if (existing) {
                         config.updateInStore(entity.id, entity);
-                    } else if (!entity.is_deleted) {
+                    } else {
                         config.addToStore(entity);
                     }
                 } else if (eventType === 'DELETE') {
