@@ -22,11 +22,15 @@ export class DatabaseMaintenanceService {
             
             for (const config of configs) {
                 // We only delete records that are soft-deleted AND older than cutoff AND NOT in the sync queue.
+                // We also respect the model's specific purgeFilter (e.g. protecting routine tombstones).
+                const extraFilter = config.purgeFilter || '';
+
                 const res = await db.execute(`
                     DELETE FROM ${config.tableName} 
                     WHERE is_deleted = 1 
                       AND updated_at < ? 
                       AND id NOT IN (SELECT row_id FROM sync_queue WHERE table_name = ?)
+                      ${extraFilter}
                 `, [cutoffDate, config.tableName]);
                 
                 totalPurged += res.changes || 0;

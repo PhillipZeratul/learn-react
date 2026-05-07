@@ -88,4 +88,10 @@ export interface ModelConfig<T extends BaseEntity> {
      * Example: 'AND (is_deleted = 0 OR parent_routine_id IS NOT NULL)'
      */
     loadFilter?: string;
+    /**
+     * Optional SQL filter for purgeOldDeletedRecords.
+     * This filter is used to EXCLUDE records from being physically deleted from local DB.
+     * Example: 'AND parent_routine_id IS NULL' (meaning: only purge if NOT a routine exception)
+     */
+    purgeFilter?: string;
 }
