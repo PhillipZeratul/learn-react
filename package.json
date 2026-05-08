@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "preview": "vite preview",
     "supabase:start": "powershell .meta/start-local-supabase.ps1",
     "supabase:stop": "supabase stop",

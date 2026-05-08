@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SyncService } from './sync.service';
 import { getDatabase } from '@/lib/db/sqlite';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
-import { DatabaseMaintenanceService } from './database-maintenance.service';
 
 // Mock dependencies
 vi.mock('@/lib/db/sqlite', () => ({

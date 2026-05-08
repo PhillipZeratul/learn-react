@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getRoutineInstancesForDate } from './routine-expansion';
 import { createRoutineCard } from '../models/routine-card.model';
-import type { RoutineCard } from '../models/routine-card.model';
 import type { IsoDateTime } from '@/shared/models/base.model';
 
 describe('routine-expansion', () => {
