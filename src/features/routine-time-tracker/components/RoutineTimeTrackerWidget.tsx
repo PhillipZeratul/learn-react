@@ -662,6 +662,20 @@ export default function RoutineTimeTrackerWidget() {
             {editingState?.type === 'routine' && (
                 <RoutineEditor
                     task={editingState.card}
+                    masterTask={(() => {
+                        const task = editingState.card;
+                        if (task._isVirtual) {
+                            const masterId = task.id.split('_')[0];
+                            return allRoutineCards.find(c => c.id === masterId);
+                        }
+                        if (task.parent_routine_id) {
+                            return allRoutineCards.find(c => c.id === task.parent_routine_id);
+                        }
+                        if (task.rrule) {
+                            return task;
+                        }
+                        return undefined;
+                    })()}
                     onSave={async (updated) => {
                         const exists = allRoutineCards.some(c => c.id === updated.id);
                         if (exists) {
