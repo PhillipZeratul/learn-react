@@ -2,6 +2,7 @@
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import { defineConfig } from "vite";
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
@@ -13,7 +14,7 @@ const isTauri = process.env.TAURI_ENV === 'true' || process.env.VITE_PLATFORM ==
 const isCapacitor = process.env.CAPACITOR_ENV === 'true' || process.env.VITE_PLATFORM === 'capacitor';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), basicSsl()],
   optimizeDeps: {
     exclude: ['@sqlite.org/sqlite-wasm'],
   },
