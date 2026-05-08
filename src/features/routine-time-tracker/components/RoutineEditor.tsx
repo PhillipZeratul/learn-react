@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { RoutineCard } from '../models/routine-card.model';
 import { timeToISO, isoToTime, formatLocalDate } from '../utils/utils';
@@ -23,7 +23,7 @@ const RRULE_OPTIONS = [
     { label: 'Monthly', value: 'FREQ=MONTHLY;INTERVAL=1' },
 ];
 
-export const RoutineEditor = ({
+export const RoutineEditor = memo(({
     task,
     masterTask,
     onSave,
@@ -142,8 +142,14 @@ export const RoutineEditor = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/60 backdrop-blur-[6px] animate-in fade-in duration-200"
+            style={{ willChange: 'opacity, backdrop-filter' }}
+        >
+            <div 
+                className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200"
+                style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+            >
                 <h3 className="text-lg font-semibold mb-4 text-foreground">
                     {task._isVirtual ? 'Edit Occurrence' : 'Routine'}
                 </h3>
@@ -228,8 +234,14 @@ export const RoutineEditor = ({
             </div>
 
             {confirmAction && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/40 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="w-full max-w-[280px] bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                <div 
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/20 backdrop-blur-[4px] animate-in fade-in duration-200"
+                    style={{ willChange: 'opacity, backdrop-filter' }}
+                >
+                    <div 
+                        className="w-full max-w-[280px] bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200"
+                        style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+                    >
                         <h4 className="text-base font-semibold mb-2 text-foreground">
                             {confirmAction === 'save' ? 'Save changes' : 'Delete routine'}
                         </h4>
@@ -271,4 +283,4 @@ export const RoutineEditor = ({
             )}
         </div>
     );
-};
+});

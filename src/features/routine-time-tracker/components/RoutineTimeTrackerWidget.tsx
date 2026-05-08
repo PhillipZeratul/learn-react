@@ -229,10 +229,10 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
 
     const isVirtual = (card as RoutineCard)._isVirtual;
     const baseClasses = `task-card absolute left-2 right-2 rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center ${
-        isVirtual ? 'bg-card/30 border-dashed opacity-80' : 'bg-card/50 backdrop-blur-sm'
+        isVirtual ? 'bg-card/30 border-dashed opacity-80' : 'bg-card/60'
     }`;
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
-    const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing";
+    const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm";
 
     const showTitle = height >= SHOW_CARD_TITLE_HEIGHT;
     const showTime = height >= SHOW_CARD_TIME_HEIGHT;
@@ -248,7 +248,7 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 paddingTop: isDragging ? undefined : (showTime ? '0.5rem' : '0'),
                 paddingBottom: isDragging ? undefined : (showTime ? '0.5rem' : '0'),
                 // Hardware Hinting: dedicated GPU layer for the card
-                willChange: isDragging ? 'transform, height' : 'auto',
+                willChange: 'transform, height, opacity',
             }}
             onMouseDown={onPress}
             onTouchStart={onPress}
