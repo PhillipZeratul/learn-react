@@ -186,7 +186,7 @@ export const RoutineEditor = memo(({
                         </div>
                     </div>
                     
-                    {(!!task.rrule || !!masterTask?.rrule) && (
+                    {(!task.parent_routine_id || !!task.rrule || !!masterTask?.rrule) && (
                         <div>
                             <label className="text-xs text-muted-foreground mb-1 block">Repeat (Series)</label>
                             <select

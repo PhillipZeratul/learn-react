@@ -228,9 +228,7 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
     }, [isDragging]);
 
     const isVirtual = (card as RoutineCard)._isVirtual;
-    const baseClasses = `task-card absolute left-2 right-2 rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center ${
-        isVirtual ? 'bg-card/30 border-dashed opacity-80' : 'bg-card/60'
-    }`;
+    const baseClasses = `task-card absolute left-2 right-2 rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`;
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm";
 
