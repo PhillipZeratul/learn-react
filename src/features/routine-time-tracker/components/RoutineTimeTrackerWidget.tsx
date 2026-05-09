@@ -428,6 +428,16 @@ export default function RoutineTimeTrackerWidget() {
 
     const handleCardPress = (e: React.MouseEvent | React.TouchEvent, type: 'routine' | 'timeTracker', task: RoutineCard | TimeTrackerCard) => {
         e.stopPropagation();
+
+        // Ignore multi-touch (pinch zoom)
+        if (isTouchEvent(e) && e.touches.length > 1) {
+            if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+            return;
+        }
+
         // Virtual cards cannot be dragged directly; they must be edited to become detached first.
         if ((task as RoutineCard)._isVirtual) return;
 
@@ -469,6 +479,15 @@ export default function RoutineTimeTrackerWidget() {
 
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
         if ((e.target as HTMLElement).closest('.task-card')) return;
+
+        // Ignore multi-touch (pinch zoom)
+        if (isTouchEvent(e) && e.touches.length > 1) {
+            if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+            return;
+        }
 
         const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
         const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
@@ -516,6 +535,15 @@ export default function RoutineTimeTrackerWidget() {
     };
 
     const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+        // Ignore if multi-touch starts during a move
+        if (isTouchEvent(e) && e.touches.length > 1) {
+            if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+            return;
+        }
+
         const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
         const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
 
