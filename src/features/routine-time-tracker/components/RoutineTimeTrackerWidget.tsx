@@ -227,7 +227,6 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
         return () => dispose();
     }, [isDragging]);
 
-    const isVirtual = (card as RoutineCard)._isVirtual;
     const baseClasses = `task-card absolute left-2 right-2 rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`;
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm";
@@ -313,6 +312,38 @@ export default function RoutineTimeTrackerWidget() {
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
     const wasDragged = useRef(false);
+
+    // Scroll to current time on mount and focus
+    const scrollToCurrentTime = () => {
+        if (!scrollContainerRef.current) return;
+        
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN;
+        const containerHeight = scrollContainerRef.current.clientHeight;
+        
+        scrollContainerRef.current.scrollTo({
+            top: targetY - containerHeight / 2,
+            behavior: 'smooth'
+        });
+    };
+
+    useEffect(() => {
+        // Initial scroll
+        const timer = setTimeout(scrollToCurrentTime, 100);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                scrollToCurrentTime();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
 
     useEffect(() => {
         if (!activeTimeTrackerId) return;
