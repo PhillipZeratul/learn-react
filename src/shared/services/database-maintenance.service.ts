@@ -66,6 +66,7 @@ export class DatabaseMaintenanceService {
         }
 
         console.warn(`DatabaseMaintenanceService: INITIATING SOFT-DELETE FOR TABLE: ${tableName}...`);
+        useAuthStore.getState().setSyncing(true);
 
         try {
             const rows = await db.select<any>(
@@ -95,6 +96,8 @@ export class DatabaseMaintenanceService {
             console.log(`DatabaseMaintenanceService: Local data for ${tableName} cleared. Sync in progress.`);
         } catch (error) {
             console.error(`DatabaseMaintenanceService: Failed to clear table ${tableName}:`, error);
+        } finally {
+            useAuthStore.getState().setSyncing(false);
         }
     }
 
@@ -103,6 +106,7 @@ export class DatabaseMaintenanceService {
      */
     static async clearAllData() {
         console.warn("DatabaseMaintenanceService: INITIATING GLOBAL SOFT-DELETE...");
+        useAuthStore.getState().setSyncing(true);
 
         try {
             const configs = SyncService.getConfigs();
@@ -112,6 +116,8 @@ export class DatabaseMaintenanceService {
             console.log("DatabaseMaintenanceService: All local data cleared. Sync in progress.");
         } catch (error) {
             console.error("DatabaseMaintenanceService: Failed to clear all data:", error);
+        } finally {
+            useAuthStore.getState().setSyncing(false);
         }
     }
 
@@ -142,6 +148,7 @@ export class DatabaseMaintenanceService {
         }
 
         console.log(`DatabaseMaintenanceService: INITIATING FULL CLOUD PULL for user ${currentUserId}...`);
+        useAuthStore.getState().setSyncing(true);
 
         try {
             const db = await getDatabase();
@@ -172,6 +179,8 @@ export class DatabaseMaintenanceService {
             console.log("DatabaseMaintenanceService: Cloud pull and local hydration complete.");
         } catch (err) {
             console.error("DatabaseMaintenanceService: Cloud pull failed:", err);
+        } finally {
+            useAuthStore.getState().setSyncing(false);
         }
     }
 }

@@ -102,6 +102,9 @@ export class SyncService {
         const currentUserId = useAuthStore.getState().user?.id;
         if (!currentUserId) return;
 
+        const syncStartTime = Date.now();
+        this.isSyncing = true;
+        useAuthStore.getState().setSyncing(true);
         const db = await getDatabase();
         
         // 1. Get last sync timestamp
@@ -165,6 +168,14 @@ export class SyncService {
             console.log("SyncService: Delta sync complete.");
         } catch (err) {
             console.error("SyncService: Delta sync failed:", err);
+        } finally {
+            const elapsed = Date.now() - syncStartTime;
+            const remaining = Math.max(0, 1000 - elapsed);
+            if (remaining > 0) {
+                await new Promise(resolve => setTimeout(resolve, remaining));
+            }
+            this.isSyncing = false;
+            useAuthStore.getState().setSyncing(false);
         }
     }
 
@@ -287,14 +298,15 @@ export class SyncService {
     static async sync() {
         if (!isSupabaseConfigured || !supabase || this.isSyncing) return;
         
+        const syncStartTime = Date.now();
         this.isSyncing = true;
+        useAuthStore.getState().setSyncing(true);
 
         try {
             // Defensive: Check for authenticated session before syncing
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 console.log("SyncService: No active session, skipping sync.");
-                this.isSyncing = false;
                 return;
             }
 
@@ -302,7 +314,6 @@ export class SyncService {
             const queue = await db.select<any>('SELECT * FROM sync_queue ORDER BY created_at ASC');
             
             if (queue.length === 0) {
-                this.isSyncing = false;
                 return;
             }
 
@@ -331,7 +342,13 @@ export class SyncService {
         } catch (err) {
             console.error("SyncService: Sync process failed:", err);
         } finally {
+            const elapsed = Date.now() - syncStartTime;
+            const remaining = Math.max(0, 1000 - elapsed);
+            if (remaining > 0) {
+                await new Promise(resolve => setTimeout(resolve, remaining));
+            }
             this.isSyncing = false;
+            useAuthStore.getState().setSyncing(false);
         }
     }
 

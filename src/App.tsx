@@ -9,6 +9,7 @@ import { Settings02Icon } from "@hugeicons/core-free-icons"
 
 export function App() {
     const user = useAuthStore(state => state.user);
+    const isSyncing = useAuthStore(state => state.isSyncing);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     if (!user) {
@@ -33,6 +34,13 @@ export function App() {
                     <HugeiconsIcon icon={Settings02Icon} size={24} />
                 </Button>
             </div>
+
+            {isSyncing && (
+                <div className="fixed bottom-6 left-6 z-50 flex items-center gap-2 bg-background/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-border shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Syncing</span>
+                </div>
+            )}
 
             {isSettingsOpen && (
                 <SettingsMenu onClose={() => setIsSettingsOpen(false)} />
