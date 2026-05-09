@@ -2,7 +2,6 @@ import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { ModelConfig, BaseEntity } from '@/shared/models/base.model'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-
 import { DatabaseMaintenanceService } from './database-maintenance.service'
 
 export class SyncService {

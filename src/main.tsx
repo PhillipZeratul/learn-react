@@ -22,31 +22,45 @@ function Root() {
         console.log("Root component mounted, starting initialization...");
         const init = async () => {
             try {
-                // Supabase Auth Listener
+                // Register all configs from feature services.
+                RoutineTimeTrackerService.registerConfig();
+
+                // Initialize Database Schema & Infrastructure
+                // This must happen first so tables exist before any logic tries to access them
+                await SyncService.initialize();
+                
+                // Initialize Features (Register models, migrations)
+                await RoutineTimeTrackerService.initialize();
+
+                // Supabase Auth Setup
                 if (supabase) {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    setSession(session);
-                    setUser(session?.user ?? null);
+                    const { data: { session: initialSession } } = await supabase.auth.getSession();
                     
-                    supabase.auth.onAuthStateChange(async (_event, session) => {
+                    // Handle initial state
+                    if (initialSession?.user) {
+                        setSession(initialSession);
+                        setUser(initialSession.user);
+                        console.log("Root: Initial user found, triggering hydration...");
+                        await SyncService.loadAll();
+                    }
+
+                    // Listen for changes (Login/Logout/Refresh)
+                    supabase.auth.onAuthStateChange(async (event, session) => {
                         const user = session?.user ?? null;
                         setSession(session);
                         setUser(user);
                         setLoading(false);
 
-                        if (user) {
-                            console.log("Root: User authenticated, triggering data hydration...");
+                        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                            console.log(`Root: Auth event ${event}, triggering hydration...`);
                             await SyncService.loadAll();
-                            await RoutineTimeTrackerService.initialize();
+                        }
+                        
+                        if (event === 'SIGNED_OUT') {
+                            // Clear stores or redirect if needed
                         }
                     });
                 }
-                
-                // Short delay to allow loading UI to show up
-                await new Promise(resolve => setTimeout(resolve, 50));
-                
-                await SyncService.initialize();
-                await RoutineTimeTrackerService.initialize();
 
                 // Debug helper
                 (window as any).__DEBUG__ = {
