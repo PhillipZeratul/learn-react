@@ -42,11 +42,8 @@ export class SyncService {
         }
 
         await SyncService.initializeTables();
-        await SyncService.loadAll();
 
-        console.log("SyncService: Initializing event-driven sync...");
-
-        // Infrastructure: Ensure sync queue exists
+        // Infrastructure: Ensure sync queue and metadata tables exist
         const db = await getDatabase();
         await db.execute(`
             CREATE TABLE IF NOT EXISTS sync_queue (
@@ -59,17 +56,33 @@ export class SyncService {
             )
         `);
 
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS sync_metadata (
+                user_id TEXT PRIMARY KEY,
+                last_synced_at TEXT
+            )
+        `);
+
+        // Load existing local data first for immediate UI response
+        await SyncService.loadAll();
+
+        // Perform catch-up sync (Delta Sync)
+        await this.pullDeltas();
+
+        console.log("SyncService: Initializing event-driven sync...");
+
         // Upstream Lifecycle: Reconnect
         window.addEventListener('online', () => {
-            console.log("SyncService: Network online, flushing queue...");
+            console.log("SyncService: Network online, flushing queue and pulling deltas...");
             this.triggerSync(true);
+            this.pullDeltas();
         });
         
         // Upstream Lifecycle: Foreground
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                console.log("SyncService: App foregrounded, flushing queue...");
-                this.triggerSync(true);
+                console.log("SyncService: App foregrounded, pulling deltas...");
+                this.pullDeltas();
             }
         });
 
@@ -78,6 +91,81 @@ export class SyncService {
 
         // Safety fallback: slower interval
         setInterval(() => this.triggerSync(), 1000 * 60 * 5); // 5 minutes
+    }
+
+    /**
+     * Efficient Catch-up Sync: Pulls only modified records from Supabase.
+     */
+    static async pullDeltas() {
+        if (!isSupabaseConfigured || !supabase || this.isSyncing) return;
+
+        const currentUserId = useAuthStore.getState().user?.id;
+        if (!currentUserId) return;
+
+        const db = await getDatabase();
+        
+        // 1. Get last sync timestamp
+        const meta = await db.select<any>('SELECT last_synced_at FROM sync_metadata WHERE user_id = ?', [currentUserId]);
+        const lastSyncedAt = meta.length > 0 ? meta[0].last_synced_at : null;
+
+        console.log(`SyncService: Pulling deltas since ${lastSyncedAt || 'the beginning of time'}...`);
+
+        try {
+            // We use a high-water mark timestamp to avoid missing records updated in the same millisecond
+            let newHighWaterMark = lastSyncedAt;
+
+            for (const config of this.configs) {
+                let query = supabase
+                    .from(config.tableName as any)
+                    .select('*')
+                    .eq('user_id', currentUserId);
+
+                if (lastSyncedAt) {
+                    query = query.gt('updated_at', lastSyncedAt);
+                }
+
+                const { data, error } = await query;
+
+                if (error) {
+                    console.error(`SyncService: Failed to pull deltas for ${config.tableName}:`, error);
+                    continue;
+                }
+
+                if (data && data.length > 0) {
+                    console.log(`SyncService: Processing ${data.length} delta records for ${config.tableName}`);
+                    for (const row of data) {
+                        const entity = config.fromDb(row);
+                        await db.execute(config.saveSql, config.toSqlValues(entity));
+                        
+                        // Update high-water mark
+                        if (!newHighWaterMark || entity.updated_at > newHighWaterMark) {
+                            newHighWaterMark = entity.updated_at;
+                        }
+
+                        // Update in-memory store
+                        const existing = config.findInStore(entity.id);
+                        if (existing) {
+                            config.updateInStore(entity.id, entity);
+                        } else if (!entity.is_deleted) {
+                            config.addToStore(entity);
+                        }
+                    }
+                }
+            }
+
+            // 2. Update last_synced_at with current high water mark
+            if (newHighWaterMark) {
+                await db.execute(`
+                    INSERT INTO sync_metadata (user_id, last_synced_at)
+                    VALUES (?, ?)
+                    ON CONFLICT(user_id) DO UPDATE SET last_synced_at = excluded.last_synced_at
+                `, [currentUserId, newHighWaterMark]);
+            }
+
+            console.log("SyncService: Delta sync complete.");
+        } catch (err) {
+            console.error("SyncService: Delta sync failed:", err);
+        }
     }
 
     static triggerSync(immediate = false) {

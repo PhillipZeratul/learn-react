@@ -49,7 +49,14 @@ describe('SyncService', () => {
 
     describe('save', () => {
         it('should execute save SQL and add to sync queue', async () => {
-            const entity = { id: '1', name: 'Test', user_id: 'user-123' };
+            const entity = { 
+                id: '1', 
+                name: 'Test', 
+                user_id: 'user-123' as any,
+                created_at: '2026-01-01T00:00:00Z' as any,
+                updated_at: '2026-01-01T00:00:00Z' as any,
+                is_deleted: false
+            };
             await SyncService.save(mockConfig, entity);
             
             expect(mockDb.execute).toHaveBeenCalledWith(mockConfig.saveSql, ['1', 'Test']);
