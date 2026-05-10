@@ -294,7 +294,7 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick, layout }: T
                         return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
                     };
 
-                    timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
+                    timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))}`;
                 }
             }
         });
