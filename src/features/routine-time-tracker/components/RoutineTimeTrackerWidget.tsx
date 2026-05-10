@@ -23,6 +23,77 @@ const BOTTOM_MARGIN = 64;
 const SHOW_CARD_TITLE_HEIGHT = 20;
 const SHOW_CARD_TIME_HEIGHT = 44;
 
+function calculateLayout(cards: (RoutineCard | TimeTrackerCard)[]) {
+    const sorted = [...cards].sort((a, b) => {
+        const startDiff = isoToMinutes(a.start_at) - isoToMinutes(b.start_at);
+        if (startDiff !== 0) return startDiff;
+        return isoToMinutes(b.end_at) - isoToMinutes(a.end_at);
+    });
+
+    const clusters: (RoutineCard | TimeTrackerCard)[][] = [];
+    let currentCluster: (RoutineCard | TimeTrackerCard)[] = [];
+    let clusterEndMin = -1;
+
+    for (const card of sorted) {
+        const startMin = isoToMinutes(card.start_at);
+        const endMin = isoToMinutes(card.end_at);
+        
+        if (startMin >= clusterEndMin) {
+            if (currentCluster.length > 0) {
+                clusters.push(currentCluster);
+            }
+            currentCluster = [card];
+            clusterEndMin = endMin;
+        } else {
+            currentCluster.push(card);
+            clusterEndMin = Math.max(clusterEndMin, endMin);
+        }
+    }
+    if (currentCluster.length > 0) {
+        clusters.push(currentCluster);
+    }
+
+    const finalLayout = new Map<string, { left: string, width: string }>();
+
+    for (const cluster of clusters) {
+        const clusterCols: (RoutineCard | TimeTrackerCard)[][] = [];
+        const layoutMap = new Map<string, { column: number }>();
+        
+        for (const card of cluster) {
+            let placed = false;
+            const startMin = isoToMinutes(card.start_at);
+            for (let i = 0; i < clusterCols.length; i++) {
+                const col = clusterCols[i];
+                const lastCard = col[col.length - 1];
+                if (isoToMinutes(lastCard.end_at) <= startMin) {
+                    col.push(card);
+                    layoutMap.set(card.id, { column: i });
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                clusterCols.push([card]);
+                layoutMap.set(card.id, { column: clusterCols.length - 1 });
+            }
+        }
+
+        const maxCols = clusterCols.length;
+        for (const card of cluster) {
+            const data = layoutMap.get(card.id)!;
+            const leftPct = (data.column / maxCols) * 100;
+            const widthPct = (1 / maxCols) * 100;
+            
+            finalLayout.set(card.id, {
+                left: `calc(${leftPct}% + 4px)`,
+                width: `calc(${widthPct}% - 8px)`
+            });
+        }
+    }
+
+    return finalLayout;
+}
+
 type EditingState =
     | { type: 'routine'; card: RoutineCard }
     | { type: 'timeTracker'; card: TimeTrackerCard }
@@ -159,9 +230,10 @@ interface TaskCardProps {
     getTagColor: (tagId: string) => string;
     onPress: (e: React.MouseEvent | React.TouchEvent) => void;
     onClick: () => void;
+    layout?: { left: string, width: string };
 }
 
-const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardProps) => {
+const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick, layout }: TaskCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
     const timeRef = useRef<HTMLDivElement>(null);
@@ -229,12 +301,15 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
         return () => dispose();
     }, [isDragging]);
 
-    const baseClasses = `task-card absolute left-2 right-2 rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`;
+    const baseClasses = `task-card absolute rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`;
     const idleClasses = "transition-all hover:shadow-md cursor-pointer shadow-sm";
     const draggingClasses = "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm";
 
     const showTitle = height >= SHOW_CARD_TITLE_HEIGHT;
     const showTime = height >= SHOW_CARD_TIME_HEIGHT;
+
+    const defaultLeft = layout ? layout.left : '0.5rem';
+    const defaultWidth = layout ? layout.width : 'calc(100% - 1rem)';
 
     return (
         <div
@@ -244,6 +319,9 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick }: TaskCardP
                 top: 0,
                 transform: isDragging ? undefined : defaultTransform,
                 height: isDragging ? undefined : defaultHeight,
+                left: isDragging ? '0.5rem' : defaultLeft,
+                width: isDragging ? 'calc(100% - 1rem)' : defaultWidth,
+                zIndex: isDragging ? 50 : undefined,
                 paddingTop: isDragging ? undefined : (showTime ? '0.5rem' : '0'),
                 paddingBottom: isDragging ? undefined : (showTime ? '0.5rem' : '0'),
                 // Hardware Hinting: dedicated GPU layer for the card
@@ -307,6 +385,10 @@ export default function RoutineTimeTrackerWidget() {
     const currentDateRoutineCards = useMemo(() => {
         return getRoutineInstancesForDate(allRoutineCards, currentDate);
     }, [allRoutineCards, currentDate]);
+
+    const routineLayoutMap = useMemo(() => {
+        return calculateLayout(currentDateRoutineCards.filter(t => !t.is_deleted));
+    }, [currentDateRoutineCards]);
 
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [dragState, setDragState] = useState<DragState | null>(null);
@@ -721,6 +803,7 @@ export default function RoutineTimeTrackerWidget() {
                                             setEditingState({ type: 'routine', card: task });
                                         }
                                     }}
+                                    layout={routineLayoutMap.get(task.id)}
                                 />
                             ))}
                         </div>
