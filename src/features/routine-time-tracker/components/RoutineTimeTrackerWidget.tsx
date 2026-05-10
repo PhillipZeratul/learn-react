@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { signal, batch, effect } from '@preact/signals-react';
+import { v4 as uuidv4 } from 'uuid';
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
@@ -14,6 +15,8 @@ import { getRoutineInstancesForDate } from '../utils/routine-expansion';
 import { Button } from '@/components/ui/Button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
+import type { IsoDateTime } from '@/shared/models/base.model';
+import type { RoutineCardId } from '../models/routine-time-tracker.model';
 
 import { AUTO_SWITCH_TO_TODAY_MS } from '@/features/settings/stores/settings.store';
 
@@ -390,6 +393,11 @@ export default function RoutineTimeTrackerWidget() {
 
     const [editingState, setEditingState] = useState<EditingState>(null);
     const [dragState, setDragState] = useState<DragState | null>(null);
+    const [confirmDragState, setConfirmDragState] = useState<{
+        type: 'routine' | 'timeTracker';
+        card: RoutineCard | TimeTrackerCard;
+        originalStartAt: IsoDateTime;
+    } | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
@@ -572,9 +580,6 @@ export default function RoutineTimeTrackerWidget() {
             return;
         }
 
-        // Virtual cards cannot be dragged directly; they must be edited to become detached first.
-        if ((task as RoutineCard)._isVirtual) return;
-
         const clientX = isTouchEvent(e) ? e.touches[0].clientX : e.clientX;
         const clientY = isTouchEvent(e) ? e.touches[0].clientY : e.clientY;
 
@@ -656,10 +661,23 @@ export default function RoutineTimeTrackerWidget() {
                 end_at: timeToISO(`${String(Math.floor(finalEndMin / 60)).padStart(2, '0')}:${String(finalEndMin % 60).padStart(2, '0')}`, dateStr),
             };
 
-            // Sync the final dragged state to the global store
+            // If it's a recurring routine, show confirmation dialog
             if (dragState.type === 'routine') {
-                updateRoutineCard(finalCard.id, finalCard as RoutineCard);
-                await SyncService.save(routineCardConfig, finalCard as RoutineCard);
+                const routine = finalCard as RoutineCard;
+                const isRecurring = routine._isVirtual || !!routine.rrule || !!routine.parent_routine_id;
+                
+                if (isRecurring) {
+                    setConfirmDragState({ 
+                        type: 'routine', 
+                        card: routine,
+                        originalStartAt: dragState.card.start_at as IsoDateTime
+                    });
+                    setDragState(null);
+                    return;
+                }
+
+                updateRoutineCard(routine.id, routine);
+                await SyncService.save(routineCardConfig, routine);
             } else {
                 updateTimeTrackerCard(finalCard.id, finalCard as TimeTrackerCard);
                 await SyncService.save(timeTrackerCardConfig, finalCard as TimeTrackerCard);
@@ -887,6 +905,80 @@ export default function RoutineTimeTrackerWidget() {
                     }}
                     onCancel={() => setEditingState(null)}
                 />
+            )}
+
+            {confirmDragState && (
+                <div 
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/20 backdrop-blur-[4px] animate-in fade-in duration-200"
+                >
+                    <div className="w-full max-w-[280px] bg-card border border-border rounded-2xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                        <h4 className="text-base font-semibold mb-2 text-foreground">Save changes</h4>
+                        <p className="text-sm text-muted-foreground mb-6">
+                            Do you want to apply this change to only this occurrence or the entire series?
+                        </p>
+                        <div className="space-y-2">
+                            <Button 
+                                className="w-full justify-center" 
+                                onClick={async () => {
+                                    const routine = confirmDragState.card as RoutineCard;
+                                    if (routine._isVirtual) {
+                                        const masterId = routine.id.split('_')[0] as RoutineCardId;
+                                        const detachedInstance: RoutineCard = {
+                                            ...routine,
+                                            id: uuidv4() as RoutineCardId,
+                                            parent_routine_id: masterId,
+                                            original_recurrence_date: confirmDragState.originalStartAt,
+                                            _isVirtual: undefined,
+                                            updated_at: new Date().toISOString() as IsoDateTime
+                                        };
+                                        addRoutineCard(detachedInstance);
+                                        await SyncService.save(routineCardConfig, detachedInstance);
+                                    } else {
+                                        updateRoutineCard(routine.id, routine);
+                                        await SyncService.save(routineCardConfig, routine);
+                                    }
+                                    setConfirmDragState(null);
+                                }}
+                            >
+                                This occurrence only
+                            </Button>
+                            <Button 
+                                variant="outline"
+                                className="w-full justify-center" 
+                                onClick={async () => {
+                                    const routine = confirmDragState.card as RoutineCard;
+                                    const masterId = routine._isVirtual ? routine.id.split('_')[0] : routine.id;
+                                    const master = allRoutineCards.find(c => c.id === masterId);
+                                    
+                                    if (master) {
+                                        const datePart = formatLocalDate(new Date(master.start_at));
+                                        const timePartStart = isoToTime(routine.start_at);
+                                        const timePartEnd = isoToTime(routine.end_at);
+                                        
+                                        const updatedMaster = {
+                                            ...master,
+                                            start_at: timeToISO(timePartStart, datePart),
+                                            end_at: timeToISO(timePartEnd, datePart),
+                                            updated_at: new Date().toISOString() as IsoDateTime
+                                        };
+                                        updateRoutineCard(master.id, updatedMaster);
+                                        await SyncService.save(routineCardConfig, updatedMaster);
+                                    }
+                                    setConfirmDragState(null);
+                                }}
+                            >
+                                All occurrences
+                            </Button>
+                            <Button 
+                                variant="ghost"
+                                className="w-full justify-center text-muted-foreground" 
+                                onClick={() => setConfirmDragState(null)}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
