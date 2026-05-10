@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 const SYNC_RETENSION_DAYS = 2
+export const AUTO_SWITCH_TO_TODAY_MS = 60 * 60 * 1000 // 1 hour
 
 interface SettingsState {
     syncRetentionDays: number

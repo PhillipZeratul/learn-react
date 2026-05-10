@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/Button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowLeft01Icon, ArrowRight01Icon, Calendar03Icon } from '@hugeicons/core-free-icons';
 
+import { AUTO_SWITCH_TO_TODAY_MS } from '@/features/settings/stores/settings.store';
+
 const PIXELS_PER_MINUTE = 1;
 const TOP_MARGIN = 32;
 const BOTTOM_MARGIN = 64;
@@ -312,6 +314,7 @@ export default function RoutineTimeTrackerWidget() {
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastTouchPos = useRef<{ x: number, y: number } | null>(null);
     const wasDragged = useRef(false);
+    const lastBackgroundTime = useRef<number | null>(null);
 
     // Scroll to current time on mount and focus
     const scrollToCurrentTime = () => {
@@ -334,7 +337,18 @@ export default function RoutineTimeTrackerWidget() {
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
+                // Auto-switch to today if backgrounded for more than threshold
+                if (lastBackgroundTime.current) {
+                    const elapsed = Date.now() - lastBackgroundTime.current;
+                    if (elapsed >= AUTO_SWITCH_TO_TODAY_MS) {
+                        console.log(`SyncService: App idle for ${Math.round(elapsed/1000/60)}m, auto-switching to today.`);
+                        setCurrentDate(new Date());
+                    }
+                    lastBackgroundTime.current = null;
+                }
                 scrollToCurrentTime();
+            } else {
+                lastBackgroundTime.current = Date.now();
             }
         };
 
