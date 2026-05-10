@@ -1,5 +1,11 @@
 import type { IsoDateTime } from "@/shared/models/base.model";
 
+export const PIXELS_PER_MINUTE = 1;
+export const TOP_MARGIN = 32;
+export const BOTTOM_MARGIN = 64;
+export const SHOW_CARD_TITLE_HEIGHT = 20;
+export const SHOW_CARD_TIME_HEIGHT = 44;
+
 export const formatLocalDate = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
