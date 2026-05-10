@@ -414,21 +414,32 @@ export default function RoutineTimeTrackerWidget() {
     };
 
     useEffect(() => {
-        // Initial scroll
-        const timer = setTimeout(scrollToCurrentTime, 100);
+        // Initial scroll - only if viewing today (which is the default)
+        const timer = setTimeout(() => {
+            if (currentDate.toDateString() === new Date().toDateString()) {
+                scrollToCurrentTime();
+            }
+        }, 100);
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
+                const now = new Date();
+                let shouldScroll = currentDate.toDateString() === now.toDateString();
+
                 // Auto-switch to today if backgrounded for more than threshold
                 if (lastBackgroundTime.current) {
                     const elapsed = Date.now() - lastBackgroundTime.current;
                     if (elapsed >= AUTO_SWITCH_TO_TODAY_MS) {
                         console.log(`SyncService: App idle for ${Math.round(elapsed/1000/60)}m, auto-switching to today.`);
-                        setCurrentDate(new Date());
+                        setCurrentDate(now);
+                        shouldScroll = true; // Always scroll after an auto-switch
                     }
                     lastBackgroundTime.current = null;
                 }
-                scrollToCurrentTime();
+                
+                if (shouldScroll) {
+                    scrollToCurrentTime();
+                }
             } else {
                 lastBackgroundTime.current = Date.now();
             }
@@ -439,7 +450,7 @@ export default function RoutineTimeTrackerWidget() {
             clearTimeout(timer);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, []);
+    }, [currentDate]);
 
     useEffect(() => {
         if (!activeTimeTrackerId) return;
