@@ -77,7 +77,7 @@ export class SyncService {
             this.triggerSync(true);
             this.pullDeltas();
         });
-        
+
         // Upstream Lifecycle: Foreground
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
@@ -106,7 +106,7 @@ export class SyncService {
         this.isSyncing = true;
         useAuthStore.getState().setSyncing(true);
         const db = await getDatabase();
-        
+
         // 1. Get last sync timestamp
         const meta = await db.select<any>('SELECT last_synced_at FROM sync_metadata WHERE user_id = ?', [currentUserId]);
         const lastSyncedAt = meta.length > 0 ? meta[0].last_synced_at : null;
@@ -138,8 +138,20 @@ export class SyncService {
                     console.log(`SyncService: Processing ${data.length} delta records for ${config.tableName}`);
                     for (const row of data) {
                         const entity = config.fromDb(row);
+
+                        // Protection: Check if this record has a pending local change in the queue
+                        const inQueue = await db.select<any>(
+                            'SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1',
+                            [config.tableName, entity.id]
+                        );
+
+                        if (inQueue.length > 0) {
+                            console.log(`SyncService: Skipping delta for ${config.tableName}:${entity.id} - local change pending.`);
+                            continue;
+                        }
+
                         await db.execute(config.saveSql, config.toSqlValues(entity));
-                        
+
                         // Update high-water mark
                         if (!newHighWaterMark || entity.updated_at > newHighWaterMark) {
                             newHighWaterMark = entity.updated_at;
@@ -181,9 +193,9 @@ export class SyncService {
 
     static triggerSync(immediate = false) {
         if (!isSupabaseConfigured) return;
-        
+
         if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        
+
         if (immediate) {
             this.sync();
         } else {
@@ -197,14 +209,14 @@ export class SyncService {
     static async save<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
         const db = await getDatabase();
         const currentUserId = useAuthStore.getState().user?.id;
-        
+
         // Defensive RLS: ensure user_id is injected
         if (!entity.user_id && currentUserId) {
             (entity as any).user_id = currentUserId;
         }
 
         await db.execute(config.saveSql, config.toSqlValues(entity));
-        
+
         // Only sync to cloud if user_id is present
         if (entity.user_id) {
             await this.addToQueue(config.tableName, entity.id, 'UPSERT', entity);
@@ -220,15 +232,15 @@ export class SyncService {
     static async delete<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
         const db = await getDatabase();
         const updatedAt = new Date().toISOString();
-        
+
         const rows = await db.select<any>(`SELECT * FROM ${config.tableName} WHERE id = ?`, [id]);
         if (rows.length === 0) return;
 
         const entity = config.fromDb(rows[0]);
-        const updatedEntity = { 
-            ...entity, 
-            is_deleted: true, 
-            updated_at: updatedAt 
+        const updatedEntity = {
+            ...entity,
+            is_deleted: true,
+            updated_at: updatedAt
         };
 
         await db.execute(`UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ? WHERE id = ?`, [updatedAt, id]);
@@ -250,14 +262,14 @@ export class SyncService {
 
         // Generic maintenance: purge local soft-deleted records that have already synced
         await DatabaseMaintenanceService.purgeOldDeletedRecords();
-        
+
         console.log(`SyncService: Hydrating stores for ${this.configs.length} registered models...`);
 
         try {
             for (const config of this.configs) {
                 const filter = config.loadFilter || 'AND is_deleted = 0';
                 const rows = await db.select<any>(
-                    `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`, 
+                    `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`,
                     [currentUserId]
                 );
                 config.updateStore(rows.map(row => config.fromDb(row)));
@@ -273,7 +285,7 @@ export class SyncService {
      */
     static async addToQueue(tableName: string, rowId: string, action: string, payload: any) {
         const db = await getDatabase();
-        
+
         const existing = await db.select<any>(
             'SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1',
             [tableName, rowId]
@@ -291,13 +303,13 @@ export class SyncService {
                 VALUES (?, ?, ?, ?, ?)
             `, [tableName, rowId, action, JSON.stringify(payload), new Date().toISOString()]);
         }
-        
+
         this.triggerSync();
     }
 
     static async sync() {
         if (!isSupabaseConfigured || !supabase || this.isSyncing) return;
-        
+
         const syncStartTime = Date.now();
         this.isSyncing = true;
         useAuthStore.getState().setSyncing(true);
@@ -312,7 +324,7 @@ export class SyncService {
 
             const db = await getDatabase();
             const queue = await db.select<any>('SELECT * FROM sync_queue ORDER BY created_at ASC');
-            
+
             if (queue.length === 0) {
                 return;
             }
@@ -336,7 +348,7 @@ export class SyncService {
                     console.log(`SyncService: Successfully synced ${tableActions.length} records to ${table}`);
                 } else {
                     console.error(`SyncService: Bulk sync error for ${table}:`, error);
-                    break; 
+                    break;
                 }
             }
         } catch (err) {
@@ -372,16 +384,29 @@ export class SyncService {
                 console.log(`SyncService: Received ${eventType} event from ${table}`);
 
                 if (eventType === 'INSERT' || eventType === 'UPDATE') {
-                    await db.execute(config.saveSql, config.toSqlValues(config.fromDb(newRecord)));
-                    
                     const entity = config.fromDb(newRecord);
+
+                    // Protection: Check if this record has a pending local change in the queue
+                    const inQueue = await db.select<any>(
+                        'SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1',
+                        [config.tableName, entity.id]
+                    );
+
+                    if (inQueue.length > 0) {
+                        console.log(`SyncService: Skipping realtime update for ${config.tableName}:${entity.id} - local change pending.`);
+                        return;
+                    }
+
+                    await db.execute(config.saveSql, config.toSqlValues(entity));
+
                     const existing = config.findInStore(entity.id);
                     if (existing) {
                         config.updateInStore(entity.id, entity);
                     } else {
                         config.addToStore(entity);
                     }
-                } else if (eventType === 'DELETE') {
+                }
+                else if (eventType === 'DELETE') {
                     await db.execute(`DELETE FROM ${config.tableName} WHERE id = ?`, [oldRecord.id]);
                     config.deleteFromStore(oldRecord.id);
                 }

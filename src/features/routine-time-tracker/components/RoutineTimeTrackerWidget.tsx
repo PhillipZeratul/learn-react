@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { signal, batch, effect, useSignal } from '@preact/signals-react';
+import { signal, batch, effect } from '@preact/signals-react';
 import { createRoutineCard, routineCardConfig, type RoutineCard } from '../models/routine-card.model';
 import { createTimeTrackerCard, timeTrackerCardConfig, type TimeTrackerCard } from '../models/time-tracker-card.model';
 import { useRoutineCardStore } from '../stores/routine-card.store';
@@ -246,8 +246,6 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick, layout }: T
     const defaultTransform = `translateY(${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px)`;
     const defaultHeight = `${height}px`;
 
-    const draggingTextSignal = useSignal("");
-
     useEffect(() => {
         if (!isDragging) {
             if (cardRef.current) {
@@ -283,19 +281,19 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick, layout }: T
 
                 if (timeRef.current) {
                     timeRef.current.style.display = showTime ? 'block' : 'none';
+
+                    const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+                    const currentEndMin = Math.round((top + dragHeight - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
+
+                    const formatMin = (m: number) => {
+                        const h = Math.floor(m / 60);
+                        const mm = m % 60;
+                        return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                    };
+
+                    timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
                 }
             }
-
-            const currentStartMin = Math.round((top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-            const currentEndMin = Math.round((top + dragHeight - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5;
-
-            const formatMin = (m: number) => {
-                const h = Math.floor(m / 60);
-                const mm = m % 60;
-                return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-            };
-
-            draggingTextSignal.value = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))} (dragging)`;
         });
 
         return () => dispose();
@@ -350,7 +348,7 @@ const TaskCard = ({ card, isDragging, getTagColor, onPress, onClick, layout }: T
                 className="card-time text-[10px] text-muted-foreground tabular-nums truncate flex-shrink-0"
                 style={{ display: showTime || isDragging ? 'block' : 'none' }}
             >
-                {isDragging ? draggingTextSignal : `${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
+                {`${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
             </div>
         </div>
     );
