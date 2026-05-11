@@ -1,54 +1,60 @@
 /// <reference types="vitest/config" />
-import path from "path";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import basicSsl from '@vitejs/plugin-basic-ssl'
-import { defineConfig } from "vite";
-import { fileURLToPath } from 'node:url';
-import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-import { playwright } from '@vitest/browser-playwright';
+import path from "path"
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
+import basicSsl from "@vitejs/plugin-basic-ssl"
+import { defineConfig } from "vite"
+import { fileURLToPath } from "node:url"
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin"
+import { playwright } from "@vitest/browser-playwright"
 
-const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname =
+  typeof __dirname !== "undefined"
+    ? __dirname
+    : path.dirname(fileURLToPath(import.meta.url))
 
-const isTauri = process.env.TAURI_ENV === 'true' || process.env.VITE_PLATFORM === 'tauri';
-const isCapacitor = process.env.CAPACITOR_ENV === 'true' || process.env.VITE_PLATFORM === 'capacitor';
+const isTauri =
+  process.env.TAURI_ENV === "true" || process.env.VITE_PLATFORM === "tauri"
+const isCapacitor =
+  process.env.CAPACITOR_ENV === "true" ||
+  process.env.VITE_PLATFORM === "capacitor"
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), basicSsl()],
   optimizeDeps: {
-    exclude: ['@sqlite.org/sqlite-wasm'],
+    exclude: ["@sqlite.org/sqlite-wasm"],
   },
   server: {
     headers: {
       // Required for WebSQLite OPFS high-performance sandboxing
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
     },
   },
   define: {
-    'import.meta.env.IS_TAURI': JSON.stringify(isTauri),
-    'import.meta.env.IS_CAPACITOR': JSON.stringify(isCapacitor),
-    'import.meta.env.IS_WEB': JSON.stringify(!isTauri && !isCapacitor),
+    "import.meta.env.IS_TAURI": JSON.stringify(isTauri),
+    "import.meta.env.IS_CAPACITOR": JSON.stringify(isCapacitor),
+    "import.meta.env.IS_WEB": JSON.stringify(!isTauri && !isCapacitor),
   },
   resolve: {
     alias: {
-      "@": path.resolve(dirname, "./src")
-    }
+      "@": path.resolve(dirname, "./src"),
+    },
   },
   test: {
     // Base configurations shared across all projects
     globals: true,
-    setupFiles: ['./src/shared/test/setup.ts'],
+    setupFiles: ["./src/shared/test/setup.ts"],
     passWithNoTests: true,
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
       exclude: [
-        'node_modules/',
-        'src/shared/ui/**',
-        '**/*.config.ts',
-        '**/*.d.ts',
-        '.storybook/**'
+        "node_modules/",
+        "src/shared/ui/**",
+        "**/*.config.ts",
+        "**/*.d.ts",
+        ".storybook/**",
       ],
     },
     projects: [
@@ -56,33 +62,35 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: 'unit',
-          environment: 'happy-dom',
+          name: "unit",
+          environment: "happy-dom",
           // Target standard test files, excluding Storybook stories
-          include: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
-          exclude: ['src/**/*.stories.{ts,tsx}'],
-        }
+          include: ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+          exclude: ["src/**/*.stories.{ts,tsx}"],
+        },
       },
       // Project 2: Your Existing Storybook UI Tests
       {
         extends: true,
         plugins: [
           storybookTest({
-            configDir: path.join(dirname, '.storybook')
-          })
+            configDir: path.join(dirname, ".storybook"),
+          }),
         ],
         test: {
-          name: 'storybook',
+          name: "storybook",
           browser: {
             enabled: true,
             headless: true,
             provider: playwright({}),
-            instances: [{
-              browser: 'chromium'
-            }]
-          }
-        }
-      }
-    ]
-  }
-});
+            instances: [
+              {
+                browser: "chromium",
+              },
+            ],
+          },
+        },
+      },
+    ],
+  },
+})

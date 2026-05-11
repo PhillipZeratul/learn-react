@@ -1,9 +1,9 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli"
 
 const config: CapacitorConfig = {
-  appId: 'com.wutongonpaper.app',
-  appName: 'learn-react',
-  webDir: 'dist'
-};
+  appId: "com.wutongonpaper.app",
+  appName: "learn-react",
+  webDir: "dist",
+}
 
-export default config;
+export default config

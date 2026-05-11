@@ -1,29 +1,41 @@
-import { v4 as uuidv4 } from 'uuid';
-import type { TimeTrackerCardId } from './routine-time-tracker.model';
-import type { UserId, BaseModel, IsoDateTime, ModelConfig } from '@/shared/models/base.model';
-import { useAuthStore } from '@/features/auth/stores/auth.store';
-import { useRoutineTimeTrackerStateStore } from '../stores/routine-time-tracker-state.store';
+import { v4 as uuidv4 } from "uuid"
+import type { TimeTrackerCardId } from "./routine-time-tracker.model"
+import type {
+  UserId,
+  BaseModel,
+  IsoDateTime,
+  ModelConfig,
+} from "@/shared/models/base.model"
+import { useAuthStore } from "@/features/auth/stores/auth.store"
+import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
 
 export interface RoutineTimeTrackerState extends BaseModel {
-    active_time_tracker_id: TimeTrackerCardId | null;
+  active_time_tracker_id: TimeTrackerCardId | null
 }
 
-export const createRoutineTimeTrackerState = (data: Partial<RoutineTimeTrackerState> = {}): RoutineTimeTrackerState => {
-    const now = new Date().toISOString() as IsoDateTime;
-    const currentUserId = useAuthStore.getState().user?.id as UserId;
+export const createRoutineTimeTrackerState = (
+  data: Partial<RoutineTimeTrackerState> = {}
+): RoutineTimeTrackerState => {
+  const now = new Date().toISOString() as IsoDateTime
+  const currentUserId = useAuthStore.getState().user?.id as UserId
+  const userId = data.user_id || currentUserId
 
-    return {
-        id: data.id || uuidv4(),
-        user_id: data.user_id || currentUserId,
-        active_time_tracker_id: data.active_time_tracker_id || null,
-        created_at: data.created_at || now,
-        updated_at: data.updated_at || now,
-        is_deleted: data.is_deleted || false,
-    };
-};
+  return {
+    // For singleton states, we use the user_id as the primary key to ensure one-to-one mapping
+    // and simplify conflict resolution during sync.
+    id: data.id || userId || uuidv4(),
+    user_id: userId,
+    active_time_tracker_id: data.active_time_tracker_id || null,
+    created_at: data.created_at || now,
+    updated_at: data.updated_at || now,
+    is_deleted: data.is_deleted || false,
+  }
+}
 
-export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState> = {
-    tableName: 'routine_time_tracker_states',
+export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState> =
+  {
+    tableName: "routine_time_tracker_states",
+    upsertOnConflict: "user_id",
     createTableSql: `
         CREATE TABLE IF NOT EXISTS routine_time_tracker_states (
             id TEXT PRIMARY KEY,
@@ -40,20 +52,27 @@ export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState>
         VALUES (?, ?, ?, ?, ?, ?)
     `,
     toSqlValues: (state) => [
-        state.id, state.user_id, state.active_time_tracker_id, 
-        state.created_at, state.updated_at, state.is_deleted ? 1 : 0
+      state.id,
+      state.user_id,
+      state.active_time_tracker_id,
+      state.created_at,
+      state.updated_at,
+      state.is_deleted ? 1 : 0,
     ],
-    fromDb: (row) => createRoutineTimeTrackerState({ ...row, is_deleted: !!row.is_deleted }),
+    fromDb: (row) =>
+      createRoutineTimeTrackerState({ ...row, is_deleted: !!row.is_deleted }),
     updateStore: (items) => {
-        if (items.length > 0) {
-            useRoutineTimeTrackerStateStore.getState().set(items[0]);
-        }
+      if (items.length > 0) {
+        useRoutineTimeTrackerStateStore.getState().set(items[0])
+      }
     },
     findInStore: (id) => {
-        const state = useRoutineTimeTrackerStateStore.getState().state;
-        return state?.id === id ? state : undefined;
+      const state = useRoutineTimeTrackerStateStore.getState().state
+      return state?.id === id ? state : undefined
     },
     addToStore: (item) => useRoutineTimeTrackerStateStore.getState().set(item),
-    updateInStore: (_, item) => useRoutineTimeTrackerStateStore.getState().set(item),
-    deleteFromStore: (_) => useRoutineTimeTrackerStateStore.getState().set(null),
-};
+    updateInStore: (_, item) =>
+      useRoutineTimeTrackerStateStore.getState().set(item),
+    deleteFromStore: (_) =>
+      useRoutineTimeTrackerStateStore.getState().set(null),
+  }
