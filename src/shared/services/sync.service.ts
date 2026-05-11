@@ -530,14 +530,22 @@ export class SyncService {
 
                         // Protection: Check if this record has a pending local change in the queue
                         const inQueue = await db.select<any>(
-                            "SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
+                            "SELECT id, payload FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
                             [config.tableName, entity.id]
                         )
 
                         if (inQueue.length > 0) {
-                            console.log(
-                                `SyncService: Skipping realtime update for ${config.tableName}:${entity.id} - local change pending.`
-                            )
+                            const pendingPayload = JSON.parse(inQueue[0].payload)
+                            if (entity.updated_at <= pendingPayload.updated_at) {
+                                return
+                            }
+                            // Delete from queue because the cloud state is now more authoritative
+                            await db.execute("DELETE FROM sync_queue WHERE id = ?", [inQueue[0].id])
+                        }
+
+                        // Check if the record in DB is already the same or newer
+                        const localRows = await db.select<any>(`SELECT updated_at FROM ${config.tableName} WHERE id = ?`, [entity.id])
+                        if (localRows.length > 0 && localRows[0].updated_at >= entity.updated_at) {
                             return
                         }
 

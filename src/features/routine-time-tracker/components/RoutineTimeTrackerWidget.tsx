@@ -181,7 +181,13 @@ export default function RoutineTimeTrackerWidget() {
         const task = allTimeTrackerCards.find(
             (c) => c.id === activeTimeTrackerId
         )
-        if (!task || task.is_deleted) {
+        if (!task) {
+            // Task not found locally. It might still be syncing from the cloud or another device.
+            // We wait for it to arrive. The effect will re-run when allTimeTrackerCards updates.
+            return
+        }
+
+        if (task.is_deleted) {
             setActiveTimeTrackerId(null)
             return
         }
@@ -656,6 +662,7 @@ export default function RoutineTimeTrackerWidget() {
                             (c) => c.id === updated.id
                         )
                         upsertTimeTrackerCard(updated)
+                        // Only auto-start if it's a BRAND NEW card (not an update) and we are on current day
                         if (!exists && !activeTimeTrackerId && isCurrentDay) {
                             setActiveTimeTrackerId(updated.id)
                         }

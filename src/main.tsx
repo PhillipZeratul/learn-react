@@ -44,6 +44,7 @@ function Root() {
                             "Root: Initial user found, triggering hydration..."
                         )
                         await SyncService.loadAll()
+                        await SyncService.pullDeltas()
                     }
                     // Listen for changes (Login/Logout/Refresh)
                     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -59,6 +60,7 @@ function Root() {
                                 `Root: Auth event ${event}, triggering hydration...`
                             )
                             await SyncService.loadAll()
+                            await SyncService.pullDeltas()
                             await RoutineTimeTrackerService.initialize()
                         }
 

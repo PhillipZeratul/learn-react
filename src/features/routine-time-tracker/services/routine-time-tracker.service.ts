@@ -27,7 +27,9 @@ export class RoutineTimeTrackerService {
                 await useTagStore
                     .getState()
                     .ensureDefault((tag) => SyncService.save(tagConfig, tag))
-                await this.ensureStateRecord()
+                // We don't call ensureStateRecord here anymore to avoid race conditions 
+                // with SyncService hydration. The record will be hydrated from cloud
+                // or created on the first active tracker change.
             }
         } catch (error) {
             console.error(
@@ -41,15 +43,29 @@ export class RoutineTimeTrackerService {
         const currentUser = useAuthStore.getState().user
         if (!currentUser) return
 
-        const state = useRoutineTimeTrackerStateStore.getState().state
+        let state = useRoutineTimeTrackerStateStore.getState().state
 
         if (!state) {
-            const newState = createRoutineTimeTrackerState()
-            useRoutineTimeTrackerStateStore.getState().set(newState)
-            await SyncService.save(routineTimeTrackerStateConfig, newState)
-        } else if (!state.user_id || state.id !== currentUser.id) {
-            // If we have a local state but it's anonymous or has a legacy random ID,
-            // migrate it to the fixed ID (user_id) to ensure correct sync behavior.
+            // Check local DB before creating a new one, as store hydration might be async or delayed
+            const db = await getDatabase()
+            const rows = await db.select<any>(
+                "SELECT * FROM routine_time_tracker_states WHERE user_id = ?",
+                [currentUser.id]
+            )
+
+            if (rows.length > 0) {
+                state = routineTimeTrackerStateConfig.fromDb(rows[0])
+                useRoutineTimeTrackerStateStore.getState().set(state)
+            } else {
+                state = createRoutineTimeTrackerState()
+                useRoutineTimeTrackerStateStore.getState().set(state)
+                await SyncService.save(routineTimeTrackerStateConfig, state)
+                return
+            }
+        }
+
+        if (state && (!state.user_id || state.id !== currentUser.id)) {
+            // Migration logic...
             const oldId = state.id
             const updatedState = {
                 ...state,
@@ -61,7 +77,6 @@ export class RoutineTimeTrackerService {
             useRoutineTimeTrackerStateStore.getState().set(updatedState)
             await SyncService.save(routineTimeTrackerStateConfig, updatedState)
 
-            // Clean up the old record if the ID changed
             if (oldId !== updatedState.id) {
                 const db = await getDatabase()
                 await db.execute(
@@ -73,20 +88,21 @@ export class RoutineTimeTrackerService {
     }
 
     static async setActiveTrackerId(id: TimeTrackerCardId | null) {
-        let state = useRoutineTimeTrackerStateStore.getState().state
-        if (!state) {
-            state = createRoutineTimeTrackerState({
-                active_time_tracker_id: id,
-            })
-        } else {
-            state = {
-                ...state,
-                active_time_tracker_id: id,
-                updated_at: new Date().toISOString() as any,
-            }
+        await this.ensureStateRecord()
+        let state = useRoutineTimeTrackerStateStore.getState().state!
+
+        // Prevent redundant updates if the state is already the same
+        if (state.active_time_tracker_id === id) {
+            return
         }
 
-        useRoutineTimeTrackerStateStore.getState().set(state)
-        await SyncService.save(routineTimeTrackerStateConfig, state)
+        const updatedState = {
+            ...state,
+            active_time_tracker_id: id,
+            updated_at: new Date().toISOString() as any,
+        }
+
+        useRoutineTimeTrackerStateStore.getState().set(updatedState)
+        await SyncService.save(routineTimeTrackerStateConfig, updatedState)
     }
 }
