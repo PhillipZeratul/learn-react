@@ -4,47 +4,92 @@ class WebDatabaseService implements IDatabaseService {
     private worker: Worker | null = null;
     private messageCounter = 0;
     private pendingPromises: Map<number, { resolve: Function; reject: Function }> = new Map();
+    private isInitializing = false;
+    private initPromise: Promise<void> | null = null;
 
     constructor() {}
 
-    async init() {
+    async init(): Promise<void> {
         if (this.worker) return;
+        if (this.isInitializing) return this.initPromise!;
 
-        // 使用 Vite 的 Worker 导入语法
-        this.worker = new Worker(new URL('./sqlite-worker.ts', import.meta.url), {
-            type: 'module'
-        });
+        this.isInitializing = true;
+        this.initPromise = (async () => {
+            try {
+                // 使用 Vite 的 Worker 导入语法
+                const newWorker = new Worker(new URL('./sqlite-worker.ts', import.meta.url), {
+                    type: 'module'
+                });
 
-        this.worker.onmessage = (e) => {
-            const { id, success, rows, changes, error } = e.data;
-            const promise = this.pendingPromises.get(id);
-            
-            if (promise) {
-                if (success) {
-                    promise.resolve(rows || { rows: [], changes });
-                } else {
-                    promise.reject(new Error(error));
-                }
-                this.pendingPromises.delete(id);
+                newWorker.onmessage = (e) => {
+                    const { id, success, rows, changes, error } = e.data;
+                    const promise = this.pendingPromises.get(id);
+                    
+                    if (promise) {
+                        if (success) {
+                            promise.resolve(rows || { rows: [], changes });
+                        } else {
+                            promise.reject(new Error(error));
+                        }
+                        this.pendingPromises.delete(id);
+                    }
+                };
+
+                newWorker.onerror = (e) => {
+                    console.error("WebDatabaseService: Worker error", e);
+                    // If the worker crashes, we'll null it out so the next call re-inits
+                    if (this.worker === newWorker) {
+                        this.worker = null;
+                    }
+                };
+
+                this.worker = newWorker;
+            } finally {
+                this.isInitializing = false;
             }
-        };
+        })();
+
+        return this.initPromise;
     }
 
-    private sendToWorker(type: 'EXEC' | 'SELECT', query: string, values?: any[]): Promise<any> {
+    private async sendToWorker(type: 'EXEC' | 'SELECT', query: string, values?: any[]): Promise<any> {
+        if (!this.worker) await this.init();
+
         const id = ++this.messageCounter;
         return new Promise((resolve, reject) => {
             this.pendingPromises.set(id, { resolve, reject });
-            this.worker?.postMessage({ id, type, query, values });
+            
+            try {
+                this.worker!.postMessage({ id, type, query, values });
+            } catch (err: any) {
+                // Handle "Disconnected port" or "InvalidStateError" which occurs after hibernation/suspension
+                if (err.message?.includes('disconnected port') || err.name === 'InvalidStateError') {
+                    console.warn("WebDatabaseService: Worker disconnected, attempting recovery...");
+                    this.worker = null;
+                    this.init().then(() => {
+                        try {
+                            this.worker!.postMessage({ id, type, query, values });
+                        } catch (retryErr) {
+                            this.pendingPromises.delete(id);
+                            reject(retryErr);
+                        }
+                    }).catch(innerErr => {
+                        this.pendingPromises.delete(id);
+                        reject(innerErr);
+                    });
+                } else {
+                    this.pendingPromises.delete(id);
+                    reject(err);
+                }
+            }
         });
     }
 
     async execute(query: string, values?: any[]): Promise<QueryResult> {
-        if (!this.worker) await this.init();
         return this.sendToWorker('EXEC', query, values);
     }
 
     async select<T>(query: string, values?: any[]): Promise<T[]> {
-        if (!this.worker) await this.init();
         return this.sendToWorker('SELECT', query, values);
     }
 

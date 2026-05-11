@@ -7,11 +7,11 @@ import { useRoutineCardStore } from '../stores/routine-card.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 import { useTagStore } from '../stores/tag.store';
 import { SyncService } from '@/shared/services/sync.service';
-import { 
-    timeToISO, 
-    isoToTime, 
-    isoToMinutes, 
-    isTouchEvent, 
+import {
+    timeToISO,
+    isoToTime,
+    isoToMinutes,
+    isTouchEvent,
     formatLocalDate,
     PIXELS_PER_MINUTE,
     TOP_MARGIN,
@@ -101,12 +101,12 @@ export default function RoutineTimeTrackerWidget() {
     // Scroll to current time on mount and focus
     const scrollToCurrentTime = () => {
         if (!scrollContainerRef.current) return;
-        
+
         const now = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN;
         const containerHeight = scrollContainerRef.current.clientHeight;
-        
+
         scrollContainerRef.current.scrollTo({
             top: targetY - containerHeight / 2,
             behavior: 'smooth'
@@ -130,13 +130,13 @@ export default function RoutineTimeTrackerWidget() {
                 if (lastBackgroundTime.current) {
                     const elapsed = Date.now() - lastBackgroundTime.current;
                     if (elapsed >= AUTO_SWITCH_TO_TODAY_MS) {
-                        console.log(`SyncService: App idle for ${Math.round(elapsed/1000/60)}m, auto-switching to today.`);
+                        console.log(`SyncService: App idle for ${Math.round(elapsed / 1000 / 60)}m, auto-switching to today.`);
                         setCurrentDate(now);
                         shouldScroll = true; // Always scroll after an auto-switch
                     }
                     lastBackgroundTime.current = null;
                 }
-                
+
                 if (shouldScroll) {
                     scrollToCurrentTime();
                 }
@@ -166,12 +166,12 @@ export default function RoutineTimeTrackerWidget() {
             const endHour = now.getHours();
             const endMin = now.getMinutes();
             const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
-            
+
             const updatedCard = {
                 ...task,
                 end_at: timeToISO(endTime)
             };
-            
+
             updateTimeTrackerCard(task.id, updatedCard);
             SyncService.save(timeTrackerCardConfig, updatedCard).catch(console.error);
         }, 60000);
@@ -184,12 +184,12 @@ export default function RoutineTimeTrackerWidget() {
             const task = allTimeTrackerCards.find(c => c.id === activeTimeTrackerId);
             if (task && !task.is_deleted) {
                 setActiveTimeTrackerId(null);
-                
+
                 const now = new Date();
                 const startHour = now.getHours();
                 const startMin = now.getMinutes();
                 const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
-                
+
                 const endHour = Math.min(24, startHour + 1);
                 const endTime = `${String(endHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
 
@@ -204,7 +204,7 @@ export default function RoutineTimeTrackerWidget() {
             const startHour = now.getHours();
             const startMin = now.getMinutes();
             const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
-            
+
             const endTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
 
             const newCard = createTimeTrackerCard({
@@ -234,7 +234,7 @@ export default function RoutineTimeTrackerWidget() {
         const roundedMinutes = Math.round(minutes / 30) * 30;
         const startHour = Math.floor(roundedMinutes / 60);
         const startMin = roundedMinutes % 60;
-        
+
         const dateStr = formatLocalDate(currentDate);
         const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
         const startIso = timeToISO(startTime, dateStr);
@@ -359,10 +359,10 @@ export default function RoutineTimeTrackerWidget() {
             if (dragState.type === 'routine') {
                 const routine = finalCard as RoutineCard;
                 const isRecurring = routine._isVirtual || !!routine.rrule || !!routine.parent_routine_id;
-                
+
                 if (isRecurring) {
-                    setConfirmDragState({ 
-                        type: 'routine', 
+                    setConfirmDragState({
+                        type: 'routine',
                         card: routine,
                         originalStartAt: dragState.card.start_at as IsoDateTime
                     });
@@ -444,7 +444,7 @@ export default function RoutineTimeTrackerWidget() {
     return (
         <div className="h-full w-full relative flex flex-col overflow-hidden">
             <DateNavigator date={currentDate} onDateChange={setCurrentDate} />
-            
+
             <div
                 ref={scrollContainerRef}
                 className={`flex-1 w-full bg-background relative scrollbar-hide select-none ${dragState ? 'overflow-hidden' : 'overflow-y-auto'}`}
@@ -481,7 +481,7 @@ export default function RoutineTimeTrackerWidget() {
                                     }}
                                 />
                             ))}
-                            <TimeTrackerActionButton 
+                            <TimeTrackerActionButton
                                 activeTimeTrackerId={activeTimeTrackerId}
                                 onAction={handleTimeTrackerAction}
                                 isCurrentDay={isCurrentDay}
@@ -608,12 +608,12 @@ export default function RoutineTimeTrackerWidget() {
                         const routine = confirmDragState.card as RoutineCard;
                         const masterId = routine._isVirtual ? routine.id.split('_')[0] : routine.id;
                         const master = allRoutineCards.find(c => c.id === masterId);
-                        
+
                         if (master) {
                             const datePart = formatLocalDate(new Date(master.start_at));
                             const timePartStart = isoToTime(routine.start_at);
                             const timePartEnd = isoToTime(routine.end_at);
-                            
+
                             const updatedMaster = {
                                 ...master,
                                 start_at: timeToISO(timePartStart, datePart),
