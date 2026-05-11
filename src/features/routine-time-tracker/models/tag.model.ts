@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { TagId } from './routine-time-tracker.model';
-import type { UserId, BaseEntity, IsoDateTime, ModelConfig } from '@/shared/models/base.model';
+import type { UserId, BaseModel, IsoDateTime, ModelConfig } from '@/shared/models/base.model';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { useTagStore } from '../stores/tag.store';
 
 export const DEFAULT_TAG_ID = 'b0ec7c88-ddd7-40ad-8fdd-478f02ac1941' as TagId;
 
-export interface Tag extends BaseEntity {
+export interface Tag extends BaseModel {
     id: TagId;
     name: string;
     color: string;

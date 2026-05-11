@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { TimeTrackerCardId, TagId } from './routine-time-tracker.model';
-import type { UserId, BaseEntity, IsoDateTime, ModelConfig } from '@/shared/models/base.model'
+import type { UserId, BaseModel, IsoDateTime, ModelConfig } from '@/shared/models/base.model'
 import { DEFAULT_TAG_ID } from './tag.model'
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { useTimeTrackerCardStore } from '../stores/time-tracker-card.store';
 
-export interface TimeTrackerCard extends BaseEntity {
+export interface TimeTrackerCard extends BaseModel {
     id: TimeTrackerCardId;
     title: string;
     description?: string;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PIXELS_PER_MINUTE, TOP_MARGIN } from '../utils/utils';
 
 interface TimeTrackerActionButtonProps {

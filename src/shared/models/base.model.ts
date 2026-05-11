@@ -16,12 +16,12 @@ export type Coin = Brand<number, 'Coin'>;
 export type IsoDateTime = Brand<string, 'ISODateTime'>;
 
 // ==========================================
-// BaseEntity
+// Base Model
 // ==========================================
 /**
  * All tables requiring synchronization with Supabase must inherit from this interface.
  */
-export interface BaseEntity {
+export interface BaseModel {
     id: string;                    // UUID for this record
     user_id: UserId;               // Resource owner ID
     created_at: IsoDateTime;       // ISO 8601 timestamp
@@ -30,28 +30,6 @@ export interface BaseEntity {
 
     // Local-First specific sync fields (only exists on SQLite client, not synced to cloud)
     _sync_status?: 'synced' | 'pending_insert' | 'pending_update' | 'pending_delete';
-}
-
-// ==========================================
-// Business Models
-// ==========================================
-
-export interface UserProfile extends BaseEntity {
-    id: UserId;
-    username: string;
-    level: number;
-    current_exp: Experience;
-    current_hp: HealthPoint;
-    gold_coins: Coin;
-}
-
-export interface Quest extends BaseEntity {
-    id: QuestId;
-    title: string;
-    difficulty: 'EASY' | 'NORMAL' | 'HARD' | 'BOSS';
-    reward_exp: Experience;   // Strongly typed: reward experience points
-    reward_coins: Coin;       // Strongly typed: reward gold coins
-    is_completed: boolean;
 }
 
 // ==========================================
@@ -71,7 +49,7 @@ export interface SyncAction<T = any> {
     timestamp: string;        // The exact time the action occurred
 }
 
-export interface ModelConfig<T extends BaseEntity> {
+export interface ModelConfig<T extends BaseModel> {
     tableName: string;
     createTableSql: string;
     saveSql: string;

@@ -17,7 +17,8 @@ import {
     TOP_MARGIN,
     BOTTOM_MARGIN
 } from '../utils/utils';
-import { useRoutineTimeTrackerStore } from '../stores/routine-time-tracker.store';
+import { useRoutineTimeTrackerStateStore } from '../stores/routine-time-tracker-state.store';
+import { RoutineTimeTrackerService } from '../services/routine-time-tracker.service';
 import { RoutineEditor } from './RoutineEditor';
 import { TimeTrackerEditor } from './TimeTrackerEditor';
 import { getRoutineInstancesForDate } from '../utils/routine-expansion';
@@ -67,7 +68,8 @@ export default function RoutineTimeTrackerWidget() {
     } = useRoutineCardStore();
 
     const { items: tags } = useTagStore();
-    const { activeTimeTrackerId, setActiveTimeTrackerId } = useRoutineTimeTrackerStore();
+    const activeTimeTrackerId = useRoutineTimeTrackerStateStore(state => state.state?.active_time_tracker_id) || null;
+    const setActiveTimeTrackerId = (id: any) => RoutineTimeTrackerService.setActiveTrackerId(id);
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const isCurrentDay = new Date().toDateString() === currentDate.toDateString();

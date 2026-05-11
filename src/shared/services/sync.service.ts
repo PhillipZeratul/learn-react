@@ -1,6 +1,6 @@
 import { getDatabase } from '@/lib/db/sqlite'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import type { ModelConfig, BaseEntity } from '@/shared/models/base.model'
+import type { ModelConfig, BaseModel } from '@/shared/models/base.model'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { DatabaseMaintenanceService } from './database-maintenance.service'
 
@@ -206,7 +206,7 @@ export class SyncService {
     /**
      * Generic save method that handles SQLite persistence and sync queuing.
      */
-    static async save<T extends BaseEntity>(config: ModelConfig<T>, entity: T) {
+    static async save<T extends BaseModel>(config: ModelConfig<T>, entity: T) {
         const db = await getDatabase();
         const currentUserId = useAuthStore.getState().user?.id;
 
@@ -229,7 +229,7 @@ export class SyncService {
      * Generic soft-delete method that handles SQLite persistence and sync queuing.
      * Fetches full record first to satisfy RLS requirements.
      */
-    static async delete<T extends BaseEntity>(config: ModelConfig<T>, id: string) {
+    static async delete<T extends BaseModel>(config: ModelConfig<T>, id: string) {
         const db = await getDatabase();
         const updatedAt = new Date().toISOString();
 
