@@ -18,7 +18,7 @@ export const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
     const [year, month, day] = datePart.split('-').map(Number);
     const [hour, minute] = timeStr.split(':').map(Number);
     
-    // Create date in local time
+    // Create date in local time, then convert to UTC ISO
     const date = new Date(year, month - 1, day, hour, minute);
     return date.toISOString() as IsoDateTime;
 };
