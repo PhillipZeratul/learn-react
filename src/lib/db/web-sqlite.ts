@@ -59,29 +59,38 @@ class WebDatabaseService implements IDatabaseService {
         return new Promise((resolve, reject) => {
             this.pendingPromises.set(id, { resolve, reject });
             
-            try {
-                this.worker!.postMessage({ id, type, query, values });
-            } catch (err: any) {
-                // Handle "Disconnected port" or "InvalidStateError" which occurs after hibernation/suspension
-                if (err.message?.includes('disconnected port') || err.name === 'InvalidStateError') {
-                    console.warn("WebDatabaseService: Worker disconnected, attempting recovery...");
-                    this.worker = null;
-                    this.init().then(() => {
+            const attemptSend = async (retryCount = 0) => {
+                try {
+                    if (!this.worker) {
+                        await this.init();
+                    }
+                    this.worker!.postMessage({ id, type, query, values });
+                } catch (err: any) {
+                    const isDisconnected = 
+                        err.message?.toLowerCase().includes('disconnected port') || 
+                        err.message?.toLowerCase().includes('already been terminated') ||
+                        err.name === 'InvalidStateError';
+
+                    if (isDisconnected && retryCount < 2) {
+                        console.warn(`WebDatabaseService: Worker disconnected (attempt ${retryCount + 1}), attempting recovery...`, err);
+                        this.worker = null;
+                        this.initPromise = null; // Force a fresh init
                         try {
-                            this.worker!.postMessage({ id, type, query, values });
-                        } catch (retryErr) {
+                            await this.init();
+                            await attemptSend(retryCount + 1);
+                        } catch (initErr) {
                             this.pendingPromises.delete(id);
-                            reject(retryErr);
+                            reject(initErr);
                         }
-                    }).catch(innerErr => {
+                    } else {
+                        console.error("WebDatabaseService: Failed to send message to worker", err);
                         this.pendingPromises.delete(id);
-                        reject(innerErr);
-                    });
-                } else {
-                    this.pendingPromises.delete(id);
-                    reject(err);
+                        reject(err);
+                    }
                 }
-            }
+            };
+
+            attemptSend();
         });
     }
 

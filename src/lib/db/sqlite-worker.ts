@@ -29,7 +29,7 @@ self.onmessage = async (e: MessageEvent) => {
                 bind: values || []
             });
             const changes = db.changes();
-            self.postMessage({ id, success: true, changes });
+            safePostMessage({ id, success: true, changes });
         } else if (type === 'SELECT') {
             const rows: any[] = [];
             db.exec({
@@ -38,9 +38,17 @@ self.onmessage = async (e: MessageEvent) => {
                 rowMode: 'object',
                 callback: (row: any) => rows.push(row)
             });
-            self.postMessage({ id, success: true, rows });
+            safePostMessage({ id, success: true, rows });
         }
     } catch (err: any) {
-        self.postMessage({ id, success: false, error: err.message });
+        safePostMessage({ id, success: false, error: err.message });
     }
 };
+
+function safePostMessage(message: any) {
+    try {
+        self.postMessage(message);
+    } catch (err) {
+        console.error('Worker: Failed to post message (main thread likely disconnected)', err);
+    }
+}
