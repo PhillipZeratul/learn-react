@@ -4,54 +4,54 @@ import { type TimeTrackerCard } from "../models/time-tracker-card.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 
 interface TimeTrackerCardState {
-  items: TimeTrackerCard[]
-  isLoading: boolean
-  error: string | null
+    items: TimeTrackerCard[]
+    isLoading: boolean
+    error: string | null
 }
 
 interface TimeTrackerCardActions {
-  set: (items: TimeTrackerCard[]) => void
-  upsert: (item: TimeTrackerCard) => void
-  remove: (id: string) => void
-  reset: () => void
+    set: (items: TimeTrackerCard[]) => void
+    upsert: (item: TimeTrackerCard) => void
+    remove: (id: string) => void
+    reset: () => void
 }
 
 export const useTimeTrackerCardStore = create<
-  TimeTrackerCardState & TimeTrackerCardActions
+    TimeTrackerCardState & TimeTrackerCardActions
 >()(
-  immer((set) => ({
-    items: [],
-    isLoading: false,
-    error: null,
+    immer((set) => ({
+        items: [],
+        isLoading: false,
+        error: null,
 
-    set: (items) =>
-      set((state) => {
-        state.items = items
-      }),
+        set: (items) =>
+            set((state) => {
+                state.items = items
+            }),
 
-    upsert: (item) =>
-      set((state) => {
-        const index = state.items.findIndex((c) => c.id === item.id)
-        if (index !== -1) {
-          state.items[index] = item
-        } else if (!item.is_deleted) {
-          state.items.push(item)
-        }
-      }),
+        upsert: (item) =>
+            set((state) => {
+                const index = state.items.findIndex((c) => c.id === item.id)
+                if (index !== -1) {
+                    state.items[index] = item
+                } else if (!item.is_deleted) {
+                    state.items.push(item)
+                }
+            }),
 
-    remove: (id) =>
-      set((state) => {
-        const index = state.items.findIndex((c) => c.id === id)
-        if (index !== -1) {
-          state.items.splice(index, 1)
-        }
-      }),
+        remove: (id) =>
+            set((state) => {
+                const index = state.items.findIndex((c) => c.id === id)
+                if (index !== -1) {
+                    state.items.splice(index, 1)
+                }
+            }),
 
-    reset: () =>
-      set((state) => {
-        state.items = []
-        state.isLoading = false
-        state.error = null
-      }),
-  }))
+        reset: () =>
+            set((state) => {
+                state.items = []
+                state.isLoading = false
+                state.error = null
+            }),
+    }))
 )

@@ -6,25 +6,25 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Helper to check if Supabase is properly configured
 export const isSupabaseConfigured = Boolean(
-  supabaseUrl &&
-  supabasePublishableKey &&
-  supabaseUrl !== "your-project-url.supabase.co"
+    supabaseUrl &&
+    supabasePublishableKey &&
+    supabaseUrl !== "your-project-url.supabase.co"
 )
 
 export const supabase = isSupabaseConfigured
-  ? createClient<Database>(supabaseUrl, supabasePublishableKey)
-  : null
+    ? createClient<Database>(supabaseUrl, supabasePublishableKey)
+    : null
 
 if (isSupabaseConfigured) {
-  const isLocal =
-    supabaseUrl.includes("localhost") || supabaseUrl.includes("127.0.0.1")
-  console.log(
-    `Supabase initialized using ${isLocal ? "LOCAL" : "CLOUD"} instance: ${supabaseUrl}`
-  )
+    const isLocal =
+        supabaseUrl.includes("localhost") || supabaseUrl.includes("127.0.0.1")
+    console.log(
+        `Supabase initialized using ${isLocal ? "LOCAL" : "CLOUD"} instance: ${supabaseUrl}`
+    )
 } else {
-  console.warn(
-    "Supabase is not configured. Cloud sync will be disabled. Please check your .env file."
-  )
+    console.warn(
+        "Supabase is not configured. Cloud sync will be disabled. Please check your .env file."
+    )
 }
 
 export type SupabaseClient = typeof supabase
