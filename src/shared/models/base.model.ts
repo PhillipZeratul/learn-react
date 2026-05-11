@@ -54,18 +54,20 @@ export interface SyncAction<T = any> {
 }
 
 export interface ModelConfig<T extends BaseModel> {
-  tableName: string
-  createTableSql: string
-  saveSql: string
-  toSqlValues: (model: T) => any[]
-  fromDb: (row: any) => T
-  updateStore: (items: T[]) => void
-  findInStore: (id: string) => T | undefined
-  addToStore: (item: T) => void
-  updateInStore: (id: string, item: T) => void
-  deleteFromStore: (id: string) => void
+  tableName: string;
+  createTableSql: string;
+  saveSql: string;
+  toSqlValues: (model: T) => any[];
+  fromDb: (row: any) => T;
+
+  // Streamlined store management
+  setStore: (items: T[]) => void;
+  upsertInStore: (item: T) => void;
+  removeFromStore: (id: string) => void;
+
   /**
    * Optional SQL filter for loadAll.
+
    * If provided, it will be used in the WHERE clause after 'user_id = ?'.
    * Example: 'AND (is_deleted = 0 OR parent_routine_id IS NOT NULL)'
    */

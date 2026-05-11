@@ -61,18 +61,13 @@ export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState>
     ],
     fromDb: (row) =>
       createRoutineTimeTrackerState({ ...row, is_deleted: !!row.is_deleted }),
-    updateStore: (items) => {
+    setStore: (items) => {
       if (items.length > 0) {
         useRoutineTimeTrackerStateStore.getState().set(items[0])
       }
     },
-    findInStore: (id) => {
-      const state = useRoutineTimeTrackerStateStore.getState().state
-      return state?.id === id ? state : undefined
-    },
-    addToStore: (item) => useRoutineTimeTrackerStateStore.getState().set(item),
-    updateInStore: (_, item) =>
+    upsertInStore: (item) =>
       useRoutineTimeTrackerStateStore.getState().set(item),
-    deleteFromStore: (_) =>
+    removeFromStore: (_) =>
       useRoutineTimeTrackerStateStore.getState().set(null),
   }

@@ -168,23 +168,19 @@ export class SyncService {
               continue
             }
 
-            await db.execute(config.saveSql, config.toSqlValues(entity))
+            await db.execute(config.saveSql, config.toSqlValues(entity));
 
             // Update high-water mark
             if (!newHighWaterMark || entity.updated_at > newHighWaterMark) {
-              newHighWaterMark = entity.updated_at
+              newHighWaterMark = entity.updated_at;
             }
 
             // Update in-memory store
-            const existing = config.findInStore(entity.id)
-            if (existing) {
-              config.updateInStore(entity.id, entity)
-            } else if (!entity.is_deleted) {
-              config.addToStore(entity)
-            }
+            config.upsertInStore(entity);
           }
         }
       }
+
 
       // 2. Update last_synced_at with current high water mark
       if (newHighWaterMark) {
@@ -233,7 +229,7 @@ export class SyncService {
 
     // Defensive RLS: ensure user_id is injected
     if (!entity.user_id && currentUserId) {
-      ;(entity as any).user_id = currentUserId
+      ; (entity as any).user_id = currentUserId
     }
 
     await db.execute(config.saveSql, config.toSqlValues(entity))
@@ -302,14 +298,11 @@ export class SyncService {
         const rows = await db.select<any>(
           `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`,
           [currentUserId]
-        )
-        config.updateStore(rows.map((row) => config.fromDb(row)))
+        );
+        config.setStore(rows.map(row => config.fromDb(row)));
       }
     } catch (error) {
-      console.error(
-        "SyncService: Failed to hydrate stores from local DB:",
-        error
-      )
+      console.error("SyncService: Failed to hydrate stores from local DB:", error);
     }
   }
 
@@ -397,6 +390,8 @@ export class SyncService {
         new Set(queue.map((item: any) => item.table_name))
       )
 
+      let highWaterMark: string | null = null;
+
       for (const table of tables as string[]) {
         const tableActions = queue.filter(
           (item: any) => item.table_name === table
@@ -425,9 +420,33 @@ export class SyncService {
           console.log(
             `SyncService: Successfully synced ${tableActions.length} records to ${table}`
           )
+
+          // Track the latest updated_at to advance last_synced_at
+          for (const payload of payloads) {
+            if (payload.updated_at && (!highWaterMark || payload.updated_at > highWaterMark)) {
+              highWaterMark = payload.updated_at;
+            }
+          }
         } else {
           console.error(`SyncService: Bulk sync error for ${table}:`, error)
           break
+        }
+      }
+
+      // 2. Update last_synced_at with current high water mark if we pushed successfully
+      if (highWaterMark) {
+        const currentUserId = session.user.id;
+        // Fetch current meta to avoid reverting last_synced_at if pullDeltas advanced it further
+        const meta = await db.select<any>('SELECT last_synced_at FROM sync_metadata WHERE user_id = ?', [currentUserId]);
+        const existingLastSynced = meta.length > 0 ? meta[0].last_synced_at : null;
+
+        if (!existingLastSynced || highWaterMark > existingLastSynced) {
+          await db.execute(`
+            INSERT INTO sync_metadata (user_id, last_synced_at)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET last_synced_at = excluded.last_synced_at
+          `, [currentUserId, highWaterMark]);
+          console.log(`SyncService: Advanced last_synced_at to ${highWaterMark} after successful push.`);
         }
       }
     } catch (err) {
@@ -481,22 +500,14 @@ export class SyncService {
               return
             }
 
-            await db.execute(config.saveSql, config.toSqlValues(entity))
-
-            const existing = config.findInStore(entity.id)
-            if (existing) {
-              config.updateInStore(entity.id, entity)
-            } else {
-              config.addToStore(entity)
-            }
-          } else if (eventType === "DELETE") {
-            await db.execute(`DELETE FROM ${config.tableName} WHERE id = ?`, [
-              oldRecord.id,
-            ])
-            config.deleteFromStore(oldRecord.id)
+            await db.execute(config.saveSql, config.toSqlValues(entity));
+            config.upsertInStore(entity);
           }
-        }
-      )
-      .subscribe()
+          else if (eventType === 'DELETE') {
+            await db.execute(`DELETE FROM ${config.tableName} WHERE id = ?`, [oldRecord.id]);
+            config.removeFromStore(oldRecord.id);
+          }
+        })
+      .subscribe();
   }
 }

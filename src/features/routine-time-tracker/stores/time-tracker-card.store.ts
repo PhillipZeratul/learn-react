@@ -11,8 +11,7 @@ interface TimeTrackerCardState {
 
 interface TimeTrackerCardActions {
   set: (items: TimeTrackerCard[]) => void
-  add: (item: TimeTrackerCard) => void
-  update: (id: string, updates: Partial<TimeTrackerCard>) => void
+  upsert: (item: TimeTrackerCard) => void
   remove: (id: string) => void
   reset: () => void
 }
@@ -30,20 +29,13 @@ export const useTimeTrackerCardStore = create<
         state.items = items
       }),
 
-    add: (item) =>
+    upsert: (item) =>
       set((state) => {
-        state.items.push(item)
-      }),
-
-    update: (id, updates) =>
-      set((state) => {
-        const index = state.items.findIndex((c) => c.id === id)
+        const index = state.items.findIndex((c) => c.id === item.id)
         if (index !== -1) {
-          state.items[index] = {
-            ...state.items[index],
-            ...updates,
-            updated_at: new Date().toISOString() as IsoDateTime,
-          }
+          state.items[index] = item
+        } else if (!item.is_deleted) {
+          state.items.push(item)
         }
       }),
 
@@ -51,9 +43,7 @@ export const useTimeTrackerCardStore = create<
       set((state) => {
         const index = state.items.findIndex((c) => c.id === id)
         if (index !== -1) {
-          state.items[index].is_deleted = true
-          state.items[index].updated_at =
-            new Date().toISOString() as IsoDateTime
+          state.items.splice(index, 1)
         }
       }),
 

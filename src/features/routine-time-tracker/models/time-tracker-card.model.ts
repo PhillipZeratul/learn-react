@@ -74,11 +74,7 @@ export const timeTrackerCardConfig: ModelConfig<TimeTrackerCard> = {
   ],
   fromDb: (row) =>
     createTimeTrackerCard({ ...row, is_deleted: !!row.is_deleted }),
-  updateStore: (items) => useTimeTrackerCardStore.getState().set(items),
-  findInStore: (id) =>
-    useTimeTrackerCardStore.getState().items.find((c) => c.id === id),
-  addToStore: (item) => useTimeTrackerCardStore.getState().add(item),
-  updateInStore: (id, item) =>
-    useTimeTrackerCardStore.getState().update(id, item),
-  deleteFromStore: (id) => useTimeTrackerCardStore.getState().remove(id),
+  setStore: (items) => useTimeTrackerCardStore.getState().set(items),
+  upsertInStore: (item) => useTimeTrackerCardStore.getState().upsert(item),
+  removeFromStore: (id) => useTimeTrackerCardStore.getState().removeRecord(id),
 }

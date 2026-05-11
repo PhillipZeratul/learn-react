@@ -60,9 +60,7 @@ export const tagConfig: ModelConfig<Tag> = {
     tag.is_deleted ? 1 : 0,
   ],
   fromDb: (row) => createTag({ ...row, is_deleted: !!row.is_deleted }),
-  updateStore: (items) => useTagStore.getState().set(items),
-  findInStore: (id) => useTagStore.getState().items.find((t) => t.id === id),
-  addToStore: (item) => useTagStore.getState().add(item),
-  updateInStore: (id, item) => useTagStore.getState().update(id, item),
-  deleteFromStore: (id) => useTagStore.getState().remove(id),
+  setStore: (items) => useTagStore.getState().set(items),
+  upsertInStore: (item) => useTagStore.getState().upsert(item),
+  removeFromStore: (id) => useTagStore.getState().removeRecord(id),
 }

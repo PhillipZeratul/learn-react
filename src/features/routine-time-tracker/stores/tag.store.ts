@@ -11,8 +11,7 @@ interface TagState {
 
 interface TagActions {
   set: (items: Tag[]) => void
-  add: (item: Tag) => void
-  update: (id: string, updates: Partial<Tag>) => void
+  upsert: (item: Tag) => void
   remove: (id: string) => void
   reset: () => void
   ensureDefault: (saveFn: (tag: Tag) => Promise<void>) => Promise<void>
@@ -29,20 +28,13 @@ export const useTagStore = create<TagState & TagActions>()(
         state.items = items
       }),
 
-    add: (item) =>
+    upsert: (item) =>
       set((state) => {
-        state.items.push(item)
-      }),
-
-    update: (id, updates) =>
-      set((state) => {
-        const index = state.items.findIndex((t) => t.id === id)
+        const index = state.items.findIndex((t) => t.id === item.id)
         if (index !== -1) {
-          state.items[index] = {
-            ...state.items[index],
-            ...updates,
-            updated_at: new Date().toISOString() as IsoDateTime,
-          }
+          state.items[index] = item
+        } else if (!item.is_deleted) {
+          state.items.push(item)
         }
       }),
 
@@ -50,9 +42,7 @@ export const useTagStore = create<TagState & TagActions>()(
       set((state) => {
         const index = state.items.findIndex((t) => t.id === id)
         if (index !== -1) {
-          state.items[index].is_deleted = true
-          state.items[index].updated_at =
-            new Date().toISOString() as IsoDateTime
+          state.items.splice(index, 1)
         }
       }),
 
