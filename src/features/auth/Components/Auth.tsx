@@ -26,8 +26,8 @@ export const Auth = () => {
             if (isSignUp) {
                 alert("Check your email for the confirmation link!")
             }
-        } catch (err: any) {
-            setError(err.message || String(err))
+        } catch (err) {
+            setError(err instanceof Error ? err.message : String(err))
         } finally {
             setLoading(false)
         }

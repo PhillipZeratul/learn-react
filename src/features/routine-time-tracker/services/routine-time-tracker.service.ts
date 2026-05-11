@@ -41,7 +41,7 @@ export class RoutineTimeTrackerService {
         const currentUser = useAuthStore.getState().user
         if (!currentUser) return
 
-        let state = useRoutineTimeTrackerStateStore.getState().state
+        const state = useRoutineTimeTrackerStateStore.getState().state
 
         if (!state) {
             const newState = createRoutineTimeTrackerState()

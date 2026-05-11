@@ -1,7 +1,6 @@
 import { create } from "zustand"
 import { immer } from "zustand/middleware/immer"
 import { type RoutineCard } from "../models/routine-card.model"
-import type { IsoDateTime } from "@/shared/models/base.model"
 
 interface RoutineCardState {
     items: RoutineCard[]

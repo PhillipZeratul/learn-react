@@ -69,7 +69,7 @@ function Root() {
                 }
 
                 // Debug helper
-                ;(window as any).__DEBUG__ = {
+                const debugTools = {
                     clearAllData: () =>
                         DatabaseMaintenanceService.clearAllData(),
                     clearTableData: (tableName: string) =>
@@ -79,6 +79,8 @@ function Root() {
                     pullCloud: () => DatabaseMaintenanceService.pullFromCloud(),
                     syncNow: () => SyncService.triggerSync(true),
                 }
+                ;(window as unknown as Record<string, unknown>).__DEBUG__ =
+                    debugTools
 
                 console.log("Initialization complete")
             } catch (err) {
@@ -87,7 +89,7 @@ function Root() {
             }
         }
         init()
-    }, [])
+    }, [setSession, setUser])
 
     if (initError) {
         return (

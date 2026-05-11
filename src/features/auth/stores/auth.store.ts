@@ -1,14 +1,15 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { User } from "@supabase/supabase-js"
+import type { User, Session } from "@supabase/supabase-js"
 
 interface AuthState {
     user: User | null
-    session: any | null
+    session: Session | null
     isSyncing: boolean
     error: string | null
     setUser: (user: User | null) => void
-    setSession: (session: any | null) => void
+    setSession: (session: Session | null) => void
+
     setSyncing: (syncing: boolean) => void
     setError: (error: string | null) => void
     signOut: () => void
