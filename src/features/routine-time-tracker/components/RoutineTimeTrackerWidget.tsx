@@ -63,15 +63,13 @@ interface DragState {
 export default function RoutineTimeTrackerWidget() {
     const {
         items: allTimeTrackerCards,
-        add: addTimeTrackerCard,
-        update: updateTimeTrackerCard,
+        upsert: upsertTimeTrackerCard,
         remove: deleteTimeTrackerCard,
     } = useTimeTrackerCardStore()
 
     const {
         items: allRoutineCards,
-        add: addRoutineCard,
-        update: updateRoutineCard,
+        upsert: upsertRoutineCard,
         remove: deleteRoutineCard,
     } = useRoutineCardStore()
 
@@ -199,7 +197,7 @@ export default function RoutineTimeTrackerWidget() {
                 end_at: timeToISO(endTime),
             }
 
-            updateTimeTrackerCard(task.id, updatedCard)
+            upsertTimeTrackerCard(updatedCard)
             SyncService.save(timeTrackerCardConfig, updatedCard).catch(
                 console.error
             )
@@ -209,7 +207,7 @@ export default function RoutineTimeTrackerWidget() {
     }, [
         activeTimeTrackerId,
         allTimeTrackerCards,
-        updateTimeTrackerCard,
+        upsertTimeTrackerCard,
         setActiveTimeTrackerId,
     ])
 
@@ -426,13 +424,10 @@ export default function RoutineTimeTrackerWidget() {
                     return
                 }
 
-                updateRoutineCard(routine.id, routine)
+                upsertRoutineCard(routine)
                 await SyncService.save(routineCardConfig, routine)
             } else {
-                updateTimeTrackerCard(
-                    finalCard.id,
-                    finalCard as TimeTrackerCard
-                )
+                upsertTimeTrackerCard(finalCard as TimeTrackerCard)
                 await SyncService.save(
                     timeTrackerCardConfig,
                     finalCard as TimeTrackerCard
@@ -637,14 +632,7 @@ export default function RoutineTimeTrackerWidget() {
                         return undefined
                     })()}
                     onSave={async (updated) => {
-                        const exists = allRoutineCards.some(
-                            (c) => c.id === updated.id
-                        )
-                        if (exists) {
-                            updateRoutineCard(updated.id, updated)
-                        } else {
-                            addRoutineCard(updated)
-                        }
+                        upsertRoutineCard(updated)
                         await SyncService.save(routineCardConfig, updated)
                         setEditingState(null)
                     }}
@@ -667,13 +655,9 @@ export default function RoutineTimeTrackerWidget() {
                         const exists = allTimeTrackerCards.some(
                             (c) => c.id === updated.id
                         )
-                        if (exists) {
-                            updateTimeTrackerCard(updated.id, updated)
-                        } else {
-                            addTimeTrackerCard(updated)
-                            if (!activeTimeTrackerId && isCurrentDay) {
-                                setActiveTimeTrackerId(updated.id)
-                            }
+                        upsertTimeTrackerCard(updated)
+                        if (!exists && !activeTimeTrackerId && isCurrentDay) {
+                            setActiveTimeTrackerId(updated.id)
                         }
                         await SyncService.save(timeTrackerCardConfig, updated)
                         setEditingState(null)
@@ -710,13 +694,13 @@ export default function RoutineTimeTrackerWidget() {
                                 updated_at:
                                     new Date().toISOString() as IsoDateTime,
                             }
-                            addRoutineCard(detachedInstance)
+                            upsertRoutineCard(detachedInstance)
                             await SyncService.save(
                                 routineCardConfig,
                                 detachedInstance
                             )
                         } else {
-                            updateRoutineCard(routine.id, routine)
+                            upsertRoutineCard(routine)
                             await SyncService.save(routineCardConfig, routine)
                         }
                         setConfirmDragState(null)
@@ -744,7 +728,7 @@ export default function RoutineTimeTrackerWidget() {
                                 updated_at:
                                     new Date().toISOString() as IsoDateTime,
                             }
-                            updateRoutineCard(master.id, updatedMaster)
+                            upsertRoutineCard(updatedMaster)
                             await SyncService.save(
                                 routineCardConfig,
                                 updatedMaster
