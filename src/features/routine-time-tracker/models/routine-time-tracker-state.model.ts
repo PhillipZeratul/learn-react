@@ -33,10 +33,10 @@ export const createRoutineTimeTrackerState = (
 }
 
 export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState> =
-    {
-        tableName: "routine_time_tracker_states",
-        upsertOnConflict: "user_id",
-        createTableSql: `
+{
+    tableName: "routine_time_tracker_states",
+    upsertOnConflict: "user_id",
+    createTableSql: `
         CREATE TABLE IF NOT EXISTS routine_time_tracker_states (
             id TEXT PRIMARY KEY,
             user_id TEXT UNIQUE,
@@ -46,31 +46,31 @@ export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState>
             is_deleted INTEGER DEFAULT 0
         )
     `,
-        saveSql: `
+    saveSql: `
         INSERT OR REPLACE INTO routine_time_tracker_states 
         (id, user_id, active_time_tracker_id, created_at, updated_at, is_deleted)
         VALUES (?, ?, ?, ?, ?, ?)
     `,
-        toSqlValues: (state) => [
-            state.id,
-            state.user_id,
-            state.active_time_tracker_id,
-            state.created_at,
-            state.updated_at,
-            state.is_deleted ? 1 : 0,
-        ],
-        fromDb: (row) =>
-            createRoutineTimeTrackerState({
-                ...row,
-                is_deleted: !!row.is_deleted,
-            }),
-        setStore: (items) => {
-            if (items.length > 0) {
-                useRoutineTimeTrackerStateStore.getState().set(items[0])
-            }
-        },
-        upsertInStore: (item) =>
-            useRoutineTimeTrackerStateStore.getState().set(item),
-        removeFromStore: (_) =>
-            useRoutineTimeTrackerStateStore.getState().set(null),
-    }
+    toSqlValues: (state) => [
+        state.id,
+        state.user_id,
+        state.active_time_tracker_id,
+        state.created_at,
+        state.updated_at,
+        state.is_deleted ? 1 : 0,
+    ],
+    fromDb: (row) =>
+        createRoutineTimeTrackerState({
+            ...row,
+            is_deleted: !!row.is_deleted,
+        }),
+    setStore: (items) => {
+        if (items.length > 0) {
+            useRoutineTimeTrackerStateStore.getState().set(items[0])
+        }
+    },
+    upsertInStore: (item) =>
+        useRoutineTimeTrackerStateStore.getState().set(item),
+    removeFromStore: (_) =>
+        useRoutineTimeTrackerStateStore.getState().set(null),
+}

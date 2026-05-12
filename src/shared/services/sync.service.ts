@@ -234,7 +234,7 @@ export class SyncService {
 
         // Defensive RLS: ensure user_id is injected
         if (!entity.user_id && currentUserId) {
-            ;(entity as any).user_id = currentUserId
+            ; (entity as any).user_id = currentUserId
         }
 
         await db.execute(config.saveSql, config.toSqlValues(entity))
