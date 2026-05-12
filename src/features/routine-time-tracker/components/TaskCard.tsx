@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react"
 import { effect } from "@preact/signals-react"
 import {
-    isoToMinutes,
+    getVisualBoundsForDate,
     isoToTime,
     timeToISO,
     PIXELS_PER_MINUTE,
@@ -19,6 +19,7 @@ interface TaskCardProps {
     getTagColor: (tagId: string) => string
     onPress: (e: React.MouseEvent | React.TouchEvent) => void
     onClick: () => void
+    currentDate: Date
     layout?: { left: string; width: string }
 }
 
@@ -28,14 +29,15 @@ export const TaskCard = ({
     getTagColor,
     onPress,
     onClick,
+    currentDate,
     layout,
 }: TaskCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null)
     const titleRef = useRef<HTMLDivElement>(null)
     const timeRef = useRef<HTMLDivElement>(null)
 
-    const startMin = isoToMinutes(card.start_at)
-    const duration = isoToMinutes(card.end_at) - startMin
+    const { startMin, duration, isStartClamped, isEndClamped } =
+        getVisualBoundsForDate(card.start_at, card.end_at, currentDate)
     const height = duration * PIXELS_PER_MINUTE
 
     // GPU-Accelerated Positioning
@@ -106,11 +108,13 @@ export const TaskCard = ({
         return () => dispose()
     }, [isDragging])
 
-    const baseClasses = `task-card absolute rounded-xl border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`
+    const baseClasses = `task-card absolute border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`
     const idleClasses =
         "transition-all hover:shadow-md cursor-pointer shadow-sm"
     const draggingClasses =
         "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm"
+
+    const roundedClasses = `${!isStartClamped ? "rounded-t-xl" : ""} ${!isEndClamped ? "rounded-b-xl" : ""}`
 
     const showTitle = height >= SHOW_CARD_TITLE_HEIGHT
     const showTime = height >= SHOW_CARD_TIME_HEIGHT
@@ -121,7 +125,9 @@ export const TaskCard = ({
     return (
         <div
             ref={cardRef}
-            className={`${baseClasses} ${isDragging ? draggingClasses : idleClasses}`}
+            className={`${baseClasses} ${roundedClasses} ${isDragging ? draggingClasses : idleClasses}`}
+            data-start-clamped={isStartClamped}
+            data-end-clamped={isEndClamped}
             style={{
                 top: 0,
                 transform: isDragging ? undefined : defaultTransform,

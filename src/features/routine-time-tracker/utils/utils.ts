@@ -38,3 +38,49 @@ export const isTouchEvent = (
 ): e is React.TouchEvent => {
     return "touches" in e
 }
+
+export const isCardOverlappingDate = (
+    startIso: string,
+    endIso: string,
+    currentDate: Date
+): boolean => {
+    const start = new Date(startIso).getTime()
+    const end = new Date(endIso).getTime()
+
+    const startOfDay = new Date(currentDate)
+    startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date(currentDate)
+    endOfDay.setHours(23, 59, 59, 999)
+
+    return start <= endOfDay.getTime() && end > startOfDay.getTime()
+}
+
+export const getVisualBoundsForDate = (
+    startIso: string,
+    endIso: string,
+    currentDate: Date
+) => {
+    const start = new Date(startIso).getTime()
+    const end = new Date(endIso).getTime()
+
+    const startOfDayDate = new Date(currentDate)
+    startOfDayDate.setHours(0, 0, 0, 0)
+    const startOfDay = startOfDayDate.getTime()
+
+    const endOfDayDate = new Date(currentDate)
+    endOfDayDate.setHours(23, 59, 59, 999)
+    const endOfDay = endOfDayDate.getTime()
+
+    const visualStart = Math.max(start, startOfDay)
+    const visualEnd = Math.min(end, endOfDay + 1) // +1 to treat end as 24:00 if needed
+
+    const startMin = Math.floor((visualStart - startOfDay) / 60000)
+    const duration = Math.ceil((visualEnd - visualStart) / 60000)
+
+    return {
+        startMin,
+        duration,
+        isStartClamped: start < startOfDay,
+        isEndClamped: end > endOfDay,
+    }
+}

@@ -1,12 +1,17 @@
-import { isoToMinutes } from "./utils"
+import { getVisualBoundsForDate } from "./utils"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 
-export function calculateLayout(cards: (RoutineCard | TimeTrackerCard)[]) {
+export function calculateLayout(
+    cards: (RoutineCard | TimeTrackerCard)[],
+    currentDate: Date
+) {
     const sorted = [...cards].sort((a, b) => {
-        const startDiff = isoToMinutes(a.start_at) - isoToMinutes(b.start_at)
+        const aBounds = getVisualBoundsForDate(a.start_at, a.end_at, currentDate)
+        const bBounds = getVisualBoundsForDate(b.start_at, b.end_at, currentDate)
+        const startDiff = aBounds.startMin - bBounds.startMin
         if (startDiff !== 0) return startDiff
-        return isoToMinutes(b.end_at) - isoToMinutes(a.end_at)
+        return bBounds.duration - aBounds.duration
     })
 
     const clusters: (RoutineCard | TimeTrackerCard)[][] = []
@@ -14,8 +19,12 @@ export function calculateLayout(cards: (RoutineCard | TimeTrackerCard)[]) {
     let clusterEndMin = -1
 
     for (const card of sorted) {
-        const startMin = isoToMinutes(card.start_at)
-        const endMin = isoToMinutes(card.end_at)
+        const { startMin, duration } = getVisualBoundsForDate(
+            card.start_at,
+            card.end_at,
+            currentDate
+        )
+        const endMin = startMin + duration
 
         if (startMin >= clusterEndMin) {
             if (currentCluster.length > 0) {
@@ -40,11 +49,21 @@ export function calculateLayout(cards: (RoutineCard | TimeTrackerCard)[]) {
 
         for (const card of cluster) {
             let placed = false
-            const startMin = isoToMinutes(card.start_at)
+            const { startMin } = getVisualBoundsForDate(
+                card.start_at,
+                card.end_at,
+                currentDate
+            )
             for (let i = 0; i < clusterCols.length; i++) {
                 const col = clusterCols[i]
                 const lastCard = col[col.length - 1]
-                if (isoToMinutes(lastCard.end_at) <= startMin) {
+                const { startMin: lastStart, duration: lastDur } =
+                    getVisualBoundsForDate(
+                        lastCard.start_at,
+                        lastCard.end_at,
+                        currentDate
+                    )
+                if (lastStart + lastDur <= startMin) {
                     col.push(card)
                     layoutMap.set(card.id, { column: i })
                     placed = true

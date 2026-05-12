@@ -5,6 +5,8 @@ import {
     isoToMinutes,
     isTouchEvent,
     formatLocalDate,
+    isCardOverlappingDate,
+    getVisualBoundsForDate,
 } from "./utils"
 
 describe("routine-time-tracker utils", () => {
@@ -63,15 +65,81 @@ describe("routine-time-tracker utils", () => {
         })
     })
 
-    describe("isTouchEvent", () => {
-        it("should return true for touch events", () => {
-            const event = { touches: [] } as unknown as React.TouchEvent
-            expect(isTouchEvent(event)).toBe(true)
+    describe("isCardOverlappingDate", () => {
+        const today = new Date(2026, 4, 12) // May 12
+
+        it("should return true for card fully within day", () => {
+            const start = new Date(2026, 4, 12, 10, 0).toISOString()
+            const end = new Date(2026, 4, 12, 11, 0).toISOString()
+            expect(isCardOverlappingDate(start, end, today)).toBe(true)
         })
 
-        it("should return false for mouse events", () => {
-            const event = {} as unknown as React.MouseEvent
-            expect(isTouchEvent(event)).toBe(false)
+        it("should return true for card starting yesterday and ending today", () => {
+            const start = new Date(2026, 4, 11, 23, 0).toISOString()
+            const end = new Date(2026, 4, 12, 1, 0).toISOString()
+            expect(isCardOverlappingDate(start, end, today)).toBe(true)
+        })
+
+        it("should return true for card starting today and ending tomorrow", () => {
+            const start = new Date(2026, 4, 12, 23, 0).toISOString()
+            const end = new Date(2026, 4, 13, 1, 0).toISOString()
+            expect(isCardOverlappingDate(start, end, today)).toBe(true)
+        })
+
+        it("should return false for card ending exactly at midnight today", () => {
+            const start = new Date(2026, 4, 11, 22, 0).toISOString()
+            const end = new Date(2026, 4, 12, 0, 0).toISOString()
+            expect(isCardOverlappingDate(start, end, today)).toBe(false)
+        })
+
+        it("should return true for card starting exactly at midnight today", () => {
+            const start = new Date(2026, 4, 12, 0, 0).toISOString()
+            const end = new Date(2026, 4, 12, 1, 0).toISOString()
+            expect(isCardOverlappingDate(start, end, today)).toBe(true)
+        })
+    })
+
+    describe("getVisualBoundsForDate", () => {
+        const today = new Date(2026, 4, 12)
+
+        it("should return full bounds for single-day card", () => {
+            const start = new Date(2026, 4, 12, 10, 0).toISOString()
+            const end = new Date(2026, 4, 12, 11, 0).toISOString()
+            const bounds = getVisualBoundsForDate(start, end, today)
+            expect(bounds.startMin).toBe(600) // 10:00
+            expect(bounds.duration).toBe(60)
+            expect(bounds.isStartClamped).toBe(false)
+            expect(bounds.isEndClamped).toBe(false)
+        })
+
+        it("should clamp start for yesterday-to-today card", () => {
+            const start = new Date(2026, 4, 11, 23, 0).toISOString()
+            const end = new Date(2026, 4, 12, 1, 0).toISOString()
+            const bounds = getVisualBoundsForDate(start, end, today)
+            expect(bounds.startMin).toBe(0)
+            expect(bounds.duration).toBe(60) // 00:00 to 01:00
+            expect(bounds.isStartClamped).toBe(true)
+            expect(bounds.isEndClamped).toBe(false)
+        })
+
+        it("should clamp end for today-to-tomorrow card", () => {
+            const start = new Date(2026, 4, 12, 23, 0).toISOString()
+            const end = new Date(2026, 4, 13, 1, 0).toISOString()
+            const bounds = getVisualBoundsForDate(start, end, today)
+            expect(bounds.startMin).toBe(1380) // 23:00
+            expect(bounds.duration).toBe(60) // 23:00 to 24:00
+            expect(bounds.isStartClamped).toBe(false)
+            expect(bounds.isEndClamped).toBe(true)
+        })
+
+        it("should clamp both for multi-day card", () => {
+            const start = new Date(2026, 4, 11, 23, 0).toISOString()
+            const end = new Date(2026, 4, 13, 1, 0).toISOString()
+            const bounds = getVisualBoundsForDate(start, end, today)
+            expect(bounds.startMin).toBe(0)
+            expect(bounds.duration).toBe(1440)
+            expect(bounds.isStartClamped).toBe(true)
+            expect(bounds.isEndClamped).toBe(true)
         })
     })
 })

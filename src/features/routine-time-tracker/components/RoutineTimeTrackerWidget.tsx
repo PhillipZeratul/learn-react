@@ -21,6 +21,7 @@ import {
     isoToMinutes,
     isTouchEvent,
     formatLocalDate,
+    isCardOverlappingDate,
     PIXELS_PER_MINUTE,
     TOP_MARGIN,
     BOTTOM_MARGIN,
@@ -86,9 +87,10 @@ export default function RoutineTimeTrackerWidget() {
         new Date().toDateString() === currentDate.toDateString()
 
     const currentDateTimeTrackerCards = useMemo(() => {
-        const dateStr = formatLocalDate(currentDate)
         return allTimeTrackerCards.filter(
-            (c) => !c.is_deleted && c.start_at.startsWith(dateStr)
+            (c) =>
+                !c.is_deleted &&
+                isCardOverlappingDate(c.start_at, c.end_at, currentDate)
         )
     }, [allTimeTrackerCards, currentDate])
 
@@ -98,9 +100,10 @@ export default function RoutineTimeTrackerWidget() {
 
     const routineLayoutMap = useMemo(() => {
         return calculateLayout(
-            currentDateRoutineCards.filter((t) => !t.is_deleted)
+            currentDateRoutineCards.filter((t) => !t.is_deleted),
+            currentDate
         )
-    }, [currentDateRoutineCards])
+    }, [currentDateRoutineCards, currentDate])
 
     const [editingState, setEditingState] = useState<EditingState>(null)
     const [dragState, setDragState] = useState<DragState | null>(null)
@@ -330,13 +333,24 @@ export default function RoutineTimeTrackerWidget() {
         const relativeY = clientY - rect.top
         const height = rect.height
 
+        const isStartClamped = cardElement.dataset.startClamped === "true"
+        const isEndClamped = cardElement.dataset.endClamped === "true"
+
         let mode: DragMode = "center"
         if (relativeY < height * 0.25) mode = "top"
         else if (relativeY > height * 0.75) mode = "bottom"
 
+        // Prevent dragging clamped edges
+        if (mode === "top" && isStartClamped) return
+        if (mode === "bottom" && isEndClamped) return
+        if (mode === "center" && (isStartClamped || isEndClamped)) return
+
         longPressTimer.current = setTimeout(() => {
-            const startMin = isoToMinutes(task.start_at)
-            const duration = isoToMinutes(task.end_at) - startMin
+            const { startMin, duration } = getVisualBoundsForDate(
+                task.start_at,
+                task.end_at,
+                currentDate
+            )
 
             batch(() => {
                 dragTopSignal.value = startMin * PIXELS_PER_MINUTE + TOP_MARGIN
@@ -347,7 +361,7 @@ export default function RoutineTimeTrackerWidget() {
                 type,
                 card: task,
                 initialStartMin: startMin,
-                initialEndMin: isoToMinutes(task.end_at),
+                initialEndMin: startMin + duration,
                 initialMouseY: clientY,
                 mode,
             })
@@ -399,17 +413,22 @@ export default function RoutineTimeTrackerWidget() {
                         5
                 ) * 5
 
-            const dateStr = formatLocalDate(new Date(dragState.card.start_at))
-            const finalCard = {
-                ...dragState.card,
-                start_at: timeToISO(
-                    `${String(Math.floor(finalStartMin / 60)).padStart(2, "0")}:${String(finalStartMin % 60).padStart(2, "0")}`,
-                    dateStr
-                ),
-                end_at: timeToISO(
-                    `${String(Math.floor(finalEndMin / 60)).padStart(2, "0")}:${String(finalEndMin % 60).padStart(2, "0")}`,
-                    dateStr
-                ),
+            const formatMin = (m: number) => {
+                const h = Math.floor(m / 60)
+                const mm = m % 60
+                return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`
+            }
+
+            const dateStr = formatLocalDate(currentDate)
+            const finalCard = { ...dragState.card }
+
+            if (dragState.mode === "top") {
+                finalCard.start_at = timeToISO(formatMin(finalStartMin), dateStr)
+            } else if (dragState.mode === "bottom") {
+                finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
+            } else if (dragState.mode === "center") {
+                finalCard.start_at = timeToISO(formatMin(finalStartMin), dateStr)
+                finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
             }
 
             // If it's a recurring routine, show confirmation dialog
@@ -558,6 +577,7 @@ export default function RoutineTimeTrackerWidget() {
                                 <TaskCard
                                     key={task.id}
                                     card={task}
+                                    currentDate={currentDate}
                                     isDragging={dragState?.card.id === task.id}
                                     getTagColor={getTagColor}
                                     onPress={(e) =>
@@ -591,6 +611,7 @@ export default function RoutineTimeTrackerWidget() {
                                     <TaskCard
                                         key={task.id}
                                         card={task}
+                                        currentDate={currentDate}
                                         isDragging={
                                             dragState?.card.id === task.id
                                         }

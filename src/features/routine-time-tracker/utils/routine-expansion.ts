@@ -1,6 +1,7 @@
 import { RRule } from "rrule"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
+import { isCardOverlappingDate } from "./utils"
 
 /**
  * Calculates the end_at time based on the original duration and a new start time.
@@ -51,8 +52,7 @@ export const getRoutineInstancesForDate = (
 
     for (const master of masterCards) {
         if (!master.rrule) {
-            const startAt = new Date(master.start_at)
-            if (startAt >= startOfDay && startAt <= endOfDay) {
+            if (isCardOverlappingDate(master.start_at, master.end_at, date)) {
                 instances.push(master)
             }
             continue
@@ -67,12 +67,25 @@ export const getRoutineInstancesForDate = (
 
             const rule = new RRule(options)
 
-            const occurrences = rule.between(startOfDay, endOfDay, true)
+            // Search back 24 hours to catch instances that started yesterday but overlap today
+            const searchStart = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000)
+            const occurrences = rule.between(searchStart, endOfDay, true)
 
             for (const occurrenceDate of occurrences) {
                 const occurrenceIso =
                     occurrenceDate.toISOString() as IsoDateTime
                 const occurrenceTime = occurrenceDate.getTime()
+                
+                const expandedEndAt = calculateEndAt(
+                    master.start_at,
+                    master.end_at,
+                    occurrenceIso
+                )
+
+                // Only include if this instance overlaps today
+                if (!isCardOverlappingDate(occurrenceIso, expandedEndAt, date)) {
+                    continue
+                }
 
                 const override = exceptions.find((e) => {
                     if (
@@ -96,19 +109,14 @@ export const getRoutineInstancesForDate = (
                         ...master,
                         id: `${master.id}_${occurrenceIso}` as any,
                         start_at: occurrenceIso,
-                        end_at: calculateEndAt(
-                            master.start_at,
-                            master.end_at,
-                            occurrenceIso
-                        ),
+                        end_at: expandedEndAt,
                         _isVirtual: true,
                     })
                 }
             }
         } catch (error) {
             console.error(`Error expanding routine card ${master.id}:`, error)
-            const startAt = new Date(master.start_at)
-            if (startAt >= startOfDay && startAt <= endOfDay) {
+            if (isCardOverlappingDate(master.start_at, master.end_at, date)) {
                 instances.push(master)
             }
         }
