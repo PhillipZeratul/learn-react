@@ -56,15 +56,30 @@ export const RoutineEditor = memo(
             }
 
             if (scope === "all" && masterTask) {
-                // Apply changes to the master record, effectively shifting it to the new date/time
-                const newMasterStartAt = timeToISO(startAt, startDate)
-                const newMasterEndAt = timeToISO(endAt, endDate)
+                // Apply changes to the master record while preserving its original start date
+                const masterStartDatePart = formatLocalDate(
+                    new Date(masterTask.start_at)
+                )
+
+                // Calculate day difference in the editor's current state to preserve multi-day span
+                const [y1, m1, d1] = startDate.split("-").map(Number)
+                const [y2, m2, d2] = endDate.split("-").map(Number)
+                const dStart = new Date(y1, m1 - 1, d1)
+                const dEnd = new Date(y2, m2 - 1, d2)
+                const dayDiff = Math.round(
+                    (dEnd.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24)
+                )
+
+                const [my, mm, md] = masterStartDatePart.split("-").map(Number)
+                const masterEndDate = new Date(my, mm - 1, md)
+                masterEndDate.setDate(masterEndDate.getDate() + dayDiff)
+                const masterEndDatePart = formatLocalDate(masterEndDate)
 
                 await onSave({
                     ...masterTask,
                     title: finalTitle,
-                    start_at: newMasterStartAt,
-                    end_at: newMasterEndAt,
+                    start_at: timeToISO(startAt, masterStartDatePart),
+                    end_at: timeToISO(endAt, masterEndDatePart),
                     tag_id: tagId as TagId,
                     rrule: rrule || undefined,
                     updated_at: new Date().toISOString() as IsoDateTime,

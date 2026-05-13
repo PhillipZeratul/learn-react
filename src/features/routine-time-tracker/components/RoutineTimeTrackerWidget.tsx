@@ -18,10 +18,10 @@ import { SyncService } from "@/shared/services/sync.service"
 import {
     timeToISO,
     isoToTime,
-    isoToMinutes,
     isTouchEvent,
     formatLocalDate,
     isCardOverlappingDate,
+    getVisualBoundsForDate,
     PIXELS_PER_MINUTE,
     TOP_MARGIN,
     BOTTOM_MARGIN,
@@ -427,8 +427,14 @@ export default function RoutineTimeTrackerWidget() {
             } else if (dragState.mode === "bottom") {
                 finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
             } else if (dragState.mode === "center") {
-                finalCard.start_at = timeToISO(formatMin(finalStartMin), dateStr)
-                finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
+                const durationMs =
+                    new Date(dragState.card.end_at).getTime() -
+                    new Date(dragState.card.start_at).getTime()
+                const newStart = timeToISO(formatMin(finalStartMin), dateStr)
+                finalCard.start_at = newStart
+                finalCard.end_at = new Date(
+                    new Date(newStart).getTime() + durationMs
+                ).toISOString() as IsoDateTime
             }
 
             // If it's a recurring routine, show confirmation dialog
@@ -743,16 +749,52 @@ export default function RoutineTimeTrackerWidget() {
                         )
 
                         if (master) {
-                            const datePart = formatLocalDate(
+                            const masterStartDatePart = formatLocalDate(
                                 new Date(master.start_at)
                             )
                             const timePartStart = isoToTime(routine.start_at)
                             const timePartEnd = isoToTime(routine.end_at)
 
+                            // Calculate day difference in the instance to preserve multi-day span
+                            // Use local-time-safe calculation
+                            const instanceStartDatePart = formatLocalDate(
+                                new Date(routine.start_at)
+                            )
+                            const instanceEndDatePart = formatLocalDate(
+                                new Date(routine.end_at)
+                            )
+
+                            const [y1, m1, d1] = instanceStartDatePart
+                                .split("-")
+                                .map(Number)
+                            const [y2, m2, d2] = instanceEndDatePart
+                                .split("-")
+                                .map(Number)
+
+                            const dStart = new Date(y1, m1 - 1, d1)
+                            const dEnd = new Date(y2, m2 - 1, d2)
+                            const dayDiff = Math.round(
+                                (dEnd.getTime() - dStart.getTime()) /
+                                    (1000 * 60 * 60 * 24)
+                            )
+
+                            const [my, mm, md] = masterStartDatePart
+                                .split("-")
+                                .map(Number)
+                            const masterEndDate = new Date(my, mm - 1, md)
+                            masterEndDate.setDate(masterEndDate.getDate() + dayDiff)
+                            const masterEndDatePart = formatLocalDate(masterEndDate)
+
                             const updatedMaster = {
                                 ...master,
-                                start_at: timeToISO(timePartStart, datePart),
-                                end_at: timeToISO(timePartEnd, datePart),
+                                start_at: timeToISO(
+                                    timePartStart,
+                                    masterStartDatePart
+                                ),
+                                end_at: timeToISO(
+                                    timePartEnd,
+                                    masterEndDatePart
+                                ),
                                 updated_at:
                                     new Date().toISOString() as IsoDateTime,
                             }

@@ -82,11 +82,11 @@ describe("RoutineTimeTrackerService", () => {
         })
     })
 
-    describe("initialize", () => {
+    describe("ensureStateRecord", () => {
         it("should create a new state record if none exists", async () => {
             mockStateStore.state = null
 
-            await RoutineTimeTrackerService.initialize()
+            await (RoutineTimeTrackerService as any).ensureStateRecord()
 
             expect(mockStateStore.set).toHaveBeenCalled()
             expect(SyncService.save).toHaveBeenCalledWith(
@@ -105,7 +105,7 @@ describe("RoutineTimeTrackerService", () => {
                 active_time_tracker_id: "tracker-1",
             }
 
-            await RoutineTimeTrackerService.initialize()
+            await (RoutineTimeTrackerService as any).ensureStateRecord()
 
             expect(mockStateStore.set).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -135,7 +135,7 @@ describe("RoutineTimeTrackerService", () => {
                 active_time_tracker_id: "tracker-1",
             }
 
-            await RoutineTimeTrackerService.initialize()
+            await (RoutineTimeTrackerService as any).ensureStateRecord()
 
             expect(mockStateStore.set).toHaveBeenCalledWith(
                 expect.objectContaining({

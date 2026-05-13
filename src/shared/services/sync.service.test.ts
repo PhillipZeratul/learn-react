@@ -27,7 +27,7 @@ const mockConfig: any = {
     saveSql: "INSERT INTO test_table",
     toSqlValues: (entity: any) => [entity.id, entity.name],
     fromDb: (row: any) => row,
-    updateStore: vi.fn(),
+    setStore: vi.fn(),
 }
 
 describe("SyncService", () => {
@@ -113,7 +113,7 @@ describe("SyncService", () => {
                 ["user-123"]
             )
 
-            expect(mockConfig.updateStore).toHaveBeenCalledWith(mockRows)
+            expect(mockConfig.setStore).toHaveBeenCalledWith(mockRows)
         })
 
         it("should respect custom loadFilter", async () => {
@@ -144,7 +144,7 @@ describe("SyncService", () => {
                 ["user-123"]
             )
 
-            expect(filteredConfig.updateStore).toHaveBeenCalledWith(mockRows)
+            expect(filteredConfig.setStore).toHaveBeenCalledWith(mockRows)
         })
     })
 })
