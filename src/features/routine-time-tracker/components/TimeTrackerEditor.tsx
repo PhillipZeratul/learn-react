@@ -19,7 +19,13 @@ export const TimeTrackerEditor = ({
 }: TimeTrackerEditorProps) => {
     const { items: tags } = useTagStore()
     const [title, setTitle] = useState(task.title)
+    const [startDate, setStartDate] = useState(
+        formatLocalDate(new Date(task.start_at))
+    )
     const [startAt, setStartAt] = useState(isoToTime(task.start_at))
+    const [endDate, setEndDate] = useState(
+        formatLocalDate(new Date(task.end_at))
+    )
     const [endAt, setEndAt] = useState(isoToTime(task.end_at))
     const [tagId, setTagId] = useState(task.tag_id)
 
@@ -32,13 +38,11 @@ export const TimeTrackerEditor = ({
             finalTitle = selectedTag?.name || "Time Tracker"
         }
 
-        const datePart = formatLocalDate(new Date(task.start_at))
-
         await onSave({
             ...task,
             title: finalTitle,
-            start_at: timeToISO(startAt, datePart),
-            end_at: timeToISO(endAt, datePart),
+            start_at: timeToISO(startAt, startDate),
+            end_at: timeToISO(endAt, endDate),
             tag_id: tagId || DEFAULT_TAG_ID,
         })
     }
@@ -66,28 +70,56 @@ export const TimeTrackerEditor = ({
                             autoFocus
                         />
                     </div>
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="mb-1 block text-xs text-muted-foreground">
-                                Start
-                            </label>
-                            <input
-                                type="time"
-                                value={startAt}
-                                onChange={(e) => setStartAt(e.target.value)}
-                                className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                            />
+                    <div className="space-y-4">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="mb-1 block text-xs text-muted-foreground">
+                                    Start Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) =>
+                                        setStartDate(e.target.value)
+                                    }
+                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="mb-1 block text-xs text-muted-foreground">
+                                    Start Time
+                                </label>
+                                <input
+                                    type="time"
+                                    value={startAt}
+                                    onChange={(e) => setStartAt(e.target.value)}
+                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                />
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <label className="mb-1 block text-xs text-muted-foreground">
-                                End
-                            </label>
-                            <input
-                                type="time"
-                                value={endAt}
-                                onChange={(e) => setEndAt(e.target.value)}
-                                className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                            />
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="mb-1 block text-xs text-muted-foreground">
+                                    End Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="mb-1 block text-xs text-muted-foreground">
+                                    End Time
+                                </label>
+                                <input
+                                    type="time"
+                                    value={endAt}
+                                    onChange={(e) => setEndAt(e.target.value)}
+                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                />
+                            </div>
                         </div>
                     </div>
                     <div>

@@ -27,7 +27,13 @@ export const RoutineEditor = memo(
     ({ task, masterTask, onSave, onDelete, onCancel }: RoutineEditorProps) => {
         const { items: tags } = useTagStore()
         const [title, setTitle] = useState(task.title)
+        const [startDate, setStartDate] = useState(
+            formatLocalDate(new Date(task.start_at))
+        )
         const [startAt, setStartAt] = useState(isoToTime(task.start_at))
+        const [endDate, setEndDate] = useState(
+            formatLocalDate(new Date(task.end_at))
+        )
         const [endAt, setEndAt] = useState(isoToTime(task.end_at))
         const [tagId, setTagId] = useState(task.tag_id)
         const [rrule, setRrule] = useState(
@@ -50,12 +56,9 @@ export const RoutineEditor = memo(
             }
 
             if (scope === "all" && masterTask) {
-                // Apply changes to the master record
-                const masterDatePart = formatLocalDate(
-                    new Date(masterTask.start_at)
-                )
-                const newMasterStartAt = timeToISO(startAt, masterDatePart)
-                const newMasterEndAt = timeToISO(endAt, masterDatePart)
+                // Apply changes to the master record, effectively shifting it to the new date/time
+                const newMasterStartAt = timeToISO(startAt, startDate)
+                const newMasterEndAt = timeToISO(endAt, endDate)
 
                 await onSave({
                     ...masterTask,
@@ -70,9 +73,8 @@ export const RoutineEditor = memo(
             }
 
             // Default: Scope 'one' (Exception logic)
-            const datePart = formatLocalDate(new Date(task.start_at))
-            const newStartAt = timeToISO(startAt, datePart)
-            const newEndAt = timeToISO(endAt, datePart)
+            const newStartAt = timeToISO(startAt, startDate)
+            const newEndAt = timeToISO(endAt, endDate)
 
             if (task._isVirtual) {
                 const masterId = task.id.split("_")[0] as RoutineCardId
@@ -174,28 +176,62 @@ export const RoutineEditor = memo(
                                 autoFocus
                             />
                         </div>
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="mb-1 block text-xs text-muted-foreground">
-                                    Start
-                                </label>
-                                <input
-                                    type="time"
-                                    value={startAt}
-                                    onChange={(e) => setStartAt(e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                />
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        Start Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) =>
+                                            setStartDate(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        Start Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={startAt}
+                                        onChange={(e) =>
+                                            setStartAt(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="mb-1 block text-xs text-muted-foreground">
-                                    End
-                                </label>
-                                <input
-                                    type="time"
-                                    value={endAt}
-                                    onChange={(e) => setEndAt(e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                />
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        End Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) =>
+                                            setEndDate(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        End Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={endAt}
+                                        onChange={(e) =>
+                                            setEndAt(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
                             </div>
                         </div>
 
