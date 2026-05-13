@@ -437,10 +437,18 @@ export class SyncService {
                 const tableActions = queue.filter(
                     (item: any) => item.table_name === table
                 )
-                const payloads = tableActions.map((item: any) =>
-                    JSON.parse(item.payload)
-                )
+                
+                // Deduplicate payloads by ID, keeping only the LATEST action for each record.
+                // This prevents "ON CONFLICT DO UPDATE command cannot affect row a second time" in Supabase.
+                const uniquePayloadMap = new Map<string, any>()
                 const actionIds = tableActions.map((item: any) => item.id)
+                
+                for (const action of tableActions) {
+                    const payload = JSON.parse(action.payload)
+                    uniquePayloadMap.set(payload.id, payload)
+                }
+                
+                const payloads = Array.from(uniquePayloadMap.values())
 
                 const config = this.configs.find((c) => c.tableName === table)
                 const { error } = await supabase
