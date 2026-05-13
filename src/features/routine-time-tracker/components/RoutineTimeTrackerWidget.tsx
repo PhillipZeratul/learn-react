@@ -83,16 +83,33 @@ export default function RoutineTimeTrackerWidget() {
         RoutineTimeTrackerService.setActiveTrackerId(id)
 
     const [currentDate, setCurrentDate] = useState(new Date())
-    const isCurrentDay =
-        new Date().toDateString() === currentDate.toDateString()
+    const [now, setNow] = useState(new Date())
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000)
+        return () => clearInterval(timer)
+    }, [])
+
+    const isCurrentDay = now.toDateString() === currentDate.toDateString()
 
     const currentDateTimeTrackerCards = useMemo(() => {
-        return allTimeTrackerCards.filter(
-            (c) =>
-                !c.is_deleted &&
-                isCardOverlappingDate(c.start_at, c.end_at, currentDate)
-        )
-    }, [allTimeTrackerCards, currentDate])
+        return allTimeTrackerCards
+            .filter(
+                (c) =>
+                    !c.is_deleted &&
+                    isCardOverlappingDate(c.start_at, c.end_at, currentDate)
+            )
+            .map((c) => {
+                // For the active task on the current day, virtualize end_at to 'now' for real-time UI updates
+                if (c.id === activeTimeTrackerId && isCurrentDay) {
+                    return {
+                        ...c,
+                        end_at: now.toISOString() as IsoDateTime,
+                    }
+                }
+                return c
+            })
+    }, [allTimeTrackerCards, currentDate, activeTimeTrackerId, isCurrentDay, now])
 
     const currentDateRoutineCards = useMemo(() => {
         return getRoutineInstancesForDate(allRoutineCards, currentDate)
@@ -181,44 +198,37 @@ export default function RoutineTimeTrackerWidget() {
     useEffect(() => {
         if (!activeTimeTrackerId) return
 
-        const task = allTimeTrackerCards.find(
-            (c) => c.id === activeTimeTrackerId
-        )
-        if (!task) {
-            // Task not found locally. It might still be syncing from the cloud or another device.
-            // We wait for it to arrive. The effect will re-run when allTimeTrackerCards updates.
-            return
-        }
+        const updateActiveTask = () => {
+            const task = useTimeTrackerCardStore.getState().items.find(
+                (c) => c.id === activeTimeTrackerId
+            )
+            if (!task || task.is_deleted) return
 
-        if (task.is_deleted) {
-            setActiveTimeTrackerId(null)
-            return
-        }
-
-        const timer = setInterval(() => {
-            const now = new Date()
-            const endHour = now.getHours()
-            const endMin = now.getMinutes()
-            const endTime = `${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}`
-
+            const currentTime = new Date()
             const updatedCard = {
                 ...task,
-                end_at: timeToISO(endTime),
+                end_at: currentTime.toISOString() as IsoDateTime,
+                updated_at: currentTime.toISOString() as IsoDateTime,
             }
 
             upsertTimeTrackerCard(updatedCard)
             SyncService.save(timeTrackerCardConfig, updatedCard).catch(
                 console.error
             )
-        }, 60000)
+        }
 
-        return () => clearInterval(timer)
-    }, [
-        activeTimeTrackerId,
-        allTimeTrackerCards,
-        upsertTimeTrackerCard,
-        setActiveTimeTrackerId,
-    ])
+        // Persistence timer: update DB every 30 seconds
+        const timer = setInterval(updateActiveTask, 30000)
+
+        // Immediate sync on focus/mount
+        updateActiveTask()
+        window.addEventListener("focus", updateActiveTask)
+
+        return () => {
+            clearInterval(timer)
+            window.removeEventListener("focus", updateActiveTask)
+        }
+    }, [activeTimeTrackerId, upsertTimeTrackerCard])
 
     const handleTimeTrackerAction = () => {
         if (activeTimeTrackerId) {
@@ -603,6 +613,7 @@ export default function RoutineTimeTrackerWidget() {
                                 activeTimeTrackerId={activeTimeTrackerId}
                                 onAction={handleTimeTrackerAction}
                                 isCurrentDay={isCurrentDay}
+                                currentTime={now}
                             />
                         </div>
 
@@ -639,7 +650,10 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
                     </div>
 
-                    <CurrentTimeIndicator isCurrentDay={isCurrentDay} />
+                    <CurrentTimeIndicator
+                        isCurrentDay={isCurrentDay}
+                        currentTime={now}
+                    />
                 </div>
             </div>
 

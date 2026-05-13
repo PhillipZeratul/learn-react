@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from "react"
 import { PIXELS_PER_MINUTE, TOP_MARGIN } from "../utils/utils"
 
 export const CurrentTimeIndicator = ({
     isCurrentDay,
+    currentTime,
 }: {
     isCurrentDay: boolean
+    currentTime: Date
 }) => {
-    const [currentTime, setCurrentTime] = useState(new Date())
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-        return () => clearInterval(timer)
-    }, [])
-
     if (!isCurrentDay) return null
 
     const currentMinutes =

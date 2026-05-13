@@ -1,24 +1,18 @@
-import { useState, useEffect } from "react"
 import { PIXELS_PER_MINUTE, TOP_MARGIN } from "../utils/utils"
 
 interface TimeTrackerActionButtonProps {
     activeTimeTrackerId: string | null
     onAction: () => void
     isCurrentDay: boolean
+    currentTime: Date
 }
 
 export const TimeTrackerActionButton = ({
     activeTimeTrackerId,
     onAction,
     isCurrentDay,
+    currentTime,
 }: TimeTrackerActionButtonProps) => {
-    const [currentTime, setCurrentTime] = useState(new Date())
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-        return () => clearInterval(timer)
-    }, [])
-
     if (!isCurrentDay) return null
 
     const currentMinutes =

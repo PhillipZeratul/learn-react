@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react"
+import React, { useRef, useEffect, memo } from "react"
 import { effect } from "@preact/signals-react"
 import {
     getVisualBoundsForDate,
@@ -23,7 +23,7 @@ interface TaskCardProps {
     layout?: { left: string; width: string }
 }
 
-export const TaskCard = ({
+export const TaskCard = memo(({
     card,
     isDragging,
     getTagColor,
@@ -90,8 +90,8 @@ export const TaskCard = ({
                     const currentEndMin =
                         Math.round(
                             (top + dragHeight - TOP_MARGIN) /
-                                PIXELS_PER_MINUTE /
-                                5
+                            PIXELS_PER_MINUTE /
+                            5
                         ) * 5
 
                     const formatMin = (m: number) => {
@@ -139,8 +139,8 @@ export const TaskCard = ({
                 paddingBottom: isDragging
                     ? undefined
                     : showTime
-                      ? "0.5rem"
-                      : "0",
+                        ? "0.5rem"
+                        : "0",
                 // Hardware Hinting: dedicated GPU layer for the card
                 willChange: "transform, height, opacity",
             }}
@@ -172,3 +172,4 @@ export const TaskCard = ({
         </div>
     )
 }
+)
