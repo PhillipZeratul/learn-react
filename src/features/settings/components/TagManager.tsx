@@ -35,10 +35,19 @@ import type { TagId } from "@/features/routine-time-tracker/models/routine-time-
 interface SortableTagItemProps {
     tag: Tag
     onDelete: (id: string) => void
+    onUpdateName: (id: string, newName: string) => void
     depth?: number
 }
 
-const SortableTagItem = ({ tag, onDelete, depth = 0 }: SortableTagItemProps) => {
+const SortableTagItem = ({
+    tag,
+    onDelete,
+    onUpdateName,
+    depth = 0,
+}: SortableTagItemProps) => {
+    const [isEditing, setIsEditing] = useState(false)
+    const [editName, setEditName] = useState(tag.name)
+
     const {
         attributes,
         listeners,
@@ -46,7 +55,7 @@ const SortableTagItem = ({ tag, onDelete, depth = 0 }: SortableTagItemProps) => 
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: tag.id })
+    } = useSortable({ id: tag.id, disabled: isEditing })
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -55,25 +64,58 @@ const SortableTagItem = ({ tag, onDelete, depth = 0 }: SortableTagItemProps) => 
         zIndex: isDragging ? 50 : undefined,
     }
 
+    const handleSave = () => {
+        if (editName.trim() && editName !== tag.name) {
+            onUpdateName(tag.id, editName)
+        } else {
+            setEditName(tag.name)
+        }
+        setIsEditing(false)
+    }
+
     return (
         <div
             ref={setNodeRef}
             style={style}
             className={`group flex items-center justify-between rounded-lg border bg-card p-2 shadow-sm ${isDragging ? "opacity-50 ring-2 ring-primary" : ""}`}
         >
-            <div className="flex items-center gap-3">
+            <div className="flex flex-1 items-center gap-3">
                 <button
                     {...attributes}
                     {...listeners}
                     className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+                    disabled={isEditing}
                 >
                     <HugeiconsIcon icon={DragDropIcon} size={16} />
                 </button>
                 <div
-                    className="h-4 w-4 rounded-full"
+                    className="h-4 w-4 shrink-0 rounded-full"
                     style={{ backgroundColor: tag.color }}
                 />
-                <span className="text-sm font-medium">{tag.name}</span>
+                {isEditing ? (
+                    <input
+                        autoFocus
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onBlur={handleSave}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSave()
+                            if (e.key === "Escape") {
+                                setEditName(tag.name)
+                                setIsEditing(false)
+                            }
+                        }}
+                        className="h-7 w-full rounded border border-input bg-background px-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                ) : (
+                    <span
+                        className="cursor-text text-sm font-medium hover:underline"
+                        onClick={() => setIsEditing(true)}
+                    >
+                        {tag.name}
+                    </span>
+                )}
             </div>
             <Button
                 variant="ghost"
@@ -158,6 +200,19 @@ export const TagManager = () => {
         if (confirmed) {
             deleteTag(id)
             await SyncService.delete(tagConfig, id)
+        }
+    }
+
+    const handleUpdateName = async (id: string, newName: string) => {
+        const original = tags.find((t) => t.id === id)
+        if (original) {
+            const updated = {
+                ...original,
+                name: newName,
+                updated_at: new Date().toISOString() as any,
+            }
+            upsertTag(updated)
+            await SyncService.save(tagConfig, updated)
         }
     }
 
@@ -262,6 +317,7 @@ export const TagManager = () => {
                                         tag={tag}
                                         depth={tag.depth}
                                         onDelete={handleDeleteTag}
+                                        onUpdateName={handleUpdateName}
                                     />
                                 ))}
                             </div>
