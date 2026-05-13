@@ -129,10 +129,29 @@ const SortableTagItem = ({
     )
 }
 
+const PRESET_COLORS = [
+    "#787878", // Default Grey
+    "#ef4444", // Red
+    "#f97316", // Orange
+    "#f59e0b", // Amber
+    "#eab308", // Yellow
+    "#84cc16", // Lime
+    "#22c55e", // Green
+    "#10b981", // Emerald
+    "#06b6d4", // Cyan
+    "#3b82f6", // Blue
+    "#6366f1", // Indigo
+    "#8b5cf6", // Violet
+    "#a855f7", // Purple
+    "#d946ef", // Fuchsia
+    "#ec4899", // Pink
+    "#f43f5e", // Rose
+]
+
 export const TagManager = () => {
     const { items: tags, upsert: upsertTag, remove: deleteTag } = useTagStore()
     const [newTagName, setNewTagName] = useState("")
-    const [newTagColor, setNewTagColor] = useState("#787878")
+    const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0])
     const [parentId, setParentId] = useState<TagId | "">("")
 
     const sensors = useSensors(
@@ -262,13 +281,37 @@ export const TagManager = () => {
                             placeholder="Tag name..."
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         />
-                        <input
-                            type="color"
-                            value={newTagColor}
-                            onChange={(e) => setNewTagColor(e.target.value)}
-                            className="h-10 w-12 cursor-pointer rounded-md border border-input bg-background p-1"
-                        />
+                        <div className="relative h-10 w-10 shrink-0">
+                            <input
+                                type="color"
+                                value={newTagColor}
+                                onChange={(e) => setNewTagColor(e.target.value)}
+                                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                            />
+                            <div
+                                className="h-full w-full rounded-md border border-input shadow-sm"
+                                style={{ backgroundColor: newTagColor }}
+                            />
+                        </div>
                     </div>
+
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                            Color Palette
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {PRESET_COLORS.map((color) => (
+                                <button
+                                    key={color}
+                                    onClick={() => setNewTagColor(color)}
+                                    className={`h-6 w-6 rounded-full border-2 transition-all hover:scale-110 ${newTagColor === color ? "border-primary scale-110 shadow-sm" : "border-transparent"}`}
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="flex gap-2">
                         <select
                             value={parentId}
@@ -284,9 +327,9 @@ export const TagManager = () => {
                                 </option>
                             ))}
                         </select>
-                        <Button onClick={handleAddTag} className="shrink-0">
+                        <Button onClick={handleAddTag} className="shrink-0 px-4">
                             <HugeiconsIcon icon={PlusSignIcon} size={18} />
-                            Add Tag
+                            Add
                         </Button>
                     </div>
                 </div>
