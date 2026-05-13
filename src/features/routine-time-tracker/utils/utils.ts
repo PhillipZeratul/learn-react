@@ -84,3 +84,86 @@ export const getVisualBoundsForDate = (
         isEndClamped: end > endOfDay,
     }
 }
+
+/**
+ * HSV Color Utilities
+ */
+
+export interface HSV {
+    h: number // 0-360
+    s: number // 0-100
+    v: number // 0-100
+}
+
+export const hexToHsv = (hex: string): HSV => {
+    // Remove # if present
+    hex = hex.replace(/^#/, "")
+
+    // Parse RGB
+    const r = parseInt(hex.substring(0, 2), 16) / 255
+    const g = parseInt(hex.substring(2, 4), 16) / 255
+    const b = parseInt(hex.substring(4, 6), 16) / 255
+
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const delta = max - min
+
+    let h = 0
+    if (delta !== 0) {
+        if (max === r) h = ((g - b) / delta) % 6
+        else if (max === g) h = (b - r) / delta + 2
+        else h = (r - g) / delta + 4
+        h = Math.round(h * 60)
+        if (h < 0) h += 360
+    }
+
+    const s = max === 0 ? 0 : Math.round((delta / max) * 100)
+    const v = Math.round(max * 100)
+
+    return { h, s, v }
+}
+
+export const hsvToHex = ({ h, s, v }: HSV): string => {
+    s /= 100
+    v /= 100
+
+    const c = v * s
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+    const m = v - c
+
+    let r = 0,
+        g = 0,
+        b = 0
+    if (h >= 0 && h < 60) {
+        r = c
+        g = x
+        b = 0
+    } else if (h >= 60 && h < 120) {
+        r = x
+        g = c
+        b = 0
+    } else if (h >= 120 && h < 180) {
+        r = 0
+        g = c
+        b = x
+    } else if (h >= 180 && h < 240) {
+        r = 0
+        g = x
+        b = c
+    } else if (h >= 240 && h < 300) {
+        r = x
+        g = 0
+        b = c
+    } else if (h >= 300 && h <= 360) {
+        r = c
+        g = 0
+        b = x
+    }
+
+    const toHex = (n: number) => {
+        const hex = Math.round((n + m) * 255).toString(16)
+        return hex.length === 1 ? "0" + hex : hex
+    }
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
