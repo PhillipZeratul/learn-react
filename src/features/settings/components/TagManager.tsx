@@ -79,7 +79,7 @@ const SortableTagItem = ({ tag, onDelete, depth = 0 }: SortableTagItemProps) => 
                 variant="ghost"
                 size="icon"
                 onClick={() => onDelete(tag.id)}
-                className="h-8 w-8 text-destructive opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
                 <HugeiconsIcon icon={Delete02Icon} size={16} />
             </Button>
@@ -148,9 +148,17 @@ export const TagManager = () => {
     }
 
     const handleDeleteTag = async (id: string) => {
-        // Warning: should probably check if there are children or usages
-        deleteTag(id)
-        await SyncService.delete(tagConfig, id)
+        const tag = tags.find((t) => t.id === id)
+        if (!tag) return
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete the tag "${tag.name}"? This action cannot be undone.`
+        )
+
+        if (confirmed) {
+            deleteTag(id)
+            await SyncService.delete(tagConfig, id)
+        }
     }
 
     const handleDragEnd = async (event: DragEndEvent) => {
