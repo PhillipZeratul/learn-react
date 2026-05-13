@@ -27,7 +27,7 @@ export const createTag = (data: Partial<Tag> = {}): Tag => {
         id: data.id || (uuidv4() as TagId),
         name: data.name || "Default",
         color: data.color || "#787878",
-        parent_id: data.parent_id,
+        parent_id: data.parent_id || undefined,
         sort_order: data.sort_order ?? 0,
         user_id: data.user_id || currentUserId,
         created_at: data.created_at || now,
@@ -70,5 +70,5 @@ export const tagConfig: ModelConfig<Tag> = {
     fromDb: (row) => createTag({ ...row, is_deleted: !!row.is_deleted }),
     setStore: (items) => useTagStore.getState().set(items),
     upsertInStore: (item) => useTagStore.getState().upsert(item),
-    removeFromStore: (id) => useTagStore.getState().removeRecord(id),
+    removeFromStore: (id) => useTagStore.getState().remove(id),
 }

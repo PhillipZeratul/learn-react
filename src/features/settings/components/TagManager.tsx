@@ -110,7 +110,7 @@ export const TagManager = () => {
         const result: (Tag & { depth: number })[] = []
         const processTags = (pId: TagId | undefined, depth: number) => {
             const siblings = activeTags
-                .filter((t) => t.parent_id === pId)
+                .filter((t) => (t.parent_id || undefined) === pId)
                 .sort((a, b) => a.sort_order - b.sort_order)
 
             siblings.forEach((sibling) => {
@@ -175,7 +175,11 @@ export const TagManager = () => {
         for (const tag of updatedTags) {
             const original = tags.find((t) => t.id === tag.id)
             if (original && original.sort_order !== tag.sort_order) {
-                const updated = { ...original, sort_order: tag.sort_order }
+                const updated = {
+                    ...original,
+                    sort_order: tag.sort_order,
+                    updated_at: new Date().toISOString() as any,
+                }
                 upsertTag(updated)
                 await SyncService.save(tagConfig, updated)
             }

@@ -25,7 +25,8 @@ export class SyncService {
 
     /**
      * Generic table initialization for all registered models.
-     * Ensures feature-specific tables exist before migrations or hydration.
+     * Ensures feature-specific tables exist and have the correct schema.
+     * Automatically adds missing columns to existing tables.
      */
     static async initializeTables() {
         const db = await getDatabase()
@@ -33,7 +34,31 @@ export class SyncService {
             `SyncService: Initializing tables for ${this.configs.length} registered models...`
         )
         for (const config of this.configs) {
+            // 1. Ensure table exists
             await db.execute(config.createTableSql)
+
+            // 2. Schema Migration: Add missing columns
+            try {
+                // Get current columns
+                const tableInfo = await db.select<any>(`PRAGMA table_info(${config.tableName})`)
+                const existingColumns = tableInfo.map((col: any) => col.name)
+
+                // Extract column definitions from createTableSql
+                // Simple regex to match "column_name TYPE" patterns
+                const columnMatches = config.createTableSql.matchAll(/\b(\w+)\s+(TEXT|INTEGER|REAL|BLOB)\b/gi)
+                
+                for (const match of columnMatches) {
+                    const columnName = match[1]
+                    const columnType = match[2]
+
+                    if (!existingColumns.includes(columnName)) {
+                        console.log(`SyncService: Adding missing column '${columnName}' to '${config.tableName}'`)
+                        await db.execute(`ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`)
+                    }
+                }
+            } catch (err) {
+                console.error(`SyncService: Schema migration failed for ${config.tableName}:`, err)
+            }
         }
     }
 
