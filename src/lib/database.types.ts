@@ -1,177 +1,226 @@
 export type Json =
-    | string
-    | number
-    | boolean
-    | null
-    | { [key: string]: Json | undefined }
-    | Json[]
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
-    graphql_public: {
-        Tables: {
-            [_ in never]: never
-        }
-        Views: {
-            [_ in never]: never
-        }
-        Functions: {
-            graphql: {
-                Args: {
-                    extensions?: Json
-                    operationName?: string
-                    query?: string
-                    variables?: Json
-                }
-                Returns: Json
-            }
-        }
-        Enums: {
-            [_ in never]: never
-        }
-        CompositeTypes: {
-            [_ in never]: never
-        }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
     }
-    public: {
-        Tables: {
-            routine_cards: {
-                Row: {
-                    created_at: string
-                    description: string
-                    end_at: string
-                    id: string
-                    is_deleted: boolean
-                    start_at: string
-                    tag_id: string
-                    title: string
-                    updated_at: string
-                    user_id: string
-                }
-                Insert: {
-                    created_at?: string
-                    description?: string
-                    end_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    start_at?: string
-                    tag_id: string
-                    title?: string
-                    updated_at?: string
-                    user_id?: string
-                }
-                Update: {
-                    created_at?: string
-                    description?: string
-                    end_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    start_at?: string
-                    tag_id?: string
-                    title?: string
-                    updated_at?: string
-                    user_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "routines_tag_id_fkey"
-                        columns: ["tag_id"]
-                        isOneToOne: false
-                        referencedRelation: "routine_time_tracker_tags"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            routine_time_tracker_tags: {
-                Row: {
-                    color: string
-                    created_at: string
-                    id: string
-                    is_deleted: boolean
-                    name: string
-                    updated_at: string
-                    user_id: string | null
-                }
-                Insert: {
-                    color?: string
-                    created_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    name?: string
-                    updated_at?: string
-                    user_id?: string | null
-                }
-                Update: {
-                    color?: string
-                    created_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    name?: string
-                    updated_at?: string
-                    user_id?: string | null
-                }
-                Relationships: []
-            }
-            time_tracker_cards: {
-                Row: {
-                    created_at: string
-                    description: string
-                    end_at: string
-                    id: string
-                    is_deleted: boolean
-                    start_at: string
-                    tag_id: string
-                    title: string
-                    updated_at: string
-                    user_id: string
-                }
-                Insert: {
-                    created_at?: string
-                    description?: string
-                    end_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    start_at?: string
-                    tag_id: string
-                    title?: string
-                    updated_at?: string
-                    user_id?: string
-                }
-                Update: {
-                    created_at?: string
-                    description?: string
-                    end_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    start_at?: string
-                    tag_id?: string
-                    title?: string
-                    updated_at?: string
-                    user_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "time_tracker_cards_tag_id_fkey"
-                        columns: ["tag_id"]
-                        isOneToOne: false
-                        referencedRelation: "routine_time_tracker_tags"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-        }
-        Views: {
-            [_ in never]: never
-        }
-        Functions: {
-            [_ in never]: never
-        }
-        Enums: {
-            [_ in never]: never
-        }
-        CompositeTypes: {
-            [_ in never]: never
-        }
+    Views: {
+      [_ in never]: never
     }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  public: {
+    Tables: {
+      routine_cards: {
+        Row: {
+          created_at: string
+          description: string
+          end_at: string
+          id: string
+          is_deleted: boolean
+          original_recurrence_date: string | null
+          parent_routine_id: string | null
+          rrule: string | null
+          start_at: string
+          tag_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          end_at?: string
+          id?: string
+          is_deleted?: boolean
+          original_recurrence_date?: string | null
+          parent_routine_id?: string | null
+          rrule?: string | null
+          start_at?: string
+          tag_id: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          end_at?: string
+          id?: string
+          is_deleted?: boolean
+          original_recurrence_date?: string | null
+          parent_routine_id?: string | null
+          rrule?: string | null
+          start_at?: string
+          tag_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_cards_parent_routine_id_fkey"
+            columns: ["parent_routine_id"]
+            isOneToOne: false
+            referencedRelation: "routine_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routines_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "routine_time_tracker_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routine_time_tracker_states: {
+        Row: {
+          active_time_tracker_id: string | null
+          created_at: string
+          id: string
+          is_deleted: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_time_tracker_id?: string | null
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          active_time_tracker_id?: string | null
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      routine_time_tracker_tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          name: string
+          parent_id: string | null
+          sort_order: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          name?: string
+          parent_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          name?: string
+          parent_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      time_tracker_cards: {
+        Row: {
+          created_at: string
+          description: string
+          end_at: string
+          id: string
+          is_deleted: boolean
+          start_at: string
+          tag_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          end_at?: string
+          id?: string
+          is_deleted?: boolean
+          start_at?: string
+          tag_id: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          end_at?: string
+          id?: string
+          is_deleted?: boolean
+          start_at?: string
+          tag_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_tracker_cards_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "routine_time_tracker_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
@@ -179,123 +228,124 @@ type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-    DefaultSchemaTableNameOrOptions extends
-        | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-        | { schema: keyof DatabaseWithoutInternals },
-    TableName extends DefaultSchemaTableNameOrOptions extends {
-        schema: keyof DatabaseWithoutInternals
-    }
-        ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-              DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-        : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
-    ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-          DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-          Row: infer R
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
       }
-        ? R
-        : never
-    : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-            DefaultSchema["Views"])
-      ? (DefaultSchema["Tables"] &
-            DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-            Row: infer R
-        }
-          ? R
-          : never
+      ? R
       : never
+    : never
 
 export type TablesInsert<
-    DefaultSchemaTableNameOrOptions extends
-        | keyof DefaultSchema["Tables"]
-        | { schema: keyof DatabaseWithoutInternals },
-    TableName extends DefaultSchemaTableNameOrOptions extends {
-        schema: keyof DatabaseWithoutInternals
-    }
-        ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-        : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
-    ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-          Insert: infer I
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
       }
-        ? I
-        : never
-    : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-      ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-            Insert: infer I
-        }
-          ? I
-          : never
+      ? I
       : never
+    : never
 
 export type TablesUpdate<
-    DefaultSchemaTableNameOrOptions extends
-        | keyof DefaultSchema["Tables"]
-        | { schema: keyof DatabaseWithoutInternals },
-    TableName extends DefaultSchemaTableNameOrOptions extends {
-        schema: keyof DatabaseWithoutInternals
-    }
-        ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-        : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
-    ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-          Update: infer U
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
       }
-        ? U
-        : never
-    : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-      ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-            Update: infer U
-        }
-          ? U
-          : never
+      ? U
       : never
+    : never
 
 export type Enums<
-    DefaultSchemaEnumNameOrOptions extends
-        | keyof DefaultSchema["Enums"]
-        | { schema: keyof DatabaseWithoutInternals },
-    EnumName extends DefaultSchemaEnumNameOrOptions extends {
-        schema: keyof DatabaseWithoutInternals
-    }
-        ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-        : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
-    ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-    : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-      ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-      : never
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
-    PublicCompositeTypeNameOrOptions extends
-        | keyof DefaultSchema["CompositeTypes"]
-        | { schema: keyof DatabaseWithoutInternals },
-    CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-        schema: keyof DatabaseWithoutInternals
-    }
-        ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-        : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
-    ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-    : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-      ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-      : never
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
-    graphql_public: {
-        Enums: {},
-    },
-    public: {
-        Enums: {},
-    },
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
 } as const
+

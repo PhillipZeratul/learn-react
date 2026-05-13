@@ -15,6 +15,8 @@ export interface Tag extends BaseModel {
     id: TagId
     name: string
     color: string
+    parent_id?: TagId
+    sort_order: number
 }
 
 export const createTag = (data: Partial<Tag> = {}): Tag => {
@@ -25,6 +27,8 @@ export const createTag = (data: Partial<Tag> = {}): Tag => {
         id: data.id || (uuidv4() as TagId),
         name: data.name || "Default",
         color: data.color || "#787878",
+        parent_id: data.parent_id,
+        sort_order: data.sort_order ?? 0,
         user_id: data.user_id || currentUserId,
         created_at: data.created_at || now,
         updated_at: data.updated_at || now,
@@ -39,6 +43,8 @@ export const tagConfig: ModelConfig<Tag> = {
             id TEXT PRIMARY KEY,
             name TEXT,
             color TEXT,
+            parent_id TEXT,
+            sort_order REAL DEFAULT 0,
             user_id TEXT,
             created_at TEXT,
             updated_at TEXT,
@@ -47,13 +53,15 @@ export const tagConfig: ModelConfig<Tag> = {
     `,
     saveSql: `
         INSERT OR REPLACE INTO routine_time_tracker_tags 
-        (id, name, color, user_id, created_at, updated_at, is_deleted)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (id, name, color, parent_id, sort_order, user_id, created_at, updated_at, is_deleted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     toSqlValues: (tag) => [
         tag.id,
         tag.name,
         tag.color,
+        tag.parent_id || null,
+        tag.sort_order,
         tag.user_id,
         tag.created_at,
         tag.updated_at,
