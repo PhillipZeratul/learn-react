@@ -31,7 +31,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import type { TagId } from "@/features/routine-time-tracker/models/routine-time-tracker.model"
-import { hexToHsv, hsvToHex, type HSV } from "@/features/routine-time-tracker/utils/utils"
+import { hexToHsv, hsvToHex } from "@/features/routine-time-tracker/utils/utils"
 
 interface SortableTagItemProps {
     tag: Tag
@@ -284,32 +284,85 @@ export const TagManager = () => {
     }
 
     const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event
-        if (!over || active.id === over.id) return
+        const { active, over, delta } = event
+        if (!over) return
 
-        const oldIndex = sortedTags.findIndex((t) => t.id === active.id)
-        const newIndex = sortedTags.findIndex((t) => t.id === over.id)
+        const activeId = active.id as string
+        const overId = over.id as string
 
-        const newSortedTags = arrayMove(sortedTags, oldIndex, newIndex)
-        const activeTag = tags.find((t) => t.id === active.id)
+        const activeTag = sortedTags.find(t => t.id === activeId)
         if (!activeTag) return
 
-        // Simple sort order update: recalculate for simplicity in this MVP
-        // In a real app, you'd use fractional indexing or only update the moved item
-        const updatedTags = newSortedTags.map((t, idx) => ({
-            ...t,
-            sort_order: idx,
-        }))
+        // Prevent dropping onto descendants
+        const getDescendants = (parentId: string): string[] => {
+            const children = activeTags.filter(t => t.parent_id === parentId).map(t => t.id)
+            return [...children, ...children.flatMap(getDescendants)]
+        }
+        const descendantIds = getDescendants(activeId)
+        if (descendantIds.includes(overId)) return
 
-        // We only really need to save the ones that changed
-        for (const tag of updatedTags) {
-            const original = tags.find((t) => t.id === tag.id)
-            if (original && original.sort_order !== tag.sort_order) {
-                const updated = {
-                    ...original,
-                    sort_order: tag.sort_order,
-                    updated_at: new Date().toISOString() as any,
+        const oldIndex = sortedTags.findIndex((t) => t.id === activeId)
+        const newIndex = activeId === overId ? oldIndex : sortedTags.findIndex((t) => t.id === overId)
+
+        const newSortedTags = arrayMove(sortedTags, oldIndex, newIndex)
+
+        // Calculate projected depth (24px = 1.5rem margin-left)
+        const depthOffset = Math.round(delta.x / 24)
+        let projectedDepth = activeTag.depth + depthOffset
+
+        // Constrain depth
+        const previousItem = newIndex > 0 ? newSortedTags[newIndex - 1] : null
+        const maxDepth = previousItem ? previousItem.depth + 1 : 0
+        projectedDepth = Math.max(0, Math.min(projectedDepth, maxDepth))
+
+        let newParentId: TagId | undefined = undefined
+
+        if (projectedDepth > 0 && previousItem) {
+            let current = previousItem
+            while (current && current.depth >= projectedDepth) {
+                // Find parent in the sorted list, or break if we hit the root
+                const currentParentId = current.parent_id
+                const parent = currentParentId ? newSortedTags.find(t => t.id === currentParentId) : null
+                if (!parent) break
+                current = parent
+            }
+            if (current && current.depth === projectedDepth - 1) {
+                if (!descendantIds.includes(current.id)) {
+                    newParentId = current.id as TagId
                 }
+            }
+        }
+
+        // Find new siblings (including the active item) to update sort orders
+        const siblings = newSortedTags.filter(t =>
+            t.id === activeId ? true : (t.parent_id || undefined) === newParentId
+        )
+
+        for (let i = 0; i < siblings.length; i++) {
+            const sibling = siblings[i]
+            const original = tags.find((t) => t.id === sibling.id)
+            if (!original) continue
+
+            let changed = false
+            const updated = { ...original }
+
+            if (sibling.id === activeId && updated.parent_id !== newParentId) {
+                updated.parent_id = newParentId
+                changed = true
+            }
+
+            // We update the sort_order of the active tag and its NEW siblings
+            // This is a simple re-sorting within the new parent container
+            if (updated.id === activeId || (updated.parent_id || undefined) === newParentId) {
+                const newPos = siblings.findIndex(s => s.id === updated.id)
+                if (updated.sort_order !== newPos) {
+                    updated.sort_order = newPos
+                    changed = true
+                }
+            }
+
+            if (changed) {
+                updated.updated_at = new Date().toISOString() as any
                 upsertTag(updated)
                 await SyncService.save(tagConfig, updated)
             }
@@ -384,7 +437,7 @@ export const TagManager = () => {
 
             <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground">
-                    Your Tags (Drag to reorder)
+                    Your Tags (Drag to reorder, drag right to nest)
                 </h3>
                 {sortedTags.length === 0 ? (
                     <p className="py-8 text-center text-sm text-muted-foreground">
