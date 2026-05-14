@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { useTagStore } from "@/features/routine-time-tracker/stores/tag.store"
 import {
     createTag,
@@ -131,7 +131,6 @@ const SortableTagItem = ({
 }
 
 const PRESET_COLORS = [
-    "#787878", // Default Grey
     "#ef4444", // Red
     "#f97316", // Orange
     "#f59e0b", // Amber
@@ -139,7 +138,9 @@ const PRESET_COLORS = [
     "#84cc16", // Lime
     "#22c55e", // Green
     "#10b981", // Emerald
+    "#14b8a6", // Teal
     "#06b6d4", // Cyan
+    "#0ea5e9", // Sky
     "#3b82f6", // Blue
     "#6366f1", // Indigo
     "#8b5cf6", // Violet
@@ -147,67 +148,49 @@ const PRESET_COLORS = [
     "#d946ef", // Fuchsia
     "#ec4899", // Pink
     "#f43f5e", // Rose
+    "#64748b", // Slate
+    "#71717a", // Zinc
+    "#78716c", // Stone
 ]
 
-const HSVSliders = ({ color, onChange }: { color: string, onChange: (newColor: string) => void }) => {
+const ShadeSwatches = ({
+    color,
+    onChange,
+}: {
+    color: string
+    onChange: (newColor: string) => void
+}) => {
     const hsv = useMemo(() => hexToHsv(color), [color])
 
-    const updateHsv = (updates: Partial<HSV>) => {
-        onChange(hsvToHex({ ...hsv, ...updates }))
-    }
+    const shades = useMemo(() => {
+        const result: string[] = []
+        // Generate 10 shades: 5 lighter (varying saturation), 5 darker (varying brightness)
+        for (let i = 0; i < 5; i++) {
+            const s = 10 + i * 20 // 10, 30, 50, 70, 90
+            result.push(hsvToHex({ h: hsv.h, s, v: 100 }))
+        }
+        for (let i = 0; i < 5; i++) {
+            const v = 100 - i * 15 // 100, 85, 70, 55, 40
+            result.push(hsvToHex({ h: hsv.h, s: 100, v }))
+        }
+        return result
+    }, [hsv.h])
 
     return (
-        <div className="space-y-3 pt-2">
-            <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                    <span>Hue</span>
-                    <span className="tabular-nums">{hsv.h}°</span>
-                </div>
-                <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={hsv.h}
-                    onChange={(e) => updateHsv({ h: Number(e.target.value) })}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full"
-                    style={{
-                        background: 'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)'
-                    }}
-                />
-            </div>
-            <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                    <span>Saturation</span>
-                    <span className="tabular-nums">{hsv.s}%</span>
-                </div>
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={hsv.s}
-                    onChange={(e) => updateHsv({ s: Number(e.target.value) })}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full"
-                    style={{
-                        background: `linear-gradient(to right, #ffffff, ${hsvToHex({ h: hsv.h, s: 100, v: 100 })})`
-                    }}
-                />
-            </div>
-            <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                    <span>Brightness</span>
-                    <span className="tabular-nums">{hsv.v}%</span>
-                </div>
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={hsv.v}
-                    onChange={(e) => updateHsv({ v: Number(e.target.value) })}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full"
-                    style={{
-                        background: `linear-gradient(to right, #000000, ${hsvToHex({ h: hsv.h, s: hsv.s, v: 100 })})`
-                    }}
-                />
+        <div className="space-y-2 pt-2">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Shades
+            </p>
+            <div className="grid grid-cols-10 gap-2">
+                {shades.map((s, idx) => (
+                    <button
+                        key={`${s}-${idx}`}
+                        onClick={() => onChange(s)}
+                        className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${color.toLowerCase() === s.toLowerCase() ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
+                        style={{ backgroundColor: s }}
+                        title={s}
+                    />
+                ))}
             </div>
         </div>
     )
@@ -346,20 +329,23 @@ export const TagManager = () => {
                             placeholder="Tag name..."
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                         />
-                        <div className="h-10 w-10 shrink-0 rounded-md border border-input shadow-sm" style={{ backgroundColor: newTagColor }} />
+                        <div
+                            className="h-10 w-10 shrink-0 rounded-md border border-input shadow-sm"
+                            style={{ backgroundColor: newTagColor }}
+                        />
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                                 Color Palette
                             </p>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="grid grid-cols-10 gap-2">
                                 {PRESET_COLORS.map((color) => (
                                     <button
                                         key={color}
                                         onClick={() => setNewTagColor(color)}
-                                        className={`h-6 w-6 rounded-full border-2 transition-all hover:scale-110 ${newTagColor === color ? "border-primary scale-110 shadow-sm" : "border-transparent"}`}
+                                        className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${newTagColor === color ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
                                         style={{ backgroundColor: color }}
                                         title={color}
                                     />
@@ -367,7 +353,10 @@ export const TagManager = () => {
                             </div>
                         </div>
 
-                        <HSVSliders color={newTagColor} onChange={setNewTagColor} />
+                        <ShadeSwatches
+                            color={newTagColor}
+                            onChange={setNewTagColor}
+                        />
                     </div>
 
                     <div className="flex gap-2">
