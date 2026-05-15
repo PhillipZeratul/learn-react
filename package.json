@@ -19,7 +19,8 @@
     "supabase:reset": "supabase db reset",
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build",
-    "test": "npx vitest run"
+    "test": "npx vitest run",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
