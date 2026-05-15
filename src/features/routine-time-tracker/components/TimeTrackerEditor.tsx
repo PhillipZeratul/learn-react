@@ -9,6 +9,7 @@ interface TimeTrackerEditorProps {
     onSave: (task: TimeTrackerCard) => Promise<void>
     onDelete: (id: string) => Promise<void>
     onCancel: () => void
+    hideTimeFields?: boolean
 }
 
 export const TimeTrackerEditor = ({
@@ -16,6 +17,7 @@ export const TimeTrackerEditor = ({
     onSave,
     onDelete,
     onCancel,
+    hideTimeFields = false,
 }: TimeTrackerEditorProps) => {
     const { items: tags } = useTagStore()
     const [title, setTitle] = useState(task.title)
@@ -70,58 +72,66 @@ export const TimeTrackerEditor = ({
                             autoFocus
                         />
                     </div>
-                    <div className="space-y-4">
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="mb-1 block text-xs text-muted-foreground">
-                                    Start Date
-                                </label>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) =>
-                                        setStartDate(e.target.value)
-                                    }
-                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                />
+                    {!hideTimeFields && (
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        Start Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) =>
+                                            setStartDate(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        Start Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={startAt}
+                                        onChange={(e) =>
+                                            setStartAt(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="mb-1 block text-xs text-muted-foreground">
-                                    Start Time
-                                </label>
-                                <input
-                                    type="time"
-                                    value={startAt}
-                                    onChange={(e) => setStartAt(e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                />
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        End Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) =>
+                                            setEndDate(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                        End Time
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={endAt}
+                                        onChange={(e) =>
+                                            setEndAt(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                    />
+                                </div>
                             </div>
                         </div>
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="mb-1 block text-xs text-muted-foreground">
-                                    End Date
-                                </label>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <label className="mb-1 block text-xs text-muted-foreground">
-                                    End Time
-                                </label>
-                                <input
-                                    type="time"
-                                    value={endAt}
-                                    onChange={(e) => setEndAt(e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    )}
                     <div>
                         <label className="mb-1 block text-xs text-muted-foreground">
                             Tag

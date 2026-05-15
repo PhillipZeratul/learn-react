@@ -3,7 +3,6 @@
 ## General Instructions
 
 - **Always use 'bun', not 'npm'.**
-- When you generate new TypeScript code, follow the existing coding style.
 - Prefer functional programming paradigms where appropriate.
 - Respond and code in English.
 

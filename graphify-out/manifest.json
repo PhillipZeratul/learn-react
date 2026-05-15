@@ -43,6 +43,10 @@
     "mtime": 1778487036.3635483,
     "hash": "0f309c0b5d346f8cd31a6ace659ee377"
   },
+  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260513170000_add_tag_hierarchy_and_sorting.sql": {
+    "mtime": 1778666107.545882,
+    "hash": "138153dc7dc166c214a79161adb47f43"
+  },
   "/Users/phillipzhang/Work/Web/learn-react/public/sqlite3.js": {
     "mtime": 1777121749.1450925,
     "hash": "17533d79e224de298596d2a820132117"
@@ -120,8 +124,8 @@
     "hash": "3da5071829fee1cad101dfd56fdc8fe1"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/components/TagManager.tsx": {
-    "mtime": 1778493372.192413,
-    "hash": "15f8677444e780cadb0db6675f2b490a"
+    "mtime": 1778747901.8702455,
+    "hash": "8aef9077dfa6222e4cc7d86ec841b44d"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/auth/stores/auth.store.ts": {
     "mtime": 1778494190.9529932,
@@ -156,24 +160,24 @@
     "hash": "accf274bd6c627b8847b1947f8a979ad"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/utils.test.ts": {
-    "mtime": 1778493372.022876,
-    "hash": "b5259f866f409f9840c3a8adf6dcfc5f"
+    "mtime": 1778587705.5495687,
+    "hash": "c0af004835b2c246b8248f6a5f0af33d"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/routine-expansion.ts": {
-    "mtime": 1778493371.9935403,
-    "hash": "73ff853998dd88d836c8c057a6cd727c"
+    "mtime": 1778587290.9367418,
+    "hash": "9b44f3483d437e83417a6ca5ef4e4b68"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/utils.ts": {
-    "mtime": 1778493372.0461795,
-    "hash": "12c831f3c2cf3526fd213d52167d2903"
+    "mtime": 1778669181.3101866,
+    "hash": "e256e2b8613bf45e45156a2382940200"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/routine-expansion.test.ts": {
-    "mtime": 1778493371.9610057,
-    "hash": "6d633febf4cf51de4693ffa14f55155e"
+    "mtime": 1778587792.0072281,
+    "hash": "6950a79a50c02d64d6f43dc765545ceb"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/layout.ts": {
-    "mtime": 1778493371.9385428,
-    "hash": "4790d4b52d529eae97d231a6b3f17899"
+    "mtime": 1778587274.1672375,
+    "hash": "3faf11c71a1677e7eb0221908d7a1215"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/time-tracker-card.model.ts": {
     "mtime": 1778493371.6254644,
@@ -188,32 +192,32 @@
     "hash": "5d7b239d540574e1397ecea474137502"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/tag.model.ts": {
-    "mtime": 1778493371.5715644,
-    "hash": "3644ce2a0d99eeee656234cdbee30792"
+    "mtime": 1778667390.055058,
+    "hash": "e4d5051e5be63721bf7de5bef9a6e700"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker-state.model.ts": {
-    "mtime": 1778493371.5070002,
-    "hash": "faf17d61ebb0c97b8cc80b4d42143c39"
+    "mtime": 1778586194.5985057,
+    "hash": "47d8c1c2000daf0c356dee0c48136a66"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-card.model.ts": {
     "mtime": 1778493371.4422941,
     "hash": "a056c5f25324d4d62735d3a72cd8e0f9"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TaskCard.tsx": {
-    "mtime": 1778493370.893149,
-    "hash": "5ac08bfae0e3dead48bc53e120024437"
+    "mtime": 1778662873.8628674,
+    "hash": "e99446cd9b8d1263ecdef3a125c0ba6f"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/CurrentTimeIndicator.tsx": {
-    "mtime": 1778493370.171851,
-    "hash": "0da5831e0fe0b827831491e2d743b0e9"
+    "mtime": 1778662802.4421685,
+    "hash": "78ad1a0d19eb824c8cf6dfd8fe629d33"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimelineGrid.tsx": {
     "mtime": 1778493371.235745,
     "hash": "c468af994a44a36d8124b5573d473f43"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/RoutineTimeTrackerWidget.tsx": {
-    "mtime": 1778496579.6831844,
-    "hash": "0d54a1169ec7d6e69d7c07ef8b5593e9"
+    "mtime": 1778825948.5791285,
+    "hash": "fdfe1b45cc63216768c23fca636172b0"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/SaveChangeDialog.tsx": {
     "mtime": 1778493370.8432038,
@@ -224,24 +228,24 @@
     "hash": "84b79007cc9f9f7f8dd28760de5d031b"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimeTrackerEditor.tsx": {
-    "mtime": 1778493371.3941462,
-    "hash": "1e8db3b569acda2f3bdd9f4bafebd349"
+    "mtime": 1778825926.822242,
+    "hash": "663853bc6a438eb4eb6cbdae886f2e09"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/RoutineEditor.tsx": {
-    "mtime": 1778493370.426175,
-    "hash": "80b02a0c16fc5ad1ad8c4ab08e0aa2be"
+    "mtime": 1778661288.3238096,
+    "hash": "ee0056c0d4ef487d50c912a707595c9d"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimeTrackerActionButton.tsx": {
-    "mtime": 1778493371.25782,
-    "hash": "1ddcdfb135f44ac101b2d7a37fc0c571"
+    "mtime": 1778662948.3982425,
+    "hash": "df8339be96f513e177e0aee31143df5e"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/services/routine-time-tracker.service.ts": {
     "mtime": 1778496574.7980947,
     "hash": "3aa5132f02f8f85fce0cce927fbc09e0"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/services/routine-time-tracker.service.test.ts": {
-    "mtime": 1778493371.6845322,
-    "hash": "4c06c5e25173aad90e4b6b1d2a8be58e"
+    "mtime": 1778660487.8951495,
+    "hash": "61e7e1788e8e2ce054aa6f393f07f912"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/shared/test/setup.ts": {
     "mtime": 1778493373.352834,
@@ -256,12 +260,12 @@
     "hash": "5646aa44faf2c118e8ade5b7be59d80d"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/sync.service.ts": {
-    "mtime": 1778496570.1913443,
-    "hash": "bd46ee85c5cd0f4055cb3d519501c609"
+    "mtime": 1778668103.7897859,
+    "hash": "f9863eace3371d27b7afe2db3f0fdac1"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/sync.service.test.ts": {
-    "mtime": 1778493373.1559913,
-    "hash": "64d3781ff68e235c559fb696bfed6802"
+    "mtime": 1778660334.808712,
+    "hash": "3607f585b8bf9f09e90fcd1b698b5d10"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/components/ThemeProvider.tsx": {
     "mtime": 1778493370.0668046,
@@ -300,8 +304,8 @@
     "hash": "d0b9fdf4a3ce463b3d98e22e8289695c"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/lib/database.types.ts": {
-    "mtime": 1778493372.2585895,
-    "hash": "50ab7494dd7293893a8aa994cf405957"
+    "mtime": 1778666642.3375945,
+    "hash": "69b6e286ab56278d929cb3f8872ba4af"
   },
   "/Users/phillipzhang/Work/Web/learn-react/src/lib/supabase.ts": {
     "mtime": 1778493372.6403637,

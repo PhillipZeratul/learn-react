@@ -47,7 +47,7 @@ import { dragTopSignal, dragHeightSignal } from "../stores/drag.store"
 
 type EditingState =
     | { type: "routine"; card: RoutineCard }
-    | { type: "timeTracker"; card: TimeTrackerCard }
+    | { type: "timeTracker"; card: TimeTrackerCard; hideTimeFields?: boolean }
     | null
 
 type DragMode = "top" | "center" | "bottom"
@@ -250,7 +250,11 @@ export default function RoutineTimeTrackerWidget() {
                     start_at: timeToISO(startTime),
                     end_at: timeToISO(endTime),
                 })
-                setEditingState({ type: "timeTracker", card: newCard })
+                setEditingState({
+                    type: "timeTracker",
+                    card: newCard,
+                    hideTimeFields: true,
+                })
             }
         } else {
             const now = new Date()
@@ -264,7 +268,11 @@ export default function RoutineTimeTrackerWidget() {
                 start_at: timeToISO(startTime),
                 end_at: timeToISO(endTime),
             })
-            setEditingState({ type: "timeTracker", card: newCard })
+            setEditingState({
+                type: "timeTracker",
+                card: newCard,
+                hideTimeFields: true,
+            })
         }
     }
 
@@ -698,6 +706,7 @@ export default function RoutineTimeTrackerWidget() {
             {editingState?.type === "timeTracker" && (
                 <TimeTrackerEditor
                     task={editingState.card}
+                    hideTimeFields={editingState.hideTimeFields}
                     onSave={async (updated) => {
                         const exists = allTimeTrackerCards.some(
                             (c) => c.id === updated.id

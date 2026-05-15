@@ -1,13 +1,18 @@
-# Graph Report - .  (2026-05-12)
+# Graph Report - learn-react  (2026-05-15)
 
 ## Corpus Check
-- 144 files · ~133,563 words
+- 87 files · ~136,699 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 397 nodes · 644 edges · 80 communities (23 shown, 57 thin omitted)
+- 421 nodes · 684 edges · 81 communities (24 shown, 57 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 14 edges (avg confidence: 0.82)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `0ff36b9b`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_CurrentTimeIndicator()  RoutineEditor  RoutineEditorProps|CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps]]
@@ -35,12 +40,11 @@
 - [[_COMMUNITY_MainActivity.java  MainActivity  BridgeActivity|MainActivity.java / MainActivity / BridgeActivity]]
 - [[_COMMUNITY_ImportMeta  ImportMetaEnv  vite-env.d.ts|ImportMeta / ImportMetaEnv / vite-env.d.ts]]
 - [[_COMMUNITY_Routine Exception Mechanism  Routine Expansion Logic  RoutineEditor|Routine Exception Mechanism / Routine Expansion Logic / RoutineEditor]]
-- [[_COMMUNITY_capacitor.config.ts  config|capacitor.config.ts / config]]
+- [[_COMMUNITY_main()  build.rs|main() / build.rs]]
 - [[_COMMUNITY_Gemini CLI Instructions  Knowledge Graph Strategy|Gemini CLI Instructions / Knowledge Graph Strategy]]
 - [[_COMMUNITY_Tauri App Runner  Tauri Main Entry|Tauri App Runner / Tauri Main Entry]]
 - [[_COMMUNITY_Flicker Prevention Mechanism  Theme Provider|Flicker Prevention Mechanism / Theme Provider]]
 - [[_COMMUNITY_Time Tracker Cards Table Definition  Routine Time Tracker States Table|Time Tracker Cards Table Definition / Routine Time Tracker States Table]]
-- [[_COMMUNITY_ESLint Configuration|ESLint Configuration]]
 - [[_COMMUNITY_Project README|Project README]]
 - [[_COMMUNITY_ImportMetaEnv Interface|ImportMetaEnv Interface]]
 - [[_COMMUNITY_Tauri Build Main|Tauri Build Main]]
@@ -85,6 +89,7 @@
 - [[_COMMUNITY_Accessibility Testing Icon|Accessibility Testing Icon]]
 - [[_COMMUNITY_Storybook Theming Feature Image|Storybook Theming Feature Image]]
 - [[_COMMUNITY_React Context Integration Image|React Context Integration Image]]
+- [[_COMMUNITY_Community 80|Community 80]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `SyncService` - 20 edges
@@ -93,10 +98,10 @@
 4. `useTagStore` - 10 edges
 5. `IsoDateTime` - 10 edges
 6. `Button()` - 10 edges
-7. `isoToTime()` - 8 edges
-8. `RoutineTimeTrackerService` - 8 edges
-9. `DatabaseMaintenanceService` - 8 edges
-10. `useRoutineTimeTrackerStateStore` - 7 edges
+7. `timeToISO()` - 8 edges
+8. `isoToTime()` - 8 edges
+9. `RoutineTimeTrackerService` - 8 edges
+10. `DatabaseMaintenanceService` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Main Entry HTML` --conceptually_related_to--> `Vite & Vitest Configuration`  [INFERRED]
@@ -107,8 +112,8 @@
   vite.config.ts → capacitor.config.ts
 - `Android Main Activity` --conceptually_related_to--> `Capacitor Mobile Configuration`  [INFERRED]
   android/app/src/main/java/com/wutongonpaper/app/MainActivity.java → capacitor.config.ts
-- `App()` --calls--> `useAuthStore`  [EXTRACTED]
-  src/App.tsx → src/features/auth/stores/auth.store.ts
+- `Storybook Configuration` --references--> `Testing Screenshot`  [EXTRACTED]
+  src/stories/Configure.mdx → src/stories/assets/testing.png
 
 ## Hyperedges (group relationships)
 - **Multi-Platform Configuration Bundle** — vite_config_root, capacitor_config_root, android_build_gradle [INFERRED 0.80]
@@ -121,23 +126,23 @@
 - **Sync Orchestration Pattern** — sync_service_syncservice, base_model_basemodel, base_model_modelconfig, database_maintenance_service_databasemaintenanceservice [EXTRACTED]
 - **Routine Feature Database Schema** — 20260423100444_remote_schema_routine_cards, 20260425120000_add_routine_recurrence_recurrence_logic, 20260423100444_remote_schema_routine_tags [INFERRED 0.95]
 
-## Communities (80 total, 57 thin omitted)
+## Communities (81 total, 57 thin omitted)
 
 ### Community 0 - "CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps"
-Cohesion: 0.09
-Nodes (37): CurrentTimeIndicator(), RoutineEditor, RoutineEditorProps, RRULE_OPTIONS, DragMode, DragState, EditingState, RoutineTimeTrackerWidget() (+29 more)
+Cohesion: 0.06
+Nodes (59): CurrentTimeIndicator(), RoutineEditor, RoutineEditorProps, RRULE_OPTIONS, DragMode, DragState, EditingState, RoutineTimeTrackerWidget() (+51 more)
 
 ### Community 1 - "BaseModel / Brand / Coin"
-Cohesion: 0.14
-Nodes (29): BaseModel, Brand, Coin, Experience, HealthPoint, IsoDateTime, ModelConfig, QuestId (+21 more)
+Cohesion: 0.1
+Nodes (18): Auth(), getDatabase(), isSupabaseConfigured, SupabaseClient, customUserId, state, DatabaseMaintenanceService, SyncService (+10 more)
 
 ### Community 2 - "Auth() / DateNavigator() / DateNavigatorProps"
 Cohesion: 0.13
-Nodes (17): Auth(), DateNavigator(), DateNavigatorProps, SaveChangeDialog(), SaveChangeDialogProps, SettingsMenu(), SettingsMenuProps, TagManager() (+9 more)
+Nodes (24): BaseModel, Brand, Coin, Experience, HealthPoint, ModelConfig, QuestId, SyncAction (+16 more)
 
 ### Community 3 - "getDatabase() / DatabaseMaintenanceService / .clearAllData()"
-Cohesion: 0.15
-Nodes (7): getDatabase(), DatabaseMaintenanceService, SyncService, entity, filteredConfig, mockConfig, mockRows
+Cohesion: 0.1
+Nodes (18): DateNavigator(), DateNavigatorProps, SaveChangeDialog(), SaveChangeDialogProps, SettingsMenu(), SettingsMenuProps, PRESET_COLORS, SortableTagItemProps (+10 more)
 
 ### Community 4 - "Button.stories.ts / Button.tsx / Header.stories.ts"
 Cohesion: 0.1
@@ -152,68 +157,68 @@ Cohesion: 0.12
 Nodes (14): changes, initDb(), rows, handlerMap, li, p, promiseProxy, proxy (+6 more)
 
 ### Community 7 - "CompositeTypes / Constants / Database"
-Cohesion: 0.13
-Nodes (14): CompositeTypes, Constants, Database, DatabaseWithoutInternals, DefaultSchema, Enums, Json, Tables (+6 more)
-
-### Community 8 - "createRoutineCard() / routine-expansion.test.ts / routine-expansion.ts"
-Cohesion: 0.18
-Nodes (11): createRoutineCard(), calculateEndAt(), getRoutineInstancesForDate(), card, deletedException, exception, instancesToday, instancesTomorrow (+3 more)
-
-### Community 9 - "disableTransitionsTemporarily() / getSystemTheme() / isEditableTarget()"
 Cohesion: 0.15
 Nodes (7): ResolvedTheme, Theme, THEME_VALUES, ThemeProvider(), ThemeProviderContext, ThemeProviderProps, ThemeProviderState
 
-### Community 10 - "Auth Component / Auth State Type / Auth Store Hook"
+### Community 8 - "createRoutineCard() / routine-expansion.test.ts / routine-expansion.ts"
+Cohesion: 0.18
+Nodes (10): CompositeTypes, Constants, Database, DatabaseWithoutInternals, DefaultSchema, Enums, Json, Tables (+2 more)
+
+### Community 9 - "disableTransitionsTemporarily() / getSystemTheme() / isEditableTarget()"
 Cohesion: 0.18
 Nodes (11): Auth Component, Auth State Type, Auth Store Hook, UI Button, Current Time Indicator, Header, Page, Routine Time Tracker Widget (+3 more)
 
-### Community 11 - "App Component / Root Component / RoutineTimeTrackerService"
+### Community 10 - "Auth Component / Auth State Type / Auth Store Hook"
 Cohesion: 0.22
 Nodes (9): App Component, Root Component, RoutineTimeTrackerService, RoutineTimeTrackerState Model, SettingsMenu, Singleton User State Mapping, Tag Model, TagManager (+1 more)
 
-### Community 14 - "Capacitor Mobile Configuration / Main Entry HTML / Android Main Activity"
+### Community 13 - "WebDatabaseService / .constructor() / .execute()"
 Cohesion: 0.29
 Nodes (6): Capacitor Mobile Configuration, Main Entry HTML, Android Main Activity, Multi-Platform Build Strategy, WebSQLite OPFS Sandboxing, Vite & Vitest Configuration
 
-### Community 16 - "CapacitorDatabaseService / DatabaseServiceFactory / initDb"
+### Community 14 - "Capacitor Mobile Configuration / Main Entry HTML / Android Main Activity"
+Cohesion: 0.33
+Nodes (5): Adding components, code:bash (npx shadcn@latest add button), code:tsx (import { Button } from "@/components/ui/Button"), React + TypeScript + Vite + shadcn/ui, Using components
+
+### Community 15 - "RoutineTimeTrackerService / .ensureStateRecord() / .initialize()"
 Cohesion: 0.4
 Nodes (5): CapacitorDatabaseService, DatabaseServiceFactory, initDb, TauriDatabaseService, WebDatabaseService
 
-### Community 17 - "DatabaseMaintenanceService / getDatabase / supabase"
+### Community 16 - "CapacitorDatabaseService / DatabaseServiceFactory / initDb"
 Cohesion: 0.4
 Nodes (5): DatabaseMaintenanceService, getDatabase, supabase, SyncService, SyncService Tests
 
-### Community 18 - "Storybook Configuration / Figma Plugin Screenshot / GitHub Logo"
+### Community 17 - "DatabaseMaintenanceService / getDatabase / supabase"
 Cohesion: 0.5
 Nodes (4): Storybook Configuration, Figma Plugin Screenshot, GitHub Logo, Testing Screenshot
 
-### Community 19 - "Routine Cards Table Definition / Routine Tags Table Definition / Routine Recurrence Logic"
+### Community 18 - "Storybook Configuration / Figma Plugin Screenshot / GitHub Logo"
 Cohesion: 0.5
 Nodes (4): Routine Cards Table Definition, Routine Tags Table Definition, Routine Recurrence Logic, Seed Routine Cards
 
-### Community 24 - "Routine Exception Mechanism / Routine Expansion Logic / RoutineEditor"
+### Community 23 - "ImportMeta / ImportMetaEnv / vite-env.d.ts"
 Cohesion: 0.67
 Nodes (3): Routine Exception Mechanism, Routine Expansion Logic, RoutineEditor
 
 ## Knowledge Gaps
-- **173 isolated node(s):** `config`, `handlerMap`, `proxy`, `p`, `promiseProxy` (+168 more)
+- **185 isolated node(s):** `config`, `handlerMap`, `proxy`, `p`, `promiseProxy` (+180 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **57 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `getDatabase()` connect `getDatabase() / DatabaseMaintenanceService / .clearAllData()` to `BaseModel / Brand / Coin`, `RoutineTimeTrackerService / .ensureStateRecord() / .initialize()`, `CapacitorDatabaseService / .constructor() / .execute()`, `CompositeTypes / Constants / Database`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `SyncService` connect `getDatabase() / DatabaseMaintenanceService / .clearAllData()` to `CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps`, `BaseModel / Brand / Coin`, `Auth() / DateNavigator() / DateNavigatorProps`, `CompositeTypes / Constants / Database`?**
+- **Why does `getDatabase()` connect `BaseModel / Brand / Coin` to `Auth() / DateNavigator() / DateNavigatorProps`, `CapacitorDatabaseService / .constructor() / .execute()`?**
+  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **Why does `SyncService` connect `BaseModel / Brand / Coin` to `CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps`, `Auth() / DateNavigator() / DateNavigatorProps`, `getDatabase() / DatabaseMaintenanceService / .clearAllData()`?**
   _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `WebDatabaseService` connect `WebDatabaseService / .constructor() / .execute()` to `CapacitorDatabaseService / .constructor() / .execute()`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `WebDatabaseService` connect `build.gradle / capacitor.build.gradle / build.gradle` to `CapacitorDatabaseService / .constructor() / .execute()`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **What connects `config`, `handlerMap`, `proxy` to the rest of the system?**
-  _173 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _185 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps` be split into smaller, more focused modules?**
-  _Cohesion score 0.09 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
 - **Should `BaseModel / Brand / Coin` be split into smaller, more focused modules?**
-  _Cohesion score 0.14 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.1 - nodes in this community are weakly interconnected._
 - **Should `Auth() / DateNavigator() / DateNavigatorProps` be split into smaller, more focused modules?**
   _Cohesion score 0.13 - nodes in this community are weakly interconnected._
