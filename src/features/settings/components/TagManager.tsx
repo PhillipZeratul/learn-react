@@ -31,7 +31,6 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import type { TagId } from "@/features/routine-time-tracker/models/routine-time-tracker.model"
-import { hexToHsv, hsvToHex } from "@/features/routine-time-tracker/utils/utils"
 
 interface SortableTagItemProps {
     tag: Tag
