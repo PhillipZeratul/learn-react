@@ -4,3 +4,4 @@ Project goal: Develop a multi-platform app to gamify daily life to help people a
 
 @coding-guideline.md
 @project-context.md
+@graphify.md
