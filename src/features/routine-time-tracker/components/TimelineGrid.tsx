@@ -1,4 +1,3 @@
-import React from "react"
 import { PIXELS_PER_MINUTE, TOP_MARGIN } from "../utils/utils"
 
 export const TimelineGrid = () => {

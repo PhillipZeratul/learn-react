@@ -118,7 +118,7 @@ export class DatabaseMaintenanceService {
                 SyncService.triggerSync(true)
             }
 
-            config.updateStore([])
+            config.setStore([])
             console.log(
                 `DatabaseMaintenanceService: Local data for ${tableName} cleared. Sync in progress.`
             )

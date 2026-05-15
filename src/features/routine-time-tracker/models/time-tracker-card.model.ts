@@ -77,5 +77,5 @@ export const timeTrackerCardConfig: ModelConfig<TimeTrackerCard> = {
     setStore: (items) => useTimeTrackerCardStore.getState().set(items),
     upsertInStore: (item) => useTimeTrackerCardStore.getState().upsert(item),
     removeFromStore: (id) =>
-        useTimeTrackerCardStore.getState().removeRecord(id),
+        useTimeTrackerCardStore.getState().remove(id),
 }

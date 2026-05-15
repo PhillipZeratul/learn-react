@@ -1,4 +1,3 @@
-import React from "react"
 import { Button } from "@/components/ui/Button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {

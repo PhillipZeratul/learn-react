@@ -3,7 +3,6 @@ import {
     timeToISO,
     isoToTime,
     isoToMinutes,
-    isTouchEvent,
     formatLocalDate,
     isCardOverlappingDate,
     getVisualBoundsForDate,
