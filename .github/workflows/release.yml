@@ -112,14 +112,22 @@ jobs:
         
       - name: Setup iOS Platform
         run: |
-          if [ ! -d "ios" ]; then
-            bunx cap add ios
-          fi
-          bunx cap sync ios
+          npx cap add ios || echo "iOS platform already exists or failed to add"
+          npx cap sync ios
+          echo "Listing iOS directory structure:"
+          ls -R ios || echo "ios directory not found"
+          echo "Searching for workspaces:"
+          find . -name "*.xcworkspace"
           
       - name: Build iOS App Bundle
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace \
+          WORKSPACE=$(find ios -name "*.xcworkspace" | head -n 1)
+          if [ -z "$WORKSPACE" ]; then
+            echo "Error: Could not find .xcworkspace file"
+            exit 1
+          fi
+          echo "Using workspace: $WORKSPACE"
+          xcodebuild -workspace "$WORKSPACE" \
             -scheme App \
             -configuration Debug \
             -sdk iphoneos \
