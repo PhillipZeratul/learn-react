@@ -29,6 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
       - name: Install Dependencies
@@ -56,6 +60,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
           
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -87,6 +96,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
           
@@ -140,7 +154,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
