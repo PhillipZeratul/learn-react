@@ -658,11 +658,12 @@ export class SyncService {
                         )
                         config.upsertInStore(entity)
                     } else if (eventType === "DELETE") {
+                        const id = oldRecord.id as string
                         await db.execute(
                             `DELETE FROM ${config.tableName} WHERE id = ?`,
-                            [oldRecord.id]
+                            [id]
                         )
-                        config.removeFromStore(oldRecord.id)
+                        config.removeFromStore(id)
                     }
                 }
             )
