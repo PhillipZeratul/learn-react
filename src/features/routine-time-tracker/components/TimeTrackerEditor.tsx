@@ -36,11 +36,7 @@ export const TimeTrackerEditor = ({
     const activeTags = tags.filter((tag) => !tag.is_deleted)
 
     const handleSave = async () => {
-        let finalTitle = title.trim()
-        if (!finalTitle) {
-            const selectedTag = tags.find((t) => t.id === tagId)
-            finalTitle = selectedTag?.name || "Time Tracker"
-        }
+        const finalTitle = title.trim()
 
         await onSave({
             ...task,

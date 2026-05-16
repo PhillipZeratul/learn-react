@@ -60,11 +60,7 @@ export const RoutineEditor = memo(
         const isRecurring = !!masterTask || !!task.rrule
 
         const handleSave = async (scope: "one" | "all" = "one") => {
-            let finalTitle = title.trim()
-            if (!finalTitle) {
-                const selectedTag = tags.find((t) => t.id === tagId)
-                finalTitle = selectedTag?.name || "Routine"
-            }
+            const finalTitle = title.trim()
 
             if (scope === "all" && masterTask) {
                 // Apply changes to the master record while preserving its original start date

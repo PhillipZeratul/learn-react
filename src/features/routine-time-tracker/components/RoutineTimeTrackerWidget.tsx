@@ -294,6 +294,11 @@ export default function RoutineTimeTrackerWidget() {
         return tag?.color || "#94a3b8" // Fallback to slate-400 if tag not found
     }
 
+    const getTagName = (tagId: string) => {
+        const tag = tags.find((t) => t.id === tagId)
+        return tag?.name || "Task"
+    }
+
     const handleCreateTask = async (clientX: number, clientY: number) => {
         if (!scrollContainerRef.current) return
 
@@ -620,9 +625,10 @@ export default function RoutineTimeTrackerWidget() {
                                     currentDate={currentDate}
                                     isDragging={dragState?.card.id === task.id}
                                     getTagColor={getTagColor}
-                                    onPress={(e) =>
+                                    getTagName={getTagName}
+                                    onPress={(e) => {
                                         handleCardPress(e, "timeTracker", task)
-                                    }
+                                    }}
                                     onClick={() => {
                                         if (!wasDragged.current) {
                                             setEditingState({
@@ -657,9 +663,10 @@ export default function RoutineTimeTrackerWidget() {
                                             dragState?.card.id === task.id
                                         }
                                         getTagColor={getTagColor}
-                                        onPress={(e) =>
+                                        getTagName={getTagName}
+                                        onPress={(e) => {
                                             handleCardPress(e, "routine", task)
-                                        }
+                                        }}
                                         onClick={() => {
                                             if (!wasDragged.current) {
                                                 setEditingState({
