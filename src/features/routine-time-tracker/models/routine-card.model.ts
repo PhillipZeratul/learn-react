@@ -86,7 +86,10 @@ export const routineCardConfig: ModelConfig<RoutineCard> = {
         card.original_recurrence_date,
     ],
     fromDb: (row) =>
-        createRoutineCard({ ...row, is_deleted: !!row.is_deleted }),
+        createRoutineCard({
+            ...(row as unknown as Partial<RoutineCard>),
+            is_deleted: row.is_deleted === 1,
+        }),
     setStore: (items) => useRoutineCardStore.getState().set(items),
     upsertInStore: (item) => useRoutineCardStore.getState().upsert(item),
     removeFromStore: (id) => useRoutineCardStore.getState().remove(id),

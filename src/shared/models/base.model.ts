@@ -44,7 +44,7 @@ export interface BaseModel {
  */
 export type SyncActionType = "INSERT" | "UPDATE" | "SOFT_DELETE"
 
-export interface SyncAction<T = any> {
+export interface SyncAction<T = unknown> {
     action_id: string // UUID, the ID of the action itself
     entity_type: "Task" | "Quest" | "UserProfile"
     action_type: SyncActionType
@@ -57,8 +57,8 @@ export interface ModelConfig<T extends BaseModel> {
     tableName: string
     createTableSql: string
     saveSql: string
-    toSqlValues: (model: T) => any[]
-    fromDb: (row: any) => T
+    toSqlValues: (model: T) => (string | number | boolean | null)[]
+    fromDb: (row: Record<string, unknown>) => T
 
     // Streamlined store management
     setStore: (items: T[]) => void

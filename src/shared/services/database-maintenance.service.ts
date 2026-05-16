@@ -94,8 +94,7 @@ export class DatabaseMaintenanceService {
         useAuthStore.getState().setSyncing(true)
 
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const rows = await db.select<any>(
+            const rows = await db.select<Record<string, unknown>>(
                 `SELECT * FROM ${config.tableName} WHERE is_deleted = 0 AND user_id = ?`,
                 [currentUserId]
             )
@@ -222,8 +221,9 @@ export class DatabaseMaintenanceService {
 
                 if (data && data.length > 0) {
                     for (const row of data) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const entity = config.fromDb(row as any)
+                        const entity = config.fromDb(
+                            row as Record<string, unknown>
+                        )
                         await db.execute(
                             config.saveSql,
                             config.toSqlValues(entity)

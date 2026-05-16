@@ -67,7 +67,11 @@ export const tagConfig: ModelConfig<Tag> = {
         tag.updated_at,
         tag.is_deleted ? 1 : 0,
     ],
-    fromDb: (row) => createTag({ ...row, is_deleted: !!row.is_deleted }),
+    fromDb: (row) =>
+        createTag({
+            ...(row as unknown as Partial<Tag>),
+            is_deleted: row.is_deleted === 1,
+        }),
     setStore: (items) => useTagStore.getState().set(items),
     upsertInStore: (item) => useTagStore.getState().upsert(item),
     removeFromStore: (id) => useTagStore.getState().remove(id),

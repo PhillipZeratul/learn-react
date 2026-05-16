@@ -29,17 +29,19 @@ interface SyncMetadata {
 export class SyncService {
     private static isSyncing = false
     private static debounceTimer: ReturnType<typeof setTimeout> | null = null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private static configs: ModelConfig<any>[] = []
+    // Internal registry of model configurations.
+    // We use BaseModel here and cast during registration to bypass variance issues.
+    private static configs: ModelConfig<BaseModel>[] = []
 
     /**
      * Registers a model config with the sync service.
      * Features should call this in their initialization.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    static registerConfig(config: ModelConfig<any>) {
+    static registerConfig<T extends BaseModel>(config: ModelConfig<T>) {
         if (!this.configs.find((c) => c.tableName === config.tableName)) {
-            this.configs.push(config)
+            // Bypass variance issues by casting to unknown then to BaseModel config.
+            // This is safe because the sync service only interacts with BaseModel properties.
+            this.configs.push(config as unknown as ModelConfig<BaseModel>)
         }
     }
 
@@ -213,7 +215,9 @@ export class SyncService {
                         `SyncService: Processing ${data.length} delta records for ${config.tableName}`
                     )
                     for (const row of data) {
-                        const entity = config.fromDb(row)
+                        const entity = config.fromDb(
+                            row as Record<string, unknown>
+                        )
 
                         // Protection: Check if this record has a pending local change in the queue
                         const inQueue = await db.select<{ id: number }>(
