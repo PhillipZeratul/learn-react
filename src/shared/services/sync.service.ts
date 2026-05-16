@@ -3,6 +3,9 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase"
 import type { ModelConfig, BaseModel } from "@/shared/models/base.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { DatabaseMaintenanceService } from "./database-maintenance.service"
+import type { Database } from "@/lib/database.types"
+
+type TableName = keyof Database["public"]["Tables"]
 
 interface QueueItem {
     id: number
@@ -180,7 +183,7 @@ export class SyncService {
 
             for (const config of this.configs) {
                 let query = supabase
-                    .from(config.tableName)
+                    .from(config.tableName as TableName)
                     .select("*")
                     .eq("user_id", currentUserId)
 
@@ -492,7 +495,7 @@ export class SyncService {
 
                 const config = this.configs.find((c) => c.tableName === table)
                 const { error } = await supabase
-                    .from(table)
+                    .from(table as TableName)
                     .upsert(
                         payloads,
                         config?.upsertOnConflict
