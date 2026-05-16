@@ -4,16 +4,30 @@ import type { ModelConfig, BaseModel } from "@/shared/models/base.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { DatabaseMaintenanceService } from "./database-maintenance.service"
 
+interface QueueItem {
+    id: number
+    table_name: string
+    row_id: string
+    action: "UPSERT" | "SOFT_DELETE"
+    payload: string
+    created_at: string
+}
+
+interface SyncMetadata {
+    user_id: string
+    last_synced_at: string
+}
+
 export class SyncService {
     private static isSyncing = false
-    private static debounceTimer: any = null
-    private static configs: ModelConfig<any>[] = []
+    private static debounceTimer: ReturnType<typeof setTimeout> | null = null
+    private static configs: ModelConfig<BaseModel>[] = []
 
     /**
      * Registers a model config with the sync service.
      * Features should call this in their initialization.
      */
-    static registerConfig(config: ModelConfig<any>) {
+    static registerConfig(config: ModelConfig<BaseModel>) {
         if (!this.configs.find((c) => c.tableName === config.tableName)) {
             this.configs.push(config)
         }
@@ -40,24 +54,35 @@ export class SyncService {
             // 2. Schema Migration: Add missing columns
             try {
                 // Get current columns
-                const tableInfo = await db.select<any>(`PRAGMA table_info(${config.tableName})`)
-                const existingColumns = tableInfo.map((col: any) => col.name)
+                const tableInfo = await db.select<{ name: string }>(
+                    `PRAGMA table_info(${config.tableName})`
+                )
+                const existingColumns = tableInfo.map((col) => col.name)
 
                 // Extract column definitions from createTableSql
                 // Simple regex to match "column_name TYPE" patterns
-                const columnMatches = config.createTableSql.matchAll(/\b(\w+)\s+(TEXT|INTEGER|REAL|BLOB)\b/gi)
-                
+                const columnMatches = config.createTableSql.matchAll(
+                    /\b(\w+)\s+(TEXT|INTEGER|REAL|BLOB)\b/gi
+                )
+
                 for (const match of columnMatches) {
                     const columnName = match[1]
                     const columnType = match[2]
 
                     if (!existingColumns.includes(columnName)) {
-                        console.log(`SyncService: Adding missing column '${columnName}' to '${config.tableName}'`)
-                        await db.execute(`ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`)
+                        console.log(
+                            `SyncService: Adding missing column '${columnName}' to '${config.tableName}'`
+                        )
+                        await db.execute(
+                            `ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`
+                        )
                     }
                 }
             } catch (err) {
-                console.error(`SyncService: Schema migration failed for ${config.tableName}:`, err)
+                console.error(
+                    `SyncService: Schema migration failed for ${config.tableName}:`,
+                    err
+                )
             }
         }
     }
@@ -139,7 +164,7 @@ export class SyncService {
         const db = await getDatabase()
 
         // 1. Get last sync timestamp
-        const meta = await db.select<any>(
+        const meta = await db.select<SyncMetadata>(
             "SELECT last_synced_at FROM sync_metadata WHERE user_id = ?",
             [currentUserId]
         )
@@ -155,7 +180,7 @@ export class SyncService {
 
             for (const config of this.configs) {
                 let query = supabase
-                    .from(config.tableName as any)
+                    .from(config.tableName)
                     .select("*")
                     .eq("user_id", currentUserId)
 
@@ -181,7 +206,7 @@ export class SyncService {
                         const entity = config.fromDb(row)
 
                         // Protection: Check if this record has a pending local change in the queue
-                        const inQueue = await db.select<any>(
+                        const inQueue = await db.select<{ id: number }>(
                             "SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
                             [config.tableName, entity.id]
                         )
@@ -259,7 +284,7 @@ export class SyncService {
 
         // Defensive RLS: ensure user_id is injected
         if (!entity.user_id && currentUserId) {
-            ; (entity as any).user_id = currentUserId
+            ;(entity as BaseModel).user_id = currentUserId
         }
 
         await db.execute(config.saveSql, config.toSqlValues(entity))
@@ -285,7 +310,7 @@ export class SyncService {
         const db = await getDatabase()
         const updatedAt = new Date().toISOString()
 
-        const rows = await db.select<any>(
+        const rows = await db.select<Record<string, unknown>>(
             `SELECT * FROM ${config.tableName} WHERE id = ?`,
             [id]
         )
@@ -333,7 +358,7 @@ export class SyncService {
         try {
             for (const config of this.configs) {
                 const filter = config.loadFilter || "AND is_deleted = 0"
-                const rows = await db.select<any>(
+                const rows = await db.select<Record<string, unknown>>(
                     `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`,
                     [currentUserId]
                 )
@@ -354,12 +379,12 @@ export class SyncService {
     static async addToQueue(
         tableName: string,
         rowId: string,
-        action: string,
-        payload: any
+        action: "UPSERT" | "SOFT_DELETE",
+        payload: BaseModel
     ) {
         const db = await getDatabase()
 
-        const existing = await db.select<any>(
+        const existing = await db.select<{ id: number }>(
             "SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
             [tableName, rowId]
         )
@@ -415,7 +440,7 @@ export class SyncService {
             }
 
             const db = await getDatabase()
-            const queue = await db.select<any>(
+            const queue = await db.select<QueueItem>(
                 "SELECT * FROM sync_queue ORDER BY created_at ASC"
             )
 
@@ -428,31 +453,46 @@ export class SyncService {
             )
 
             const tables = Array.from(
-                new Set(queue.map((item: any) => item.table_name))
+                new Set(queue.map((item) => item.table_name))
             )
+
+            // Define table priority to satisfy foreign key constraints during push.
+            // Tags must be synced before cards that reference them.
+            const tablePriority: Record<string, number> = {
+                routine_time_tracker_tags: 1,
+                routine_cards: 2,
+                time_tracker_cards: 2,
+                routine_time_tracker_states: 3,
+            }
+
+            const sortedTables = (tables as string[]).sort((a, b) => {
+                const priorityA = tablePriority[a] || 99
+                const priorityB = tablePriority[b] || 99
+                return priorityA - priorityB
+            })
 
             let highWaterMark: string | null = null
 
-            for (const table of tables as string[]) {
+            for (const table of sortedTables) {
                 const tableActions = queue.filter(
-                    (item: any) => item.table_name === table
+                    (item) => item.table_name === table
                 )
-                
+
                 // Deduplicate payloads by ID, keeping only the LATEST action for each record.
                 // This prevents "ON CONFLICT DO UPDATE command cannot affect row a second time" in Supabase.
-                const uniquePayloadMap = new Map<string, any>()
-                const actionIds = tableActions.map((item: any) => item.id)
-                
+                const uniquePayloadMap = new Map<string, BaseModel>()
+                const actionIds = tableActions.map((item) => item.id)
+
                 for (const action of tableActions) {
-                    const payload = JSON.parse(action.payload)
+                    const payload = JSON.parse(action.payload) as BaseModel
                     uniquePayloadMap.set(payload.id, payload)
                 }
-                
+
                 const payloads = Array.from(uniquePayloadMap.values())
 
                 const config = this.configs.find((c) => c.tableName === table)
                 const { error } = await supabase
-                    .from(table as any)
+                    .from(table)
                     .upsert(
                         payloads,
                         config?.upsertOnConflict
@@ -493,7 +533,7 @@ export class SyncService {
             if (highWaterMark) {
                 const currentUserId = session.user.id
                 // Fetch current meta to avoid reverting last_synced_at if pullDeltas advanced it further
-                const meta = await db.select<any>(
+                const meta = await db.select<SyncMetadata>(
                     "SELECT last_synced_at FROM sync_metadata WHERE user_id = ?",
                     [currentUserId]
                 )
@@ -543,7 +583,12 @@ export class SyncService {
                         eventType,
                         new: newRecord,
                         old: oldRecord,
-                    } = payload
+                    } = payload as {
+                        table: string
+                        eventType: string
+                        new: Record<string, unknown>
+                        old: Record<string, unknown>
+                    }
                     const db = await getDatabase()
 
                     const config = this.configs.find(
@@ -562,23 +607,41 @@ export class SyncService {
                         const entity = config.fromDb(newRecord)
 
                         // Protection: Check if this record has a pending local change in the queue
-                        const inQueue = await db.select<any>(
+                        const inQueue = await db.select<{
+                            id: number
+                            payload: string
+                        }>(
                             "SELECT id, payload FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
                             [config.tableName, entity.id]
                         )
 
                         if (inQueue.length > 0) {
-                            const pendingPayload = JSON.parse(inQueue[0].payload)
-                            if (entity.updated_at <= pendingPayload.updated_at) {
+                            const pendingPayload = JSON.parse(
+                                inQueue[0].payload
+                            ) as BaseModel
+                            if (
+                                entity.updated_at <= pendingPayload.updated_at
+                            ) {
                                 return
                             }
                             // Delete from queue because the cloud state is now more authoritative
-                            await db.execute("DELETE FROM sync_queue WHERE id = ?", [inQueue[0].id])
+                            await db.execute(
+                                "DELETE FROM sync_queue WHERE id = ?",
+                                [inQueue[0].id]
+                            )
                         }
 
                         // Check if the record in DB is already the same or newer
-                        const localRows = await db.select<any>(`SELECT updated_at FROM ${config.tableName} WHERE id = ?`, [entity.id])
-                        if (localRows.length > 0 && localRows[0].updated_at >= entity.updated_at) {
+                        const localRows = await db.select<{
+                            updated_at: string
+                        }>(
+                            `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
+                            [entity.id]
+                        )
+                        if (
+                            localRows.length > 0 &&
+                            localRows[0].updated_at >= entity.updated_at
+                        ) {
                             return
                         }
 
