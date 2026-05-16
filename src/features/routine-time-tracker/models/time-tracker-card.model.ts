@@ -75,7 +75,7 @@ export const timeTrackerCardConfig: ModelConfig<TimeTrackerCard> = {
     fromDb: (row) =>
         createTimeTrackerCard({
             ...(row as unknown as Partial<TimeTrackerCard>),
-            is_deleted: row.is_deleted === 1,
+            is_deleted: !!row.is_deleted,
         }),
     setStore: (items) => useTimeTrackerCardStore.getState().set(items),
     upsertInStore: (item) => useTimeTrackerCardStore.getState().upsert(item),

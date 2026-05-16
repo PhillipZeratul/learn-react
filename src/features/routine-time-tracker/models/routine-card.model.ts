@@ -88,7 +88,7 @@ export const routineCardConfig: ModelConfig<RoutineCard> = {
     fromDb: (row) =>
         createRoutineCard({
             ...(row as unknown as Partial<RoutineCard>),
-            is_deleted: row.is_deleted === 1,
+            is_deleted: !!row.is_deleted,
         }),
     setStore: (items) => useRoutineCardStore.getState().set(items),
     upsertInStore: (item) => useRoutineCardStore.getState().upsert(item),

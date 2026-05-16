@@ -62,7 +62,7 @@ export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState>
         fromDb: (row) =>
             createRoutineTimeTrackerState({
                 ...(row as unknown as Partial<RoutineTimeTrackerState>),
-                is_deleted: row.is_deleted === 1,
+                is_deleted: !!row.is_deleted,
             }),
         setStore: (items) => {
             if (items.length > 0) {

@@ -1,5 +1,6 @@
 import { RRule } from "rrule"
 import type { RoutineCard } from "../models/routine-card.model"
+import type { RoutineCardId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 import { isCardOverlappingDate } from "./utils"
 

@@ -70,7 +70,7 @@ export const tagConfig: ModelConfig<Tag> = {
     fromDb: (row) =>
         createTag({
             ...(row as unknown as Partial<Tag>),
-            is_deleted: row.is_deleted === 1,
+            is_deleted: !!row.is_deleted,
         }),
     setStore: (items) => useTagStore.getState().set(items),
     upsertInStore: (item) => useTagStore.getState().upsert(item),
