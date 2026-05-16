@@ -63,7 +63,7 @@ export const timeTrackerCardConfig: ModelConfig<TimeTrackerCard> = {
     toSqlValues: (card) => [
         card.id,
         card.title,
-        card.description,
+        card.description ?? null,
         card.start_at,
         card.end_at,
         card.tag_id,

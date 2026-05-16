@@ -73,7 +73,7 @@ export const routineCardConfig: ModelConfig<RoutineCard> = {
     toSqlValues: (card) => [
         card.id,
         card.title,
-        card.description,
+        card.description ?? null,
         card.start_at,
         card.end_at,
         card.tag_id,
@@ -81,9 +81,9 @@ export const routineCardConfig: ModelConfig<RoutineCard> = {
         card.created_at,
         card.updated_at,
         card.is_deleted ? 1 : 0,
-        card.rrule,
-        card.parent_routine_id,
-        card.original_recurrence_date,
+        card.rrule ?? null,
+        card.parent_routine_id ?? null,
+        card.original_recurrence_date ?? null,
     ],
     fromDb: (row) =>
         createRoutineCard({
