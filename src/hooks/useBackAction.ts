@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef, useLayoutEffect } from "react"
 import { backActionManager } from "../lib/back-action"
 
 /**
@@ -9,9 +9,16 @@ import { backActionManager } from "../lib/back-action"
  * @param active Whether the handler should be active. Usually depends on whether a modal/editor is open.
  */
 export function useBackAction(handler: () => void, active: boolean) {
+    const handlerRef = useRef(handler)
+
+    useLayoutEffect(() => {
+        handlerRef.current = handler
+    })
+
     useEffect(() => {
         if (active) {
-            return backActionManager.register(handler)
+            const stableHandler = () => handlerRef.current()
+            return backActionManager.register(stableHandler)
         }
-    }, [handler, active])
+    }, [active])
 }

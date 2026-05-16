@@ -21,7 +21,7 @@ class BackActionManager {
     }
 
     private triggerLastHandler = () => {
-        const handler = this.handlers.pop()
+        const handler = this.handlers[this.handlers.length - 1]
         if (handler) {
             handler()
         }

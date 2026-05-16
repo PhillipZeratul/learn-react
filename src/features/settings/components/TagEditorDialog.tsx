@@ -1,17 +1,13 @@
 import { useState, useMemo } from "react"
-import {
-    type Tag,
-} from "@/features/routine-time-tracker/models/tag.model"
+import { type Tag } from "@/features/routine-time-tracker/models/tag.model"
 import { Button } from "@/components/ui/Button"
 import { HugeiconsIcon } from "@hugeicons/react"
-import {
-    Tick02Icon,
-    Cancel01Icon,
-} from "@hugeicons/core-free-icons"
+import { Tick02Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
 import type { TagId } from "@/features/routine-time-tracker/models/routine-time-tracker.model"
 import { hexToHsv, hsvToHex } from "@/features/routine-time-tracker/utils/utils"
+import { useBackAction } from "@/hooks/useBackAction"
 
-export const PRESET_COLORS = [
+const PRESET_COLORS = [
     "#ef4444", // Red
     "#f97316", // Orange
     "#f59e0b", // Amber
@@ -58,7 +54,7 @@ const ShadeSwatches = ({
 
     return (
         <div className="space-y-2 pt-2">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                 Shades
             </p>
             <div className="grid grid-cols-10 gap-2">
@@ -80,7 +76,11 @@ const ShadeSwatches = ({
 interface TagEditorDialogProps {
     tag?: Tag
     activeTags: Tag[]
-    onSave: (data: { name: string; color: string; parentId: TagId | undefined }) => Promise<void>
+    onSave: (data: {
+        name: string
+        color: string
+        parentId: TagId | undefined
+    }) => Promise<void>
     onClose: () => void
 }
 
@@ -90,6 +90,7 @@ export const TagEditorDialog = ({
     onSave,
     onClose,
 }: TagEditorDialogProps) => {
+    useBackAction(onClose, true)
     const [name, setName] = useState(tag?.name ?? "")
     const [color, setColor] = useState(tag?.color ?? PRESET_COLORS[0])
     const [parentId, setParentId] = useState<TagId | "">(tag?.parent_id ?? "")
@@ -100,16 +101,20 @@ export const TagEditorDialog = ({
         if (!tag) return activeTags
 
         const getDescendants = (pId: string): string[] => {
-            const children = activeTags.filter(t => t.parent_id === pId).map(t => t.id)
+            const children = activeTags
+                .filter((t) => t.parent_id === pId)
+                .map((t) => t.id)
             return [...children, ...children.flatMap(getDescendants)]
         }
         const descendantIds = getDescendants(tag.id)
-        return activeTags.filter(t => t.id !== tag.id && !descendantIds.includes(t.id))
+        return activeTags.filter(
+            (t) => t.id !== tag.id && !descendantIds.includes(t.id)
+        )
     }, [activeTags, tag])
 
     const handleSave = async () => {
         if (!name.trim()) return
-        
+
         setIsSaving(true)
         try {
             await onSave({
@@ -150,7 +155,7 @@ export const TagEditorDialog = ({
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                                <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                                     Color Palette
                                 </p>
                                 <div className="grid grid-cols-10 gap-2">
@@ -167,14 +172,11 @@ export const TagEditorDialog = ({
                                 </div>
                             </div>
 
-                            <ShadeSwatches
-                                color={color}
-                                onChange={setColor}
-                            />
+                            <ShadeSwatches color={color} onChange={setColor} />
                         </div>
 
                         <div className="space-y-2">
-                            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                                 Parent Tag
                             </p>
                             <select
@@ -196,8 +198,16 @@ export const TagEditorDialog = ({
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
-                    <Button onClick={handleSave} disabled={isSaving || !name.trim()} className="w-full justify-center">
-                        <HugeiconsIcon icon={Tick02Icon} size={18} className="mr-2" />
+                    <Button
+                        onClick={handleSave}
+                        disabled={isSaving || !name.trim()}
+                        className="w-full justify-center"
+                    >
+                        <HugeiconsIcon
+                            icon={Tick02Icon}
+                            size={18}
+                            className="mr-2"
+                        />
                         Save Tag
                     </Button>
                     <Button
@@ -206,7 +216,11 @@ export const TagEditorDialog = ({
                         disabled={isSaving}
                         className="w-full justify-center text-muted-foreground"
                     >
-                        <HugeiconsIcon icon={Cancel01Icon} size={18} className="mr-2" />
+                        <HugeiconsIcon
+                            icon={Cancel01Icon}
+                            size={18}
+                            className="mr-2"
+                        />
                         Cancel
                     </Button>
                 </div>
