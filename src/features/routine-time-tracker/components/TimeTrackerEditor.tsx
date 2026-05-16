@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
 import { useBackAction } from "@/hooks/useBackAction"
+import { getSortedTagsWithDepth } from "../utils/tag-utils"
 
 interface TimeTrackerEditorProps {
     task: TimeTrackerCard
@@ -34,6 +35,10 @@ export const TimeTrackerEditor = ({
     const [tagId, setTagId] = useState(task.tag_id)
 
     const activeTags = tags.filter((tag) => !tag.is_deleted)
+    const sortedTags = useMemo(
+        () => getSortedTagsWithDepth(activeTags),
+        [activeTags]
+    )
 
     const handleSave = async () => {
         const finalTitle = title.trim()
@@ -135,7 +140,7 @@ export const TimeTrackerEditor = ({
                             Tag
                         </label>
                         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
-                            {activeTags.map((tag) => (
+                            {sortedTags.map((tag) => (
                                 <button
                                     key={tag.id}
                                     onClick={() => setTagId(tag.id)}

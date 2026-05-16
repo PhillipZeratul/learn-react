@@ -1,8 +1,9 @@
-import { useState, memo, useCallback } from "react"
+import { useState, memo, useCallback, useMemo } from "react"
 import { v4 as uuidv4 } from "uuid"
 import type { RoutineCard } from "../models/routine-card.model"
 import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
+import { getSortedTagsWithDepth } from "../utils/tag-utils"
 import type { RoutineCardId, TagId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 import { Button } from "@/components/ui/Button"
@@ -56,6 +57,10 @@ export const RoutineEditor = memo(
         useBackAction(handleBack, true)
 
         const activeTags = tags.filter((tag) => !tag.is_deleted)
+        const sortedTags = useMemo(
+            () => getSortedTagsWithDepth(activeTags),
+            [activeTags]
+        )
 
         const isRecurring = !!masterTask || !!task.rrule
 
@@ -286,7 +291,7 @@ export const RoutineEditor = memo(
                                 Tag
                             </label>
                             <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
-                                {activeTags.map((tag) => (
+                                {sortedTags.map((tag) => (
                                     <button
                                         key={tag.id}
                                         onClick={() => setTagId(tag.id)}

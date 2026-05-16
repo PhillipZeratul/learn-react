@@ -101,6 +101,7 @@ const SortableTagItem = ({
 }
 
 import { TagEditorDialog } from "./TagEditorDialog"
+import { getSortedTagsWithDepth } from "@/features/routine-time-tracker/utils/tag-utils"
 
 export const TagManager = () => {
     const { items: tags, upsert: upsertTag, remove: deleteTag } = useTagStore()
@@ -129,21 +130,10 @@ export const TagManager = () => {
     )
 
     // Helper to organize tags into a flat list with depth for sorting
-    const sortedTags = useMemo(() => {
-        const result: (Tag & { depth: number })[] = []
-        const processTags = (pId: TagId | undefined, depth: number) => {
-            const siblings = activeTags
-                .filter((t) => (t.parent_id || undefined) === pId)
-                .sort((a, b) => a.sort_order - b.sort_order)
-
-            siblings.forEach((sibling) => {
-                result.push({ ...sibling, depth })
-                processTags(sibling.id, depth + 1)
-            })
-        }
-        processTags(undefined, 0)
-        return result
-    }, [activeTags])
+    const sortedTags = useMemo(
+        () => getSortedTagsWithDepth(activeTags),
+        [activeTags]
+    )
 
     const handleSaveTag = async (data: {
         name: string
