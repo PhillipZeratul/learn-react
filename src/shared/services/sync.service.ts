@@ -143,14 +143,13 @@ export class SyncService {
                 "SyncService: Network online, flushing queue and pulling deltas..."
             )
             this.triggerSync(true)
-            this.pullDeltas()
         })
 
         // Upstream Lifecycle: Foreground
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
                 console.log("SyncService: App foregrounded, pulling deltas...")
-                this.pullDeltas()
+                this.triggerSync(true)
             }
         })
 
@@ -167,12 +166,20 @@ export class SyncService {
     static async pullDeltas() {
         if (!isSupabaseConfigured || !supabase || this.isSyncing) return
 
+        this.isSyncing = true
+        useAuthStore.getState().setSyncing(true)
+        try {
+            await this.internalPullDeltas()
+        } finally {
+            this.isSyncing = false
+            useAuthStore.getState().setSyncing(false)
+        }
+    }
+
+    private static async internalPullDeltas() {
         const currentUserId = useAuthStore.getState().user?.id
         if (!currentUserId) return
 
-        const syncStartTime = Date.now()
-        this.isSyncing = true
-        useAuthStore.getState().setSyncing(true)
         const db = await getDatabase()
 
         // 1. Get last sync timestamp
@@ -191,7 +198,7 @@ export class SyncService {
             let newHighWaterMark = lastSyncedAt
 
             for (const config of this.configs) {
-                let query = supabase
+                let query = supabase!
                     .from(config.tableName as TableName)
                     .select("*")
                     .eq("user_id", currentUserId)
@@ -220,16 +227,33 @@ export class SyncService {
                         )
 
                         // Protection: Check if this record has a pending local change in the queue
-                        const inQueue = await db.select<{ id: number }>(
-                            "SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
+                        const inQueue = await db.select<{
+                            id: number
+                            payload: string
+                        }>(
+                            "SELECT id, payload FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
                             [config.tableName, entity.id]
                         )
 
                         if (inQueue.length > 0) {
-                            console.log(
-                                `SyncService: Skipping delta for ${config.tableName}:${entity.id} - local change pending.`
-                            )
-                            continue
+                            const pendingPayload = JSON.parse(
+                                inQueue[0].payload
+                            ) as BaseModel
+                            if (entity.updated_at > pendingPayload.updated_at) {
+                                console.log(
+                                    `SyncService: Cloud version is newer than pending local change for ${config.tableName}:${entity.id}. Overriding queue.`
+                                )
+                                await db.execute(
+                                    "DELETE FROM sync_queue WHERE id = ?",
+                                    [inQueue[0].id]
+                                )
+                                // Fall through to save cloud version
+                            } else {
+                                console.log(
+                                    `SyncService: Skipping delta for ${config.tableName}:${entity.id} - local change pending and is newer or same.`
+                                )
+                                continue
+                            }
                         }
 
                         await db.execute(
@@ -266,14 +290,6 @@ export class SyncService {
             console.log("SyncService: Delta sync complete.")
         } catch (err) {
             console.error("SyncService: Delta sync failed:", err)
-        } finally {
-            const elapsed = Date.now() - syncStartTime
-            const remaining = Math.max(0, 1000 - elapsed)
-            if (remaining > 0) {
-                await new Promise((resolve) => setTimeout(resolve, remaining))
-            }
-            this.isSyncing = false
-            useAuthStore.getState().setSyncing(false)
         }
     }
 
@@ -444,134 +460,9 @@ export class SyncService {
         useAuthStore.getState().setSyncing(true)
 
         try {
-            // Defensive: Check for authenticated session before syncing
-            const {
-                data: { session },
-            } = await supabase.auth.getSession()
-            if (!session) {
-                console.log("SyncService: No active session, skipping sync.")
-                return
-            }
-
-            const db = await getDatabase()
-            const queue = await db.select<QueueItem>(
-                "SELECT * FROM sync_queue ORDER BY created_at ASC"
-            )
-
-            if (queue.length === 0) {
-                return
-            }
-
-            console.log(
-                `SyncService: Found ${queue.length} pending actions. Starting bulk push...`
-            )
-
-            const tables = Array.from(
-                new Set(queue.map((item) => item.table_name))
-            )
-
-            // Define table priority to satisfy foreign key constraints during push.
-            // Tags must be synced before cards that reference them.
-            const tablePriority: Record<string, number> = {
-                routine_time_tracker_tags: 1,
-                routine_cards: 2,
-                time_tracker_cards: 2,
-                routine_time_tracker_states: 3,
-            }
-
-            const sortedTables = (tables as string[]).sort((a, b) => {
-                const priorityA = tablePriority[a] || 99
-                const priorityB = tablePriority[b] || 99
-                return priorityA - priorityB
-            })
-
-            let highWaterMark: string | null = null
-
-            for (const table of sortedTables) {
-                const tableActions = queue.filter(
-                    (item) => item.table_name === table
-                )
-
-                // Deduplicate payloads by ID, keeping only the LATEST action for each record.
-                // This prevents "ON CONFLICT DO UPDATE command cannot affect row a second time" in Supabase.
-                const uniquePayloadMap = new Map<string, BaseModel>()
-                const actionIds = tableActions.map((item) => item.id)
-
-                for (const action of tableActions) {
-                    const payload = JSON.parse(action.payload) as BaseModel
-                    uniquePayloadMap.set(payload.id, payload)
-                }
-
-                // Strip local-only fields (like _sync_status) before sending to Supabase
-                const payloads = Array.from(uniquePayloadMap.values()).map(
-                    ({ _sync_status, ...rest }) => rest
-                )
-
-                const config = this.configs.find((c) => c.tableName === table)
-
-                const { error } = await supabase
-                    .from(table as TableName)
-                    .upsert(
-                        payloads,
-                        config?.upsertOnConflict
-                            ? { onConflict: config.upsertOnConflict }
-                            : undefined
-                    )
-
-                if (!error) {
-                    const placeholders = actionIds.map(() => "?").join(",")
-                    await db.execute(
-                        `DELETE FROM sync_queue WHERE id IN (${placeholders})`,
-                        actionIds
-                    )
-                    console.log(
-                        `SyncService: Successfully synced ${tableActions.length} records to ${table}`
-                    )
-
-                    // Track the latest updated_at to advance last_synced_at
-                    for (const payload of payloads) {
-                        if (
-                            payload.updated_at &&
-                            (!highWaterMark ||
-                                payload.updated_at > highWaterMark)
-                        ) {
-                            highWaterMark = payload.updated_at
-                        }
-                    }
-                } else {
-                    console.error(
-                        `SyncService: Bulk sync error for ${table}:`,
-                        error
-                    )
-                    break
-                }
-            }
-
-            // 2. Update last_synced_at with current high water mark if we pushed successfully
-            if (highWaterMark) {
-                const currentUserId = session.user.id
-                // Fetch current meta to avoid reverting last_synced_at if pullDeltas advanced it further
-                const meta = await db.select<SyncMetadata>(
-                    "SELECT last_synced_at FROM sync_metadata WHERE user_id = ?",
-                    [currentUserId]
-                )
-                const existingLastSynced =
-                    meta.length > 0 ? meta[0].last_synced_at : null
-
-                if (!existingLastSynced || highWaterMark > existingLastSynced) {
-                    await db.execute(
-                        `
-            INSERT INTO sync_metadata (user_id, last_synced_at)
-            VALUES (?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET last_synced_at = excluded.last_synced_at
-          `,
-                        [currentUserId, highWaterMark]
-                    )
-                    console.log(
-                        `SyncService: Advanced last_synced_at to ${highWaterMark} after successful push.`
-                    )
-                }
-            }
+            // Pull deltas before push to resolve conflicts locally and ensure FK consistency
+            await this.internalPullDeltas()
+            await this.internalSync()
         } catch (err) {
             console.error("SyncService: Sync process failed:", err)
         } finally {
@@ -582,6 +473,134 @@ export class SyncService {
             }
             this.isSyncing = false
             useAuthStore.getState().setSyncing(false)
+        }
+    }
+
+    private static async internalSync() {
+        // Defensive: Check for authenticated session before syncing
+        const {
+            data: { session },
+        } = await supabase!.auth.getSession()
+        if (!session) {
+            console.log("SyncService: No active session, skipping push.")
+            return
+        }
+
+        const db = await getDatabase()
+        const queue = await db.select<QueueItem>(
+            "SELECT * FROM sync_queue ORDER BY created_at ASC"
+        )
+
+        if (queue.length === 0) {
+            return
+        }
+
+        console.log(
+            `SyncService: Found ${queue.length} pending actions. Starting bulk push...`
+        )
+
+        const tables = Array.from(new Set(queue.map((item) => item.table_name)))
+
+        // Define table priority to satisfy foreign key constraints during push.
+        // Tags must be synced before cards that reference them.
+        const tablePriority: Record<string, number> = {
+            routine_time_tracker_tags: 1,
+            routine_cards: 2,
+            time_tracker_cards: 2,
+            routine_time_tracker_states: 3,
+        }
+
+        const sortedTables = (tables as string[]).sort((a, b) => {
+            const priorityA = tablePriority[a] || 99
+            const priorityB = tablePriority[b] || 99
+            return priorityA - priorityB
+        })
+
+        let highWaterMark: string | null = null
+
+        for (const table of sortedTables) {
+            const tableActions = queue.filter(
+                (item) => item.table_name === table
+            )
+
+            // Deduplicate payloads by ID, keeping only the LATEST action for each record.
+            // This prevents "ON CONFLICT DO UPDATE command cannot affect row a second time" in Supabase.
+            const uniquePayloadMap = new Map<string, BaseModel>()
+            const actionIds = tableActions.map((item) => item.id)
+
+            for (const action of tableActions) {
+                const payload = JSON.parse(action.payload) as BaseModel
+                uniquePayloadMap.set(payload.id, payload)
+            }
+
+            // Strip local-only fields (like _sync_status) before sending to Supabase
+            const payloads = Array.from(uniquePayloadMap.values()).map(
+                ({ _sync_status, ...rest }) => rest
+            )
+
+            const config = this.configs.find((c) => c.tableName === table)
+
+            const { error } = await supabase!
+                .from(table as TableName)
+                .upsert(
+                    payloads,
+                    config?.upsertOnConflict
+                        ? { onConflict: config.upsertOnConflict }
+                        : undefined
+                )
+
+            if (!error) {
+                const placeholders = actionIds.map(() => "?").join(",")
+                await db.execute(
+                    `DELETE FROM sync_queue WHERE id IN (${placeholders})`,
+                    actionIds
+                )
+                console.log(
+                    `SyncService: Successfully synced ${tableActions.length} records to ${table}`
+                )
+
+                // Track the latest updated_at to advance last_synced_at
+                for (const payload of payloads) {
+                    if (
+                        payload.updated_at &&
+                        (!highWaterMark || payload.updated_at > highWaterMark)
+                    ) {
+                        highWaterMark = payload.updated_at
+                    }
+                }
+            } else {
+                console.error(
+                    `SyncService: Bulk sync error for ${table}:`,
+                    error
+                )
+                break
+            }
+        }
+
+        // 2. Update last_synced_at with current high water mark if we pushed successfully
+        if (highWaterMark) {
+            const currentUserId = session.user.id
+            // Fetch current meta to avoid reverting last_synced_at if pullDeltas advanced it further
+            const meta = await db.select<SyncMetadata>(
+                "SELECT last_synced_at FROM sync_metadata WHERE user_id = ?",
+                [currentUserId]
+            )
+            const existingLastSynced =
+                meta.length > 0 ? meta[0].last_synced_at : null
+
+            if (!existingLastSynced || highWaterMark > existingLastSynced) {
+                await db.execute(
+                    `
+            INSERT INTO sync_metadata (user_id, last_synced_at)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET last_synced_at = excluded.last_synced_at
+          `,
+                    [currentUserId, highWaterMark]
+                )
+                console.log(
+                    `SyncService: Advanced last_synced_at to ${highWaterMark} after successful push.`
+                )
+            }
         }
     }
 

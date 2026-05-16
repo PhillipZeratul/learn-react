@@ -15,9 +15,9 @@ import type { IsoDateTime, UserId } from "@/shared/models/base.model"
 
 export class RoutineTimeTrackerService {
     static registerConfig() {
+        SyncService.registerConfig(tagConfig)
         SyncService.registerConfig(routineCardConfig)
         SyncService.registerConfig(timeTrackerCardConfig)
-        SyncService.registerConfig(tagConfig)
         SyncService.registerConfig(routineTimeTrackerStateConfig)
     }
 

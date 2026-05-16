@@ -233,13 +233,8 @@ export default function RoutineTimeTrackerWidget() {
         // Persistence timer: update DB every 30 seconds
         const timer = setInterval(updateActiveTask, 30000)
 
-        // Immediate sync on focus/mount
-        updateActiveTask()
-        window.addEventListener("focus", updateActiveTask)
-
         return () => {
             clearInterval(timer)
-            window.removeEventListener("focus", updateActiveTask)
         }
     }, [activeTimeTrackerId, upsertTimeTrackerCard])
 
