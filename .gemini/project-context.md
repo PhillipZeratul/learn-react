@@ -3,14 +3,16 @@
 ## General Instructions
 
 - **Always use 'bun', not 'npm'.**
-- Prefer functional programming paradigms where appropriate.
 - Respond and code in English.
 
-## Coding Style
+## TypeScript & Typing Strictness
 
-- Use 4 spaces for indentation.
-- verbatimModuleSyntax is enabled, so use type-only import when needed.
-- erasableSyntaxOnly is enabled.
+- **Zero `any` Tolerance:** Under no circumstances should you generate TypeScript code using the `any` type. If type definitions are missing, infer them from the context or ask for the interface.
+- **Compiler Rigor:** Treat TypeScript's structural typing with absolute strictness. Do not bypass the compiler.
+- **Use `unknown` for Dynamic Data:** If a payload or error object is genuinely unpredictable (e.g., catching an error, parsing raw JSON), type it as `unknown` and write explicit type guards or `typeof` checks to narrow the type before accessing its properties.
+- **Leverage Generics:** Use Generics (`<T>`) for flexible functions and interfaces, particularly within the Zustand Action Queue and local-first synchronization pipelines.
+- **Supabase Schema Extraction:** Never use arbitrary strings or generic objects for database operations. Always type Supabase calls by extracting the exact definitions from the generated `Database` schema file (e.g., `Database['public']['Tables']['table_name']['Row']`).
+- **Compilation Flags:** Strictly adhere to `verbatimModuleSyntax` (enforcing `import type` and `export type` for pure types) and `erasableSyntaxOnly` (avoiding enums and namespaces in favor of union types and const objects).
 
 ## Core Philosophy
 

@@ -1,6 +1,11 @@
 import { getDatabase } from "@/lib/db/sqlite"
 import { supabase, isSupabaseConfigured } from "@/lib/supabase"
-import type { ModelConfig, BaseModel, UserId } from "@/shared/models/base.model"
+import type {
+    ModelConfig,
+    BaseModel,
+    UserId,
+    IsoDateTime,
+} from "@/shared/models/base.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { DatabaseMaintenanceService } from "./database-maintenance.service"
 import type { Database } from "@/lib/database.types"
