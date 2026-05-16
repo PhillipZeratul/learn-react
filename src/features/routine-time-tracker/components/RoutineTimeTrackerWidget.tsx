@@ -32,7 +32,10 @@ import { RoutineEditor } from "./RoutineEditor"
 import { TimeTrackerEditor } from "./TimeTrackerEditor"
 import { getRoutineInstancesForDate } from "../utils/routine-expansion"
 import type { IsoDateTime } from "@/shared/models/base.model"
-import type { RoutineCardId } from "../models/routine-time-tracker.model"
+import type {
+    RoutineCardId,
+    TimeTrackerCardId,
+} from "../models/routine-time-tracker.model"
 import { AUTO_SWITCH_TO_TODAY_MS } from "@/features/settings/stores/settings.store"
 
 // Extracted components and utilities
@@ -44,6 +47,7 @@ import { TaskCard } from "./TaskCard"
 import { TimelineGrid } from "./TimelineGrid"
 import { SaveChangeDialog } from "./SaveChangeDialog"
 import { dragTopSignal, dragHeightSignal } from "../stores/drag.store"
+import { useBackAction } from "@/hooks/useBackAction"
 
 type EditingState =
     | { type: "routine"; card: RoutineCard }
@@ -79,7 +83,7 @@ export default function RoutineTimeTrackerWidget() {
         useRoutineTimeTrackerStateStore(
             (state) => state.state?.active_time_tracker_id
         ) || null
-    const setActiveTimeTrackerId = (id: any) =>
+    const setActiveTimeTrackerId = (id: TimeTrackerCardId | null) =>
         RoutineTimeTrackerService.setActiveTrackerId(id)
 
     const [currentDate, setCurrentDate] = useState(new Date())
@@ -109,7 +113,13 @@ export default function RoutineTimeTrackerWidget() {
                 }
                 return c
             })
-    }, [allTimeTrackerCards, currentDate, activeTimeTrackerId, isCurrentDay, now])
+    }, [
+        allTimeTrackerCards,
+        currentDate,
+        activeTimeTrackerId,
+        isCurrentDay,
+        now,
+    ])
 
     const currentDateRoutineCards = useMemo(() => {
         return getRoutineInstancesForDate(allRoutineCards, currentDate)
@@ -129,6 +139,9 @@ export default function RoutineTimeTrackerWidget() {
         card: RoutineCard | TimeTrackerCard
         originalStartAt: IsoDateTime
     } | null>(null)
+
+    useBackAction(() => setConfirmDragState(null), !!confirmDragState)
+
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const lastTouchPos = useRef<{ x: number; y: number } | null>(null)
@@ -199,9 +212,9 @@ export default function RoutineTimeTrackerWidget() {
         if (!activeTimeTrackerId) return
 
         const updateActiveTask = () => {
-            const task = useTimeTrackerCardStore.getState().items.find(
-                (c) => c.id === activeTimeTrackerId
-            )
+            const task = useTimeTrackerCardStore
+                .getState()
+                .items.find((c) => c.id === activeTimeTrackerId)
             if (!task || task.is_deleted) return
 
             const currentTime = new Date()
@@ -441,7 +454,10 @@ export default function RoutineTimeTrackerWidget() {
             const finalCard = { ...dragState.card }
 
             if (dragState.mode === "top") {
-                finalCard.start_at = timeToISO(formatMin(finalStartMin), dateStr)
+                finalCard.start_at = timeToISO(
+                    formatMin(finalStartMin),
+                    dateStr
+                )
             } else if (dragState.mode === "bottom") {
                 finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
             } else if (dragState.mode === "center") {
@@ -805,8 +821,11 @@ export default function RoutineTimeTrackerWidget() {
                                 .split("-")
                                 .map(Number)
                             const masterEndDate = new Date(my, mm - 1, md)
-                            masterEndDate.setDate(masterEndDate.getDate() + dayDiff)
-                            const masterEndDatePart = formatLocalDate(masterEndDate)
+                            masterEndDate.setDate(
+                                masterEndDate.getDate() + dayDiff
+                            )
+                            const masterEndDatePart =
+                                formatLocalDate(masterEndDate)
 
                             const updatedMaster = {
                                 ...master,

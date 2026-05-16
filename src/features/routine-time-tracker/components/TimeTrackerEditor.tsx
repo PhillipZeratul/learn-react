@@ -3,6 +3,7 @@ import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
+import { useBackAction } from "@/hooks/useBackAction"
 
 interface TimeTrackerEditorProps {
     task: TimeTrackerCard
@@ -19,6 +20,7 @@ export const TimeTrackerEditor = ({
     onCancel,
     hideTimeFields = false,
 }: TimeTrackerEditorProps) => {
+    useBackAction(onCancel, true)
     const { items: tags } = useTagStore()
     const [title, setTitle] = useState(task.title)
     const [startDate, setStartDate] = useState(

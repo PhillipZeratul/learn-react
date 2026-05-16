@@ -1,4 +1,4 @@
-import { useState, memo } from "react"
+import { useState, memo, useCallback } from "react"
 import { v4 as uuidv4 } from "uuid"
 import type { RoutineCard } from "../models/routine-card.model"
 import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
@@ -6,6 +6,7 @@ import { useTagStore } from "../stores/tag.store"
 import type { RoutineCardId, TagId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 import { Button } from "@/components/ui/Button"
+import { useBackAction } from "@/hooks/useBackAction"
 
 interface RoutineEditorProps {
     task: RoutineCard
@@ -43,6 +44,16 @@ export const RoutineEditor = memo(
         const [confirmAction, setConfirmAction] = useState<
             "save" | "delete" | null
         >(null)
+
+        const handleBack = useCallback(() => {
+            if (confirmAction) {
+                setConfirmAction(null)
+            } else {
+                onCancel()
+            }
+        }, [confirmAction, onCancel])
+
+        useBackAction(handleBack, true)
 
         const activeTags = tags.filter((tag) => !tag.is_deleted)
 

@@ -2,12 +2,15 @@ import { TagManager } from "./TagManager"
 import { Button } from "@/components/ui/Button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
+import { useBackAction } from "@/hooks/useBackAction"
 
 interface SettingsMenuProps {
     onClose: () => void
 }
 
 export const SettingsMenu = ({ onClose }: SettingsMenuProps) => {
+    useBackAction(onClose, true)
+
     return (
         <div className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
             <div className="flex max-h-[90vh] w-full max-w-md animate-in flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl duration-200 zoom-in-95">
