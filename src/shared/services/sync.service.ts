@@ -1,6 +1,6 @@
 import { getDatabase } from "@/lib/db/sqlite"
 import { supabase, isSupabaseConfigured } from "@/lib/supabase"
-import type { ModelConfig, BaseModel } from "@/shared/models/base.model"
+import type { ModelConfig, BaseModel, UserId } from "@/shared/models/base.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { DatabaseMaintenanceService } from "./database-maintenance.service"
 import type { Database } from "@/lib/database.types"
@@ -283,7 +283,7 @@ export class SyncService {
      */
     static async save<T extends BaseModel>(config: ModelConfig<T>, entity: T) {
         const db = await getDatabase()
-        const currentUserId = useAuthStore.getState().user?.id
+        const currentUserId = useAuthStore.getState().user?.id as UserId
 
         // Defensive RLS: ensure user_id is injected
         if (!entity.user_id && currentUserId) {
@@ -491,9 +491,13 @@ export class SyncService {
                     uniquePayloadMap.set(payload.id, payload)
                 }
 
-                const payloads = Array.from(uniquePayloadMap.values())
+                // Strip local-only fields (like _sync_status) before sending to Supabase
+                const payloads = Array.from(uniquePayloadMap.values()).map(
+                    ({ _sync_status, ...rest }) => rest
+                )
 
                 const config = this.configs.find((c) => c.tableName === table)
+
                 const { error } = await supabase
                     .from(table as TableName)
                     .upsert(
