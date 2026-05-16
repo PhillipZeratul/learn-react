@@ -32,7 +32,11 @@ export const useRoutineCardStore = create<
             set((state) => {
                 const index = state.items.findIndex((c) => c.id === item.id)
                 if (index !== -1) {
-                    state.items[index] = item
+                    if (item.is_deleted) {
+                        state.items.splice(index, 1)
+                    } else {
+                        state.items[index] = item
+                    }
                 } else if (!item.is_deleted) {
                     state.items.push(item)
                 }

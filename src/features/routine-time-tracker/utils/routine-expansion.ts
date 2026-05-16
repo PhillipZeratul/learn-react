@@ -45,7 +45,9 @@ export const getRoutineInstancesForDate = (
         999
     )
 
-    const masterCards = allCards.filter((c) => !c.parent_routine_id)
+    const masterCards = allCards.filter(
+        (c) => !c.parent_routine_id && !c.is_deleted
+    )
     const exceptions = allCards.filter((c) => !!c.parent_routine_id)
 
     const instances: RoutineCard[] = []
@@ -107,7 +109,7 @@ export const getRoutineInstancesForDate = (
                 } else {
                     instances.push({
                         ...master,
-                        id: `${master.id}_${occurrenceIso}` as any,
+                        id: `${master.id}_${occurrenceIso}` as RoutineCardId,
                         start_at: occurrenceIso,
                         end_at: expandedEndAt,
                         _isVirtual: true,
