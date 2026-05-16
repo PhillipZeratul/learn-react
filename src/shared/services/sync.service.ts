@@ -24,13 +24,15 @@ interface SyncMetadata {
 export class SyncService {
     private static isSyncing = false
     private static debounceTimer: ReturnType<typeof setTimeout> | null = null
-    private static configs: ModelConfig<BaseModel>[] = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private static configs: ModelConfig<any>[] = []
 
     /**
      * Registers a model config with the sync service.
      * Features should call this in their initialization.
      */
-    static registerConfig(config: ModelConfig<BaseModel>) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static registerConfig(config: ModelConfig<any>) {
         if (!this.configs.find((c) => c.tableName === config.tableName)) {
             this.configs.push(config)
         }
@@ -311,7 +313,7 @@ export class SyncService {
         id: string
     ) {
         const db = await getDatabase()
-        const updatedAt = new Date().toISOString()
+        const updatedAt = new Date().toISOString() as IsoDateTime
 
         const rows = await db.select<Record<string, unknown>>(
             `SELECT * FROM ${config.tableName} WHERE id = ?`,

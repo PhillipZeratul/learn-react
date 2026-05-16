@@ -3,6 +3,10 @@ import { SyncService } from "./sync.service"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { useSettingsStore } from "@/features/settings/stores/settings.store"
 import { supabase, isSupabaseConfigured } from "@/lib/supabase"
+import type { IsoDateTime } from "../models/base.model"
+import type { Database } from "@/lib/database.types"
+
+type TableName = keyof Database["public"]["Tables"]
 
 export class DatabaseMaintenanceService {
     /**
@@ -61,7 +65,7 @@ export class DatabaseMaintenanceService {
      */
     static async clearTableData(tableName: string) {
         const db = await getDatabase()
-        const updatedAt = new Date().toISOString()
+        const updatedAt = new Date().toISOString() as IsoDateTime
         const currentUserId = useAuthStore.getState().user?.id
 
         if (!currentUserId) {
@@ -90,6 +94,7 @@ export class DatabaseMaintenanceService {
         useAuthStore.getState().setSyncing(true)
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rows = await db.select<any>(
                 `SELECT * FROM ${config.tableName} WHERE is_deleted = 0 AND user_id = ?`,
                 [currentUserId]
@@ -203,7 +208,7 @@ export class DatabaseMaintenanceService {
                     `DatabaseMaintenanceService: Pulling ${config.tableName}...`
                 )
                 const { data, error } = await supabase
-                    .from(config.tableName as any)
+                    .from(config.tableName as TableName)
                     .select("*")
                     .eq("user_id", currentUserId)
 
@@ -217,7 +222,8 @@ export class DatabaseMaintenanceService {
 
                 if (data && data.length > 0) {
                     for (const row of data) {
-                        const entity = config.fromDb(row)
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const entity = config.fromDb(row as any)
                         await db.execute(
                             config.saveSql,
                             config.toSqlValues(entity)

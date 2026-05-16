@@ -11,13 +11,18 @@ import { useTagStore } from "../stores/tag.store"
 import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import type { TimeTrackerCardId } from "../models/routine-time-tracker.model"
+import type { IsoDateTime } from "@/shared/models/base.model"
 
 export class RoutineTimeTrackerService {
     static registerConfig() {
-        SyncService.registerConfig(routineCardConfig)
-        SyncService.registerConfig(timeTrackerCardConfig)
-        SyncService.registerConfig(tagConfig)
-        SyncService.registerConfig(routineTimeTrackerStateConfig)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        SyncService.registerConfig(routineCardConfig as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        SyncService.registerConfig(timeTrackerCardConfig as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        SyncService.registerConfig(tagConfig as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        SyncService.registerConfig(routineTimeTrackerStateConfig as any)
     }
 
     static async initialize() {
@@ -27,7 +32,7 @@ export class RoutineTimeTrackerService {
                 await useTagStore
                     .getState()
                     .ensureDefault((tag) => SyncService.save(tagConfig, tag))
-                // We don't call ensureStateRecord here anymore to avoid race conditions 
+                // We don't call ensureStateRecord here anymore to avoid race conditions
                 // with SyncService hydration. The record will be hydrated from cloud
                 // or created on the first active tracker change.
             }
@@ -48,6 +53,7 @@ export class RoutineTimeTrackerService {
         if (!state) {
             // Check local DB before creating a new one, as store hydration might be async or delayed
             const db = await getDatabase()
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const rows = await db.select<any>(
                 "SELECT * FROM routine_time_tracker_states WHERE user_id = ?",
                 [currentUser.id]
@@ -70,8 +76,8 @@ export class RoutineTimeTrackerService {
             const updatedState = {
                 ...state,
                 id: currentUser.id,
-                user_id: currentUser.id as any,
-                updated_at: new Date().toISOString() as any,
+                user_id: currentUser.id as UserId,
+                updated_at: new Date().toISOString() as IsoDateTime,
             }
 
             useRoutineTimeTrackerStateStore.getState().set(updatedState)
@@ -89,7 +95,7 @@ export class RoutineTimeTrackerService {
 
     static async setActiveTrackerId(id: TimeTrackerCardId | null) {
         await this.ensureStateRecord()
-        let state = useRoutineTimeTrackerStateStore.getState().state!
+        const state = useRoutineTimeTrackerStateStore.getState().state!
 
         // Prevent redundant updates if the state is already the same
         if (state.active_time_tracker_id === id) {
@@ -99,7 +105,7 @@ export class RoutineTimeTrackerService {
         const updatedState = {
             ...state,
             active_time_tracker_id: id,
-            updated_at: new Date().toISOString() as any,
+            updated_at: new Date().toISOString() as IsoDateTime,
         }
 
         useRoutineTimeTrackerStateStore.getState().set(updatedState)
