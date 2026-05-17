@@ -90,7 +90,7 @@ export function Root() {
             }
         }
         init()
-    }, [setSession, setUser])
+    }, [setAuth])
 
     if (initError) {
         return (

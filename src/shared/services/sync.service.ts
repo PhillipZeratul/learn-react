@@ -288,7 +288,7 @@ export class SyncService {
                     )
 
                     // Bulk-check sync queue for all row IDs in this batch
-                    const rowIds = data.map((r) => r.id)
+                    const rowIds = data.map((r) => r.id as string)
                     const placeholders = rowIds.map(() => "?").join(",")
                     const inQueueResults = await db.select<{
                         row_id: string
