@@ -32,7 +32,7 @@ export const createRoutineCard = (
     return {
         id: data.id || (uuidv4() as RoutineCardId),
         title: data.title ?? "",
-        description: data.description || "",
+        description: data.description === undefined ? "" : data.description,
         start_at: data.start_at || now,
         end_at: data.end_at || now,
         tag_id: data.tag_id || DEFAULT_TAG_ID,

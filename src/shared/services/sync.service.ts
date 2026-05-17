@@ -165,7 +165,7 @@ export class SyncService {
         // Upstream Lifecycle: Reconnect
         window.addEventListener("online", () => {
             console.log(
-                "SyncService: Network online, flushing queue and pulling deltas..."
+                "SyncService: [EVENT] Network online, triggering sync..."
             )
             this.triggerSync(true)
         })
@@ -173,7 +173,9 @@ export class SyncService {
         // Upstream Lifecycle: Foreground
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
-                console.log("SyncService: App foregrounded, pulling deltas...")
+                console.log(
+                    "SyncService: [EVENT] App foregrounded, pulling deltas..."
+                )
                 this.triggerSync(true)
             }
         })
@@ -193,8 +195,13 @@ export class SyncService {
      * Efficient Catch-up Sync: Pulls only modified records from Supabase.
      */
     static async pullDeltas() {
-        if (!isSupabaseConfigured || !supabase || this.isSyncing) return
+        if (!isSupabaseConfigured || !supabase) return
+        if (this.isSyncing) {
+            console.log("SyncService: pullDeltas skipped (already syncing)")
+            return
+        }
 
+        console.log("SyncService: Starting pullDeltas...")
         this.isSyncing = true
         useAuthStore.getState().setSyncing(true)
         try {
@@ -297,19 +304,38 @@ export class SyncService {
                         const inQueue = inQueueMap.get(entity.id)
                         let finalEntity = entity
 
+                        // Update high-water mark AS EARLY AS POSSIBLE
+                        // If we received this from server, we are definitely synced up to this point.
+                        if (
+                            !newHighWaterMark ||
+                            entity.updated_at > newHighWaterMark
+                        ) {
+                            newHighWaterMark = entity.updated_at
+                        }
+
                         if (inQueue) {
                             const pendingPatch = JSON.parse(
                                 inQueue.payload
                             ) as Partial<BaseModel>
 
                             // Server Reconciliation: Apply local patch on top of authoritative cloud state
-                            // Type casting is needed because fromDb returns the specific model type T, and we merge partial properties into it.
+                            // We MUST ensure the resulting updated_at is at least as new as the cloud's
+                            // to avoid an infinite loop where we keep pulling the same "stale" version.
+                            const cloudUpdatedAt = entity.updated_at
+                            const localUpdatedAt =
+                                pendingPatch.updated_at || entity.updated_at
+
                             finalEntity = {
                                 ...entity,
                                 ...pendingPatch,
+                                updated_at:
+                                    cloudUpdatedAt > localUpdatedAt
+                                        ? cloudUpdatedAt
+                                        : localUpdatedAt,
                             } as typeof entity
+
                             console.log(
-                                `SyncService: Server Reconciliation applied for ${config.tableName}:${entity.id}. Merged local patch.`
+                                `SyncService: [RECONCILE] ${config.tableName}:${entity.id}`
                             )
                         } else {
                             // Check if local DB already has same or newer version (for non-queued items)
@@ -325,20 +351,15 @@ export class SyncService {
                             ) {
                                 continue
                             }
+                            console.log(
+                                `SyncService: [APPLY] ${config.tableName}:${entity.id} (Cloud is newer: ${entity.updated_at})`
+                            )
                         }
 
                         await db.execute(
                             config.saveSql,
                             config.toSqlValues(finalEntity)
                         )
-
-                        // Update high-water mark
-                        if (
-                            !newHighWaterMark ||
-                            entity.updated_at > newHighWaterMark
-                        ) {
-                            newHighWaterMark = entity.updated_at
-                        }
 
                         // Update in-memory store
                         config.upsertInStore(finalEntity)
@@ -367,11 +388,16 @@ export class SyncService {
     static triggerSync(immediate = false) {
         if (!isSupabaseConfigured) return
 
-        if (this.debounceTimer) clearTimeout(this.debounceTimer)
+        if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer)
+            this.debounceTimer = null
+        }
 
         if (immediate) {
+            console.log("SyncService: triggerSync(immediate)")
             this.sync()
         } else {
+            console.log("SyncService: triggerSync(debounced 3s)")
             this.debounceTimer = setTimeout(() => this.sync(), 3000)
         }
     }
@@ -382,6 +408,7 @@ export class SyncService {
     static async save<T extends BaseModel>(config: ModelConfig<T>, entity: T) {
         const db = await getDatabase()
         const currentUserId = useAuthStore.getState().user?.id as UserId
+        const now = new Date().toISOString() as IsoDateTime
 
         // Defensive RLS: ensure user_id is injected
         if (!entity.user_id && currentUserId) {
@@ -395,28 +422,48 @@ export class SyncService {
         )
 
         const patch: Record<string, unknown> = {}
+        const finalEntity = { ...entity }
+
         if (rows.length > 0) {
             const oldEntity = config.fromDb(rows[0])
+            let hasChanges = false
             for (const key in entity) {
+                // Skip _sync_status and other local-only fields
+                if (key.startsWith("_")) continue
+
                 if (entity[key as keyof T] !== oldEntity[key as keyof T]) {
                     patch[key] = entity[key as keyof T]
+                    hasChanges = true
                 }
             }
-            // Always include id and updated_at
+
+            if (!hasChanges) {
+                console.log(
+                    `SyncService: No changes detected for ${config.tableName}:${entity.id}, skipping save.`
+                )
+                return
+            }
+
+            // Always refresh updated_at on save to ensure LWW works correctly
+            finalEntity.updated_at = now
+            patch.updated_at = now
             patch.id = entity.id
-            patch.updated_at = entity.updated_at
         } else {
             // It's an insert, patch is the full entity
-            Object.assign(patch, entity)
+            finalEntity.updated_at = now
+            Object.assign(patch, finalEntity)
         }
 
-        await db.execute(config.saveSql, config.toSqlValues(entity))
+        await db.execute(config.saveSql, config.toSqlValues(finalEntity))
+        console.log(
+            `SyncService: [LOCAL SAVE] ${config.tableName}:${entity.id} (updated_at: ${finalEntity.updated_at})`
+        )
 
         // Only sync to cloud if user_id is present
-        if (entity.user_id) {
+        if (finalEntity.user_id) {
             await this.addToQueue(
                 config.tableName,
-                entity.id,
+                finalEntity.id,
                 rows.length > 0 ? "UPDATE" : "INSERT",
                 patch as Partial<BaseModel>
             )
@@ -557,8 +604,13 @@ export class SyncService {
     }
 
     static async sync() {
-        if (!isSupabaseConfigured || !supabase || this.isSyncing) return
+        if (!isSupabaseConfigured || !supabase) return
+        if (this.isSyncing) {
+            console.log("SyncService: sync skipped (already syncing)")
+            return
+        }
 
+        console.log("SyncService: Starting full sync (pull + push)...")
         const syncStartTime = Date.now()
         this.isSyncing = true
         useAuthStore.getState().setSyncing(true)
@@ -577,6 +629,7 @@ export class SyncService {
             }
             this.isSyncing = false
             useAuthStore.getState().setSyncing(false)
+            console.log("SyncService: Sync process complete.")
         }
     }
 
@@ -626,6 +679,7 @@ export class SyncService {
         const configMap = new Map(this.configs.map((c) => [c.tableName, c]))
 
         for (const table of sortedTables) {
+            console.log(`SyncService: Processing push for table ${table}...`)
             const tableActions = queue.filter(
                 (item) => item.table_name === table
             )
@@ -654,12 +708,13 @@ export class SyncService {
 
                     try {
                         let error
+                        let serverRecord: Record<string, unknown> | null = null
+
                         if (action.action === "INSERT") {
                             // For INSERT, we have the full payload, so upsert is safe.
-                            // We MUST strip local-only fields like _sync_status to satisfy strict DB types.
                             const { _sync_status: _, ...upsertPayload } =
                                 payload as Record<string, unknown>
-                            const { error: err } = await supabase!
+                            const { data, error: err } = await supabase!
                                 .from(table as TableName)
                                 .upsert(
                                     upsertPayload as unknown as Record<
@@ -673,14 +728,23 @@ export class SyncService {
                                           }
                                         : undefined
                                 )
+                                .select()
+                                .single()
                             error = err
+                            serverRecord = data as Record<string, unknown>
                         } else {
-                            // For UPDATE and SOFT_DELETE, we only have a patch, must use update
-                            const { error: err } = await supabase!
+                            // For UPDATE and SOFT_DELETE, we push the patch including updated_at.
+                            // Although server triggers usually handle this, including it ensures
+                            // that the record is seen as "newer" by any other processes or
+                            // triggers that might be relying on LWW at the SQL level.
+                            const { data, error: err } = await supabase!
                                 .from(table as TableName)
                                 .update(rest)
                                 .eq("id", id as string)
+                                .select()
+                                .single()
                             error = err
+                            serverRecord = data as Record<string, unknown>
                         }
 
                         if (error) {
@@ -689,6 +753,24 @@ export class SyncService {
                                 error
                             )
                             hasError = true
+                        } else if (serverRecord && config) {
+                            const entity = config.fromDb(serverRecord)
+                            console.log(
+                                `SyncService: [PUSH SUCCESS] ${table}:${id} (${action.action})`
+                            )
+                            console.log(
+                                `  Local updated_at:  ${payload.updated_at}`
+                            )
+                            console.log(
+                                `  Server updated_at: ${entity.updated_at}`
+                            )
+
+                            // Update local DB with authoritative server state (specifically the final updated_at)
+                            await db.execute(
+                                config.saveSql,
+                                config.toSqlValues(entity)
+                            )
+                            config.upsertInStore(entity)
                         }
                     } catch (err) {
                         console.error(
@@ -725,6 +807,9 @@ export class SyncService {
         if (!supabase) return
         const currentUserId = useAuthStore.getState().user?.id
         if (!currentUserId) {
+            console.log(
+                "SyncService: No user found, skipping realtime listener."
+            )
             if (this.realtimeChannel) {
                 console.log(
                     "SyncService: Cleaning up realtime listener (user signed out)..."
@@ -742,7 +827,7 @@ export class SyncService {
         }
 
         console.log(
-            `SyncService: Starting realtime listener for user ${currentUserId}...`
+            `SyncService: Starting realtime listener for user ${currentUserId} on ${this.configs.length} tables...`
         )
 
         // Create a unique channel for this user's session
@@ -797,12 +882,20 @@ export class SyncService {
                             ) as Partial<BaseModel>
 
                             // Server Reconciliation: Apply local patch on top of authoritative cloud state
+                            const cloudUpdatedAt = entity.updated_at
+                            const localUpdatedAt =
+                                pendingPatch.updated_at || entity.updated_at
+
                             finalEntity = {
                                 ...entity,
                                 ...pendingPatch,
+                                updated_at:
+                                    cloudUpdatedAt > localUpdatedAt
+                                        ? cloudUpdatedAt
+                                        : localUpdatedAt,
                             } as typeof entity
                             console.log(
-                                `SyncService: Realtime Server Reconciliation applied for ${table}:${entity.id}. Merged local patch.`
+                                `SyncService: [REALTIME RECONCILE] ${table}:${entity.id}`
                             )
                         } else {
                             // 2. Freshness Check: is the record in DB already the same or newer?
@@ -818,6 +911,9 @@ export class SyncService {
                             ) {
                                 return
                             }
+                            console.log(
+                                `SyncService: [REALTIME APPLY] ${table}:${entity.id}`
+                            )
                         }
 
                         // 3. Apply Update

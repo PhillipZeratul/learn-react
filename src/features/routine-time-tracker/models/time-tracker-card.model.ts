@@ -28,7 +28,7 @@ export const createTimeTrackerCard = (
     return {
         id: data.id || (uuidv4() as TimeTrackerCardId),
         title: data.title ?? "",
-        description: data.description || "",
+        description: data.description === undefined ? "" : data.description,
         start_at: data.start_at || now,
         end_at: data.end_at !== undefined ? data.end_at : null,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
