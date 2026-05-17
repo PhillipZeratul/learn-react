@@ -38,7 +38,7 @@ jobs:
       - name: Install Dependencies
         run: bun install
       - name: Build Web
-        run: bun run build
+        run: VITE_PLATFORM=web bun run build
       - name: Zip Web Assets
         run: |
           cd dist
@@ -73,7 +73,7 @@ jobs:
         run: bun install
         
       - name: Build Web Assets
-        run: bun run build
+        run: VITE_PLATFORM=capacitor bun run build
         
       - name: Sync Capacitor
         run: bunx cap sync android
@@ -108,7 +108,7 @@ jobs:
         run: bun install
         
       - name: Build Web Assets
-        run: bun run build
+        run: VITE_PLATFORM=capacitor bun run build
         
       - name: Setup iOS Platform
         run: |
@@ -185,6 +185,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_PLATFORM: tauri
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Release ${{ github.ref_name }}"
