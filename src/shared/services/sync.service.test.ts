@@ -1,7 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest"
 import { SyncService } from "./sync.service"
 import { getDatabase } from "@/lib/db/sqlite"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
+import type {
+    BaseModel,
+    IsoDateTime,
+    ModelConfig,
+    UserId,
+} from "@/shared/models/base.model"
 
 // Mock dependencies
 vi.mock("@/lib/db/sqlite", () => ({
@@ -20,18 +26,24 @@ vi.mock("./database-maintenance.service", () => ({
     },
 }))
 
+interface TestEntity extends BaseModel {
+    name: string
+}
+
 // Dummy config for testing
-const mockConfig: any = {
+const mockConfig: ModelConfig<TestEntity> = {
     tableName: "test_table",
     createTableSql: "CREATE TABLE test_table",
     saveSql: "INSERT INTO test_table",
-    toSqlValues: (entity: any) => [entity.id, entity.name],
-    fromDb: (row: any) => row,
+    toSqlValues: (entity: TestEntity) => [entity.id, entity.name],
+    fromDb: (row: Record<string, unknown>) => row as unknown as TestEntity,
     setStore: vi.fn(),
+    upsertInStore: vi.fn(),
+    removeFromStore: vi.fn(),
 }
 
 describe("SyncService", () => {
-    let mockDb: any
+    let mockDb: { execute: Mock; select: Mock }
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -39,24 +51,28 @@ describe("SyncService", () => {
             execute: vi.fn().mockResolvedValue({ changes: 1 }),
             select: vi.fn().mockResolvedValue([]),
         }
-        ;(getDatabase as any).mockResolvedValue(mockDb)
-        ;(useAuthStore.getState as any).mockReturnValue({
+        ;(getDatabase as Mock).mockResolvedValue(mockDb)
+        ;(useAuthStore.getState as Mock).mockReturnValue({
             user: { id: "user-123" },
         })
 
         // Reset configs array for clean tests
-        ;(SyncService as any).configs = []
-        SyncService.registerConfig(mockConfig)
+        ;(
+            SyncService as unknown as { configs: ModelConfig<BaseModel>[] }
+        ).configs = []
+        SyncService.registerConfig(
+            mockConfig as unknown as ModelConfig<BaseModel>
+        )
     })
 
     describe("save", () => {
         it("should execute save SQL and add to sync queue", async () => {
-            const entity = {
+            const entity: TestEntity = {
                 id: "1",
                 name: "Test",
-                user_id: "user-123" as any,
-                created_at: "2026-01-01T00:00:00Z" as any,
-                updated_at: "2026-01-01T00:00:00Z" as any,
+                user_id: "user-123" as UserId,
+                created_at: "2026-01-01T00:00:00Z" as IsoDateTime,
+                updated_at: "2026-01-01T00:00:00Z" as IsoDateTime,
                 is_deleted: false,
             }
             await SyncService.save(mockConfig, entity)
@@ -117,12 +133,14 @@ describe("SyncService", () => {
         })
 
         it("should respect custom loadFilter", async () => {
-            const filteredConfig = {
+            const filteredConfig: ModelConfig<TestEntity> = {
                 ...mockConfig,
                 tableName: "filtered_table",
                 loadFilter: "AND (is_deleted = 0 OR special_flag = 1)",
             }
-            ;(SyncService as any).configs = [filteredConfig]
+            ;(
+                SyncService as unknown as { configs: ModelConfig<BaseModel>[] }
+            ).configs = [filteredConfig as unknown as ModelConfig<BaseModel>]
 
             const mockRows = [
                 { id: "1", is_deleted: 0, user_id: "user-123" },

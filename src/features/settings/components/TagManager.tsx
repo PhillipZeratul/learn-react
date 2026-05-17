@@ -31,11 +31,12 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import type { TagId } from "@/features/routine-time-tracker/models/routine-time-tracker.model"
+import type { IsoDateTime } from "@/shared/models/base.model"
 
 interface SortableTagItemProps {
     tag: Tag
-    onDelete: (id: string) => void
-    onEdit: (id: string) => void
+    onDelete: (id: TagId) => void
+    onEdit: (id: TagId) => void
     depth?: number
 }
 
@@ -74,25 +75,27 @@ const SortableTagItem = ({
                     type="button"
                     className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
                     style={{ touchAction: "none" }}
+                    aria-label="Drag to reorder"
                 >
                     <HugeiconsIcon icon={DragDropIcon} size={16} />
                 </button>
                 <div
-                    className="h-4 w-4 shrink-0 rounded-full"
+                    className="size-4 shrink-0 rounded-full"
                     style={{ backgroundColor: tag.color }}
                 />
-                <span
-                    className="flex-1 cursor-pointer text-sm font-medium hover:underline"
+                <button
+                    type="button"
+                    className="flex-1 text-left text-sm font-medium hover:underline focus:outline-none"
                     onClick={() => onEdit(tag.id)}
                 >
                     {tag.name}
-                </span>
+                </button>
             </div>
             <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onDelete(tag.id)}
-                className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
                 <HugeiconsIcon icon={Delete02Icon} size={16} />
             </Button>
@@ -106,7 +109,7 @@ import { getSortedTagsWithDepth } from "@/features/routine-time-tracker/utils/ta
 export const TagManager = () => {
     const { items: tags, upsert: upsertTag, remove: deleteTag } = useTagStore()
     const [isEditorOpen, setIsEditorOpen] = useState(false)
-    const [editingTagId, setEditingTagId] = useState<string | null>(null)
+    const [editingTagId, setEditingTagId] = useState<TagId | null>(null)
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -125,7 +128,8 @@ export const TagManager = () => {
     )
 
     const editingTag = useMemo(
-        () => (editingTagId ? tags.find((t) => t.id === editingTagId) : undefined),
+        () =>
+            editingTagId ? tags.find((t) => t.id === editingTagId) : undefined,
         [editingTagId, tags]
     )
 
@@ -140,14 +144,15 @@ export const TagManager = () => {
         color: string
         parentId: TagId | undefined
     }) => {
+        const tagMap = new Map(tags.map((t) => [t.id, t]))
         if (editingTagId) {
-            const original = tags.find((t) => t.id === editingTagId)
+            const original = tagMap.get(editingTagId)
             if (original) {
                 const updated = {
                     ...original,
                     ...data,
                     parent_id: data.parentId,
-                    updated_at: new Date().toISOString() as any,
+                    updated_at: new Date().toISOString() as IsoDateTime,
                 }
                 upsertTag(updated)
                 await SyncService.save(tagConfig, updated)
@@ -175,8 +180,9 @@ export const TagManager = () => {
         setEditingTagId(null)
     }
 
-    const handleDeleteTag = async (id: string) => {
-        const tag = tags.find((t) => t.id === id)
+    const handleDeleteTag = async (id: TagId) => {
+        const tagMap = new Map(tags.map((t) => [t.id, t]))
+        const tag = tagMap.get(id)
         if (!tag) return
 
         const confirmed = window.confirm(
@@ -193,14 +199,16 @@ export const TagManager = () => {
         const { active, over, delta } = event
         if (!over) return
 
-        const activeId = active.id as string
-        const overId = over.id as string
+        const activeId = active.id as TagId
+        const overId = over.id as TagId
 
-        const activeTag = sortedTags.find((t) => t.id === activeId)
+        const tagMap = new Map(tags.map((t) => [t.id, t]))
+        const sortedTagMap = new Map(sortedTags.map((t) => [t.id, t]))
+        const activeTag = sortedTagMap.get(activeId)
         if (!activeTag) return
 
         // Prevent dropping onto descendants
-        const getDescendants = (parentId: string): string[] => {
+        const getDescendants = (parentId: TagId): TagId[] => {
             const children = activeTags
                 .filter((t) => t.parent_id === parentId)
                 .map((t) => t.id)
@@ -216,6 +224,7 @@ export const TagManager = () => {
                 : sortedTags.findIndex((t) => t.id === overId)
 
         const newSortedTags = arrayMove(sortedTags, oldIndex, newIndex)
+        const newSortedTagMap = new Map(newSortedTags.map((t) => [t.id, t]))
 
         // Calculate projected depth (24px = 1.5rem margin-left)
         const depthOffset = Math.round(delta.x / 24)
@@ -234,7 +243,7 @@ export const TagManager = () => {
                 // Find parent in the sorted list, or break if we hit the root
                 const currentParentId = current.parent_id
                 const parent = currentParentId
-                    ? newSortedTags.find((t) => t.id === currentParentId)
+                    ? newSortedTagMap.get(currentParentId)
                     : null
                 if (!parent) break
                 current = parent
@@ -247,15 +256,17 @@ export const TagManager = () => {
         }
 
         // Find new siblings (including the active item) to update sort orders
-        const siblings = newSortedTags.filter((t) =>
-            t.id === activeId
-                ? true
-                : (t.parent_id || undefined) === newParentId
+        const siblings = newSortedTags.filter(
+            (t) =>
+                t.id === activeId || (t.parent_id || undefined) === newParentId
         )
+
+        const updates: Tag[] = []
+        const siblingIndexMap = new Map(siblings.map((s, idx) => [s.id, idx]))
 
         for (let i = 0; i < siblings.length; i++) {
             const sibling = siblings[i]
-            const original = tags.find((t) => t.id === sibling.id)
+            const original = tagMap.get(sibling.id)
             if (!original) continue
 
             let changed = false
@@ -268,22 +279,25 @@ export const TagManager = () => {
 
             // We update the sort_order of the active tag and its NEW siblings
             // This is a simple re-sorting within the new parent container
-            if (
-                updated.id === activeId ||
-                (updated.parent_id || undefined) === newParentId
-            ) {
-                const newPos = siblings.findIndex((s) => s.id === updated.id)
-                if (updated.sort_order !== newPos) {
-                    updated.sort_order = newPos
-                    changed = true
-                }
+            const newPos = siblingIndexMap.get(updated.id) ?? -1
+            if (updated.sort_order !== newPos) {
+                updated.sort_order = newPos
+                changed = true
             }
 
             if (changed) {
-                updated.updated_at = new Date().toISOString() as any
-                upsertTag(updated)
-                await SyncService.save(tagConfig, updated)
+                updated.updated_at = new Date().toISOString() as IsoDateTime
+                updates.push(updated)
             }
+        }
+
+        if (updates.length > 0) {
+            await Promise.all(
+                updates.map((updated) => {
+                    upsertTag(updated)
+                    return SyncService.save(tagConfig, updated)
+                })
+            )
         }
     }
 
@@ -304,7 +318,7 @@ export const TagManager = () => {
             </div>
 
             <div className="space-y-2">
-                <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <h3 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                     Your Tags (Drag handle to reorder/nest, tap name to edit)
                 </h3>
                 {sortedTags.length === 0 ? (

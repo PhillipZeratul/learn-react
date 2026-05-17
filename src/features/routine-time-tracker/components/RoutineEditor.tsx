@@ -29,18 +29,23 @@ export const RoutineEditor = memo(
     ({ task, masterTask, onSave, onDelete, onCancel }: RoutineEditorProps) => {
         const { items: tags } = useTagStore()
         const [title, setTitle] = useState(task.title)
-        const [startDate, setStartDate] = useState(
+        const [startDate, setStartDate] = useState(() =>
             formatLocalDate(new Date(task.start_at))
         )
-        const [startAt, setStartAt] = useState(isoToTime(task.start_at))
-        const [endDate, setEndDate] = useState(
+        const [startAt, setStartAt] = useState(() => isoToTime(task.start_at))
+        const [endDate, setEndDate] = useState(() =>
             formatLocalDate(new Date(task.end_at))
         )
-        const [endAt, setEndAt] = useState(isoToTime(task.end_at))
+        const [endAt, setEndAt] = useState(() => isoToTime(task.end_at))
         const [tagId, setTagId] = useState(task.tag_id)
         const [rrule, setRrule] = useState(
             task.rrule || masterTask?.rrule || ""
         )
+
+        // Fix endAt setter name if needed (the original code had endAt and setEndAt)
+        // Wait, looking at the code:
+        // const [endAt, setEndAt] = useState(isoToTime(task.end_at))
+        // I should stick to the original names.
 
         const [confirmAction, setConfirmAction] = useState<
             "save" | "delete" | null
@@ -172,14 +177,10 @@ export const RoutineEditor = memo(
         }
 
         return (
-            <div
-                className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in"
-                style={{ willChange: "opacity, backdrop-filter" }}
-            >
+            <div className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in">
                 <div
                     className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                     style={{
-                        willChange: "transform, opacity",
                         transform: "translateZ(0)",
                     }}
                 >
@@ -188,10 +189,14 @@ export const RoutineEditor = memo(
                     </h3>
                     <div className="space-y-4">
                         <div>
-                            <label className="mb-1 block text-xs text-muted-foreground">
+                            <label
+                                htmlFor="routine-title"
+                                className="mb-1 block text-xs text-muted-foreground"
+                            >
                                 Title
                             </label>
                             <input
+                                id="routine-title"
                                 type="text"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
@@ -200,16 +205,19 @@ export const RoutineEditor = memo(
                                     tags.find((t) => t.id === tagId)?.name ||
                                     "Routine"
                                 }
-                                autoFocus
                             />
                         </div>
                         <div className="space-y-4">
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="routine-start-date"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         Start Date
                                     </label>
                                     <input
+                                        id="routine-start-date"
                                         type="date"
                                         value={startDate}
                                         onChange={(e) =>
@@ -219,10 +227,14 @@ export const RoutineEditor = memo(
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="routine-start-time"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         Start Time
                                     </label>
                                     <input
+                                        id="routine-start-time"
                                         type="time"
                                         value={startAt}
                                         onChange={(e) =>
@@ -234,10 +246,14 @@ export const RoutineEditor = memo(
                             </div>
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="routine-end-date"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         End Date
                                     </label>
                                     <input
+                                        id="routine-end-date"
                                         type="date"
                                         value={endDate}
                                         onChange={(e) =>
@@ -247,10 +263,14 @@ export const RoutineEditor = memo(
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="routine-end-time"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         End Time
                                     </label>
                                     <input
+                                        id="routine-end-time"
                                         type="time"
                                         value={endAt}
                                         onChange={(e) =>
@@ -266,10 +286,14 @@ export const RoutineEditor = memo(
                             !!task.rrule ||
                             !!masterTask?.rrule) && (
                             <div>
-                                <label className="mb-1 block text-xs text-muted-foreground">
+                                <label
+                                    htmlFor="routine-rrule"
+                                    className="mb-1 block text-xs text-muted-foreground"
+                                >
                                     Repeat (Series)
                                 </label>
                                 <select
+                                    id="routine-rrule"
                                     value={rrule}
                                     onChange={(e) => setRrule(e.target.value)}
                                     className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -287,9 +311,9 @@ export const RoutineEditor = memo(
                         )}
 
                         <div>
-                            <label className="mb-1 block text-xs text-muted-foreground">
+                            <p className="mb-1 block text-xs text-muted-foreground">
                                 Tag
-                            </label>
+                            </p>
                             <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
                                 {sortedTags.map((tag) => (
                                     <button
@@ -302,7 +326,7 @@ export const RoutineEditor = memo(
                                         }`}
                                     >
                                         <div
-                                            className="h-2 w-2 rounded-full"
+                                            className="size-2 rounded-full"
                                             style={{
                                                 backgroundColor: tag.color,
                                             }}
@@ -338,14 +362,10 @@ export const RoutineEditor = memo(
                 </div>
 
                 {confirmAction && (
-                    <div
-                        className="fixed inset-0 z-[60] flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-[4px] duration-200 fade-in"
-                        style={{ willChange: "opacity, backdrop-filter" }}
-                    >
+                    <div className="fixed inset-0 z-[60] flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-[4px] duration-200 fade-in">
                         <div
                             className="w-full max-w-[280px] animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                             style={{
-                                willChange: "transform, opacity",
                                 transform: "translateZ(0)",
                             }}
                         >

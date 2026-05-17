@@ -5,7 +5,7 @@ export const TimelineGrid = () => {
         <>
             {[...Array(25)].map((_, i) => (
                 <div
-                    key={`line-${i}`}
+                    key={`grid-line-${i}`}
                     className="absolute right-0 left-0 -translate-y-1/2 border-t border-dashed border-border"
                     style={{
                         top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px`,
@@ -20,7 +20,7 @@ export const TimelineGrid = () => {
                     </div>
                     {[...Array(25)].map((_, i) => (
                         <div
-                            key={`time-${i}`}
+                            key={`grid-time-${i}`}
                             className="absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground"
                             style={{
                                 top: `${i * 60 * PIXELS_PER_MINUTE + TOP_MARGIN}px`,

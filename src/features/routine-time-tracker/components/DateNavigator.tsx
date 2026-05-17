@@ -27,7 +27,7 @@ export const DateNavigator = ({ date, onDateChange }: DateNavigatorProps) => {
                     variant="ghost"
                     size="icon"
                     onClick={() => changeDate(-1)}
-                    className="h-8 w-8"
+                    className="size-8"
                 >
                     <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
                 </Button>
@@ -36,6 +36,7 @@ export const DateNavigator = ({ date, onDateChange }: DateNavigatorProps) => {
                     size="sm"
                     onClick={() => onDateChange(new Date())}
                     className={`text-xs font-bold ${isToday ? "text-primary" : ""}`}
+                    suppressHydrationWarning
                 >
                     {isToday
                         ? "TODAY"
@@ -48,14 +49,17 @@ export const DateNavigator = ({ date, onDateChange }: DateNavigatorProps) => {
                     variant="ghost"
                     size="icon"
                     onClick={() => changeDate(1)}
-                    className="h-8 w-8"
+                    className="size-8"
                 >
                     <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
                 </Button>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
                 <HugeiconsIcon icon={Calendar03Icon} size={16} />
-                <span className="text-[10px] font-medium tracking-wider uppercase">
+                <span
+                    className="text-[10px] font-medium tracking-wider uppercase"
+                    suppressHydrationWarning
+                >
                     {date.toLocaleDateString(undefined, { weekday: "short" })}
                 </span>
             </div>

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import { getRoutineInstancesForDate } from "./routine-expansion"
 import { createRoutineCard } from "../models/routine-card.model"
 import { timeToISO } from "./utils"
+import type { RoutineCardId } from "../models/routine-time-tracker.model"
 
 describe("routine-expansion", () => {
     // To be 100% deterministic and TZ-agnostic, we use local dates for the 'date' parameter,
@@ -11,7 +12,7 @@ describe("routine-expansion", () => {
 
     it("should return non-recurring cards on their start date", () => {
         const card = createRoutineCard({
-            id: "1" as any,
+            id: "1" as RoutineCardId,
             title: "One-off",
             start_at: timeToISO("08:00", "2026-04-25"),
             end_at: timeToISO("09:00", "2026-04-25"),
@@ -27,7 +28,7 @@ describe("routine-expansion", () => {
 
     it("should expand recurring cards into virtual cards", () => {
         const master = createRoutineCard({
-            id: "master" as any,
+            id: "master" as RoutineCardId,
             title: "Daily Jog",
             start_at: timeToISO("08:00", "2026-04-25"),
             end_at: timeToISO("09:00", "2026-04-25"),
@@ -37,17 +38,21 @@ describe("routine-expansion", () => {
         const instancesToday = getRoutineInstancesForDate([master], today)
         expect(instancesToday).toHaveLength(1)
         expect(instancesToday[0]._isVirtual).toBe(true)
-        expect(instancesToday[0].start_at).toBe(timeToISO("08:00", "2026-04-25"))
+        expect(instancesToday[0].start_at).toBe(
+            timeToISO("08:00", "2026-04-25")
+        )
 
         const instancesTomorrow = getRoutineInstancesForDate([master], tomorrow)
         expect(instancesTomorrow).toHaveLength(1)
         expect(instancesTomorrow[0]._isVirtual).toBe(true)
-        expect(instancesTomorrow[0].start_at).toBe(timeToISO("08:00", "2026-04-26"))
+        expect(instancesTomorrow[0].start_at).toBe(
+            timeToISO("08:00", "2026-04-26")
+        )
     })
 
     it("should replace virtual cards with detached instances (exceptions)", () => {
         const master = createRoutineCard({
-            id: "master" as any,
+            id: "master" as RoutineCardId,
             title: "Daily Jog",
             start_at: timeToISO("08:00", "2026-04-25"),
             end_at: timeToISO("09:00", "2026-04-25"),
@@ -55,8 +60,8 @@ describe("routine-expansion", () => {
         })
 
         const exception = createRoutineCard({
-            id: "exception" as any,
-            parent_routine_id: "master" as any,
+            id: "exception" as RoutineCardId,
+            parent_routine_id: "master" as RoutineCardId,
             original_recurrence_date: timeToISO("08:00", "2026-04-26"),
             title: "Modified Jog",
             start_at: timeToISO("07:00", "2026-04-26"),
@@ -75,7 +80,7 @@ describe("routine-expansion", () => {
 
     it("should skip virtual cards if a deleted detached instance exists", () => {
         const master = createRoutineCard({
-            id: "master" as any,
+            id: "master" as RoutineCardId,
             title: "Daily Jog",
             start_at: timeToISO("08:00", "2026-04-25"),
             end_at: timeToISO("09:00", "2026-04-25"),
@@ -83,8 +88,8 @@ describe("routine-expansion", () => {
         })
 
         const deletedException = createRoutineCard({
-            id: "deleted" as any,
-            parent_routine_id: "master" as any,
+            id: "deleted" as RoutineCardId,
+            parent_routine_id: "master" as RoutineCardId,
             original_recurrence_date: timeToISO("08:00", "2026-04-26"),
             is_deleted: true,
         })
@@ -98,7 +103,7 @@ describe("routine-expansion", () => {
 
     it("should return cross-day routines for both start and overlap days", () => {
         const card = createRoutineCard({
-            id: "cross-day" as any,
+            id: "cross-day" as RoutineCardId,
             title: "Sleep",
             start_at: timeToISO("22:00", "2026-04-25"),
             end_at: timeToISO("06:00", "2026-04-26"),
@@ -115,7 +120,7 @@ describe("routine-expansion", () => {
 
     it("should expand recurring cross-day routines correctly", () => {
         const master = createRoutineCard({
-            id: "master" as any,
+            id: "master" as RoutineCardId,
             title: "Daily Sleep",
             start_at: timeToISO("22:00", "2026-04-25"),
             end_at: timeToISO("06:00", "2026-04-26"),

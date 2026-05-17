@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest"
 import { createRoutineTimeTrackerState } from "./routine-time-tracker-state.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
+import type { UserId } from "@/shared/models/base.model"
 
 vi.mock("@/features/auth/stores/auth.store", () => ({
     useAuthStore: {
@@ -15,7 +16,7 @@ describe("RoutineTimeTrackerState Model", () => {
 
     it("should use user_id as id when user is logged in", () => {
         const userId = "user-123"
-        ;(useAuthStore.getState as any).mockReturnValue({
+        ;(useAuthStore.getState as Mock).mockReturnValue({
             user: { id: userId },
         })
 
@@ -25,7 +26,7 @@ describe("RoutineTimeTrackerState Model", () => {
     })
 
     it("should use random uuid if user is not logged in", () => {
-        ;(useAuthStore.getState as any).mockReturnValue({ user: null })
+        ;(useAuthStore.getState as Mock).mockReturnValue({ user: null })
 
         const state = createRoutineTimeTrackerState()
         expect(state.user_id).toBeUndefined()
@@ -36,7 +37,7 @@ describe("RoutineTimeTrackerState Model", () => {
 
     it("should respect provided id and user_id", () => {
         const customId = "custom-id"
-        const customUserId = "custom-user-id" as any
+        const customUserId = "custom-user-id" as UserId
 
         const state = createRoutineTimeTrackerState({
             id: customId,

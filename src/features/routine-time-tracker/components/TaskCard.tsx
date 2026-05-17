@@ -50,8 +50,10 @@ export const TaskCard = memo(
         useEffect(() => {
             if (!isDragging) {
                 if (cardRef.current) {
-                    cardRef.current.style.paddingTop = ""
-                    cardRef.current.style.paddingBottom = ""
+                    Object.assign(cardRef.current.style, {
+                        paddingTop: "",
+                        paddingBottom: "",
+                    })
                 }
                 if (titleRef.current) {
                     titleRef.current.style.lineHeight = ""
@@ -64,26 +66,21 @@ export const TaskCard = memo(
                 const top = dragTopSignal.value
 
                 if (cardRef.current) {
-                    cardRef.current.style.transform = `translateY(${top}px) scale(1.02)`
-                    cardRef.current.style.height = `${dragHeight}px`
-
-                    // Direct layout updates to avoid re-renders
                     const showTitle = dragHeight >= SHOW_CARD_TITLE_HEIGHT
                     const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT
 
-                    // Update padding directly on the card ref
-                    cardRef.current.style.paddingTop = showTime ? "0.5rem" : "0"
-                    cardRef.current.style.paddingBottom = showTime
-                        ? "0.5rem"
-                        : "0"
+                    Object.assign(cardRef.current.style, {
+                        transform: `translateY(${top}px) scale(1.02)`,
+                        height: `${dragHeight}px`,
+                        paddingTop: showTime ? "0.5rem" : "0",
+                        paddingBottom: showTime ? "0.5rem" : "0",
+                    })
 
                     if (titleRef.current) {
-                        titleRef.current.style.display = showTitle
-                            ? "block"
-                            : "none"
-                        titleRef.current.style.lineHeight = showTime
-                            ? "1.25rem"
-                            : "1"
+                        Object.assign(titleRef.current.style, {
+                            display: showTitle ? "block" : "none",
+                            lineHeight: showTime ? "1.25rem" : "1",
+                        })
                     }
 
                     if (timeRef.current) {
@@ -116,6 +113,13 @@ export const TaskCard = memo(
             return () => dispose()
         }, [isDragging])
 
+        const handleKeyDown = (e: React.KeyboardEvent) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onClick()
+            }
+        }
+
         const baseClasses = `task-card absolute border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`
         const idleClasses =
             "transition-all hover:shadow-md cursor-pointer shadow-sm"
@@ -136,6 +140,9 @@ export const TaskCard = memo(
                 className={`${baseClasses} ${roundedClasses} ${isDragging ? draggingClasses : idleClasses}`}
                 data-start-clamped={isStartClamped}
                 data-end-clamped={isEndClamped}
+                role="button"
+                tabIndex={0}
+                onKeyDown={handleKeyDown}
                 style={{
                     top: 0,
                     transform: isDragging ? undefined : defaultTransform,
@@ -153,8 +160,10 @@ export const TaskCard = memo(
                         : showTime
                           ? "0.5rem"
                           : "0",
-                    // Hardware Hinting: dedicated GPU layer for the card
-                    willChange: "transform, height, opacity",
+                    // Hardware Hinting: dedicated GPU layer only when dragging
+                    willChange: isDragging
+                        ? "transform, height, opacity"
+                        : undefined,
                 }}
                 onMouseDown={onPress}
                 onTouchStart={onPress}

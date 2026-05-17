@@ -35,16 +35,20 @@ export const Auth = () => {
 
     return (
         <div className="flex w-full max-w-sm flex-col items-center justify-center rounded-2xl border border-border bg-card p-6 shadow-lg">
-            <h2 className="mb-6 text-2xl font-bold text-foreground">
+            <h2 className="mb-6 text-2xl font-semibold text-foreground">
                 {isSignUp ? "Create Account" : "Sign In"}
             </h2>
 
             <form onSubmit={handleAuth} className="w-full space-y-4">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label
+                        htmlFor="auth-email"
+                        className="text-sm font-medium text-muted-foreground"
+                    >
                         Email
                     </label>
                     <input
+                        id="auth-email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -55,10 +59,14 @@ export const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label
+                        htmlFor="auth-password"
+                        className="text-sm font-medium text-muted-foreground"
+                    >
                         Password
                     </label>
                     <input
+                        id="auth-password"
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -76,7 +84,7 @@ export const Auth = () => {
 
                 <Button
                     type="submit"
-                    className="w-full rounded-xl py-6 text-lg font-bold"
+                    className="w-full rounded-xl py-6 text-lg font-semibold"
                     disabled={loading}
                 >
                     {loading

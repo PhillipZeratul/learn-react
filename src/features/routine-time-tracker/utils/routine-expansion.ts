@@ -51,6 +51,20 @@ export const getRoutineInstancesForDate = (
     )
     const exceptions = allCards.filter((c) => !!c.parent_routine_id)
 
+    // Build a map of exceptions for O(1) lookup: parent_id -> original_date_ms -> exception
+    const exceptionsMap = new Map<string, Map<number, RoutineCard>>()
+    for (const e of exceptions) {
+        if (e.parent_routine_id && e.original_recurrence_date) {
+            const time = new Date(e.original_recurrence_date).getTime()
+            let parentMap = exceptionsMap.get(e.parent_routine_id)
+            if (!parentMap) {
+                parentMap = new Map()
+                exceptionsMap.set(e.parent_routine_id, parentMap)
+            }
+            parentMap.set(time, e)
+        }
+    }
+
     const instances: RoutineCard[] = []
 
     for (const master of masterCards) {
@@ -71,14 +85,16 @@ export const getRoutineInstancesForDate = (
             const rule = new RRule(options)
 
             // Search back 24 hours to catch instances that started yesterday but overlap today
-            const searchStart = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000)
+            const searchStart = new Date(
+                startOfDay.getTime() - 24 * 60 * 60 * 1000
+            )
             const occurrences = rule.between(searchStart, endOfDay, true)
 
             for (const occurrenceDate of occurrences) {
                 const occurrenceIso =
                     occurrenceDate.toISOString() as IsoDateTime
                 const occurrenceTime = occurrenceDate.getTime()
-                
+
                 const expandedEndAt = calculateEndAt(
                     master.start_at,
                     master.end_at,
@@ -86,22 +102,15 @@ export const getRoutineInstancesForDate = (
                 )
 
                 // Only include if this instance overlaps today
-                if (!isCardOverlappingDate(occurrenceIso, expandedEndAt, date)) {
+                if (
+                    !isCardOverlappingDate(occurrenceIso, expandedEndAt, date)
+                ) {
                     continue
                 }
 
-                const override = exceptions.find((e) => {
-                    if (
-                        !e.parent_routine_id ||
-                        e.parent_routine_id !== master.id ||
-                        !e.original_recurrence_date
-                    )
-                        return false
-                    return (
-                        new Date(e.original_recurrence_date).getTime() ===
-                        occurrenceTime
-                    )
-                })
+                const override = exceptionsMap
+                    .get(master.id)
+                    ?.get(occurrenceTime)
 
                 if (override) {
                     if (!override.is_deleted) {

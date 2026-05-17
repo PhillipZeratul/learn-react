@@ -6,9 +6,17 @@ export function calculateLayout(
     cards: (RoutineCard | TimeTrackerCard)[],
     currentDate: Date
 ) {
-    const sorted = [...cards].sort((a, b) => {
-        const aBounds = getVisualBoundsForDate(a.start_at, a.end_at, currentDate)
-        const bBounds = getVisualBoundsForDate(b.start_at, b.end_at, currentDate)
+    const sorted = cards.toSorted((a, b) => {
+        const aBounds = getVisualBoundsForDate(
+            a.start_at,
+            a.end_at,
+            currentDate
+        )
+        const bBounds = getVisualBoundsForDate(
+            b.start_at,
+            b.end_at,
+            currentDate
+        )
         const startDiff = aBounds.startMin - bBounds.startMin
         if (startDiff !== 0) return startDiff
         return bBounds.duration - aBounds.duration

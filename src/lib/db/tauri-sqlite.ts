@@ -1,12 +1,20 @@
 import type { IDatabaseService, QueryResult } from "./types"
 
-export class TauriDatabaseService implements IDatabaseService {
-    private db: any
+interface TauriDatabase {
+    execute(
+        query: string,
+        values?: unknown[]
+    ): Promise<{ rowsAffected: number; lastInsertId: number }>
+    select<T>(query: string, values?: unknown[]): Promise<T[]>
+}
 
-    constructor(db: any) {
+export class TauriDatabaseService implements IDatabaseService {
+    private db: TauriDatabase
+
+    constructor(db: TauriDatabase) {
         this.db = db
     }
-    async execute(query: string, values?: any[]): Promise<QueryResult> {
+    async execute(query: string, values?: unknown[]): Promise<QueryResult> {
         const result = await this.db.execute(query, values)
         return {
             rows: [],
@@ -14,8 +22,8 @@ export class TauriDatabaseService implements IDatabaseService {
             lastInsertId: result.lastInsertId,
         }
     }
-    async select<T>(query: string, values?: any[]): Promise<T[]> {
-        return await this.db.select(query, values)
+    async select<T>(query: string, values?: unknown[]): Promise<T[]> {
+        return await this.db.select<T>(query, values)
     }
     async transaction<T>(
         callback: (db: IDatabaseService) => Promise<T>
@@ -27,5 +35,5 @@ export class TauriDatabaseService implements IDatabaseService {
 export const initTauriDb = async () => {
     const Database = (await import("@tauri-apps/plugin-sql")).default
     const db = await Database.load("sqlite:local.db")
-    return new TauriDatabaseService(db)
+    return new TauriDatabaseService(db as unknown as TauriDatabase)
 }

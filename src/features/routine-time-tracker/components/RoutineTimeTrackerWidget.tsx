@@ -86,8 +86,8 @@ export default function RoutineTimeTrackerWidget() {
     const setActiveTimeTrackerId = (id: TimeTrackerCardId | null) =>
         RoutineTimeTrackerService.setActiveTrackerId(id)
 
-    const [currentDate, setCurrentDate] = useState(new Date())
-    const [now, setNow] = useState(new Date())
+    const [currentDate, setCurrentDate] = useState(() => new Date())
+    const [now, setNow] = useState(() => new Date())
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000)
@@ -97,22 +97,23 @@ export default function RoutineTimeTrackerWidget() {
     const isCurrentDay = now.toDateString() === currentDate.toDateString()
 
     const currentDateTimeTrackerCards = useMemo(() => {
-        return allTimeTrackerCards
-            .filter(
-                (c) =>
-                    !c.is_deleted &&
-                    isCardOverlappingDate(c.start_at, c.end_at, currentDate)
-            )
-            .map((c) => {
+        return allTimeTrackerCards.reduce<TimeTrackerCard[]>((acc, c) => {
+            if (
+                !c.is_deleted &&
+                isCardOverlappingDate(c.start_at, c.end_at, currentDate)
+            ) {
                 // For the active task on the current day, virtualize end_at to 'now' for real-time UI updates
                 if (c.id === activeTimeTrackerId && isCurrentDay) {
-                    return {
+                    acc.push({
                         ...c,
                         end_at: now.toISOString() as IsoDateTime,
-                    }
+                    })
+                } else {
+                    acc.push(c)
                 }
-                return c
-            })
+            }
+            return acc
+        }, [])
     }, [
         allTimeTrackerCards,
         currentDate,
@@ -173,9 +174,9 @@ export default function RoutineTimeTrackerWidget() {
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
-                const now = new Date()
+                const currentNow = new Date()
                 let shouldScroll =
-                    currentDate.toDateString() === now.toDateString()
+                    currentDate.toDateString() === currentNow.toDateString()
 
                 // Auto-switch to today if backgrounded for more than threshold
                 if (lastBackgroundTime.current) {
@@ -184,7 +185,7 @@ export default function RoutineTimeTrackerWidget() {
                         console.log(
                             `SyncService: App idle for ${Math.round(elapsed / 1000 / 60)}m, auto-switching to today.`
                         )
-                        setCurrentDate(now)
+                        setCurrentDate(currentNow)
                         shouldScroll = true // Always scroll after an auto-switch
                     }
                     lastBackgroundTime.current = null
@@ -601,6 +602,8 @@ export default function RoutineTimeTrackerWidget() {
                 onTouchStart={startPress}
                 onTouchEnd={endPress}
                 onTouchMove={handleMove}
+                role="region"
+                aria-label="Daily timeline grid"
             >
                 <div
                     className="pointer-events-none relative mx-auto w-full max-w-2xl"
@@ -647,32 +650,45 @@ export default function RoutineTimeTrackerWidget() {
 
                         {/* Routine Column */}
                         <div className="relative h-full flex-1">
-                            {currentDateRoutineCards
-                                .filter((t) => !t.is_deleted)
-                                .map((task) => (
-                                    <TaskCard
-                                        key={task.id}
-                                        card={task}
-                                        currentDate={currentDate}
-                                        isDragging={
-                                            dragState?.card.id === task.id
-                                        }
-                                        getTagColor={getTagColor}
-                                        getTagName={getTagName}
-                                        onPress={(e) => {
-                                            handleCardPress(e, "routine", task)
-                                        }}
-                                        onClick={() => {
-                                            if (!wasDragged.current) {
-                                                setEditingState({
-                                                    type: "routine",
-                                                    card: task,
-                                                })
-                                            }
-                                        }}
-                                        layout={routineLayoutMap.get(task.id)}
-                                    />
-                                ))}
+                            {currentDateRoutineCards.reduce<React.ReactNode[]>(
+                                (acc, task) => {
+                                    if (!task.is_deleted) {
+                                        acc.push(
+                                            <TaskCard
+                                                key={task.id}
+                                                card={task}
+                                                currentDate={currentDate}
+                                                isDragging={
+                                                    dragState?.card.id ===
+                                                    task.id
+                                                }
+                                                getTagColor={getTagColor}
+                                                getTagName={getTagName}
+                                                onPress={(e) => {
+                                                    handleCardPress(
+                                                        e,
+                                                        "routine",
+                                                        task
+                                                    )
+                                                }}
+                                                onClick={() => {
+                                                    if (!wasDragged.current) {
+                                                        setEditingState({
+                                                            type: "routine",
+                                                            card: task,
+                                                        })
+                                                    }
+                                                }}
+                                                layout={routineLayoutMap.get(
+                                                    task.id
+                                                )}
+                                            />
+                                        )
+                                    }
+                                    return acc
+                                },
+                                []
+                            )}
                         </div>
                     </div>
 
@@ -685,6 +701,7 @@ export default function RoutineTimeTrackerWidget() {
 
             {editingState?.type === "routine" && (
                 <RoutineEditor
+                    key={editingState.card.id}
                     task={editingState.card}
                     masterTask={(() => {
                         const task = editingState.card
@@ -723,6 +740,7 @@ export default function RoutineTimeTrackerWidget() {
 
             {editingState?.type === "timeTracker" && (
                 <TimeTrackerEditor
+                    key={editingState.card.id}
                     task={editingState.card}
                     hideTimeFields={editingState.hideTimeFields}
                     onSave={async (updated) => {
@@ -766,8 +784,7 @@ export default function RoutineTimeTrackerWidget() {
                                 original_recurrence_date:
                                     confirmDragState.originalStartAt,
                                 _isVirtual: undefined,
-                                updated_at:
-                                    new Date().toISOString() as IsoDateTime,
+                                updated_at: now.toISOString() as IsoDateTime,
                             }
                             upsertRoutineCard(detachedInstance)
                             await SyncService.save(
@@ -839,8 +856,7 @@ export default function RoutineTimeTrackerWidget() {
                                     timePartEnd,
                                     masterEndDatePart
                                 ),
-                                updated_at:
-                                    new Date().toISOString() as IsoDateTime,
+                                updated_at: now.toISOString() as IsoDateTime,
                             }
                             upsertRoutineCard(updatedMaster)
                             await SyncService.save(

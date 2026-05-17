@@ -24,14 +24,14 @@ export const TimeTrackerEditor = ({
     useBackAction(onCancel, true)
     const { items: tags } = useTagStore()
     const [title, setTitle] = useState(task.title)
-    const [startDate, setStartDate] = useState(
+    const [startDate, setStartDate] = useState(() =>
         formatLocalDate(new Date(task.start_at))
     )
-    const [startAt, setStartAt] = useState(isoToTime(task.start_at))
-    const [endDate, setEndDate] = useState(
+    const [startAt, setStartAt] = useState(() => isoToTime(task.start_at))
+    const [endDate, setEndDate] = useState(() =>
         formatLocalDate(new Date(task.end_at))
     )
-    const [endAt, setEndAt] = useState(isoToTime(task.end_at))
+    const [endAt, setEndAt] = useState(() => isoToTime(task.end_at))
     const [tagId, setTagId] = useState(task.tag_id)
 
     const activeTags = tags.filter((tag) => !tag.is_deleted)
@@ -60,10 +60,14 @@ export const TimeTrackerEditor = ({
                 </h3>
                 <div className="space-y-4">
                     <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">
+                        <label
+                            htmlFor="tracker-title"
+                            className="mb-1 block text-xs text-muted-foreground"
+                        >
                             Title
                         </label>
                         <input
+                            id="tracker-title"
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -72,17 +76,20 @@ export const TimeTrackerEditor = ({
                                 tags.find((t) => t.id === tagId)?.name ||
                                 "Time Tracker"
                             }
-                            autoFocus
                         />
                     </div>
                     {!hideTimeFields && (
                         <div className="space-y-4">
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="tracker-start-date"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         Start Date
                                     </label>
                                     <input
+                                        id="tracker-start-date"
                                         type="date"
                                         value={startDate}
                                         onChange={(e) =>
@@ -92,10 +99,14 @@ export const TimeTrackerEditor = ({
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="tracker-start-time"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         Start Time
                                     </label>
                                     <input
+                                        id="tracker-start-time"
                                         type="time"
                                         value={startAt}
                                         onChange={(e) =>
@@ -107,10 +118,14 @@ export const TimeTrackerEditor = ({
                             </div>
                             <div className="flex gap-4">
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="tracker-end-date"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         End Date
                                     </label>
                                     <input
+                                        id="tracker-end-date"
                                         type="date"
                                         value={endDate}
                                         onChange={(e) =>
@@ -120,10 +135,14 @@ export const TimeTrackerEditor = ({
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="mb-1 block text-xs text-muted-foreground">
+                                    <label
+                                        htmlFor="tracker-end-time"
+                                        className="mb-1 block text-xs text-muted-foreground"
+                                    >
                                         End Time
                                     </label>
                                     <input
+                                        id="tracker-end-time"
                                         type="time"
                                         value={endAt}
                                         onChange={(e) =>
@@ -136,9 +155,9 @@ export const TimeTrackerEditor = ({
                         </div>
                     )}
                     <div>
-                        <label className="mb-1 block text-xs text-muted-foreground">
+                        <p className="mb-1 block text-xs text-muted-foreground">
                             Tag
-                        </label>
+                        </p>
                         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
                             {sortedTags.map((tag) => (
                                 <button
@@ -151,7 +170,7 @@ export const TimeTrackerEditor = ({
                                     }`}
                                 >
                                     <div
-                                        className="h-2 w-2 rounded-full"
+                                        className="size-2 rounded-full"
                                         style={{ backgroundColor: tag.color }}
                                     />
                                     {tag.name}

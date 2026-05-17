@@ -28,7 +28,7 @@ export const SettingsMenu = ({ onClose }: SettingsMenuProps) => {
                 </div>
 
                 <div className="flex justify-end border-t bg-muted/30 p-4">
-                    <Button onClick={onClose}>Done</Button>
+                    <Button onClick={onClose}>Close Settings</Button>
                 </div>
             </div>
         </div>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Settings02Icon } from "@hugeicons/core-free-icons"
 
-export function App() {
+export default function App() {
     const user = useAuthStore((state) => state.user)
     const isSyncing = useAuthStore((state) => state.isSyncing)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -28,7 +28,7 @@ export function App() {
                 <Button
                     variant="secondary"
                     size="icon"
-                    className="h-12 w-12 rounded-full border border-border bg-background/80 shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+                    className="size-12 rounded-full border border-border bg-background/80 shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
                     onClick={() => setIsSettingsOpen(true)}
                 >
                     <HugeiconsIcon icon={Settings02Icon} size={24} />
@@ -37,7 +37,7 @@ export function App() {
 
             {isSyncing && (
                 <div className="fixed bottom-6 left-6 z-50 flex animate-in items-center gap-2 rounded-full border border-border bg-background/60 px-3 py-1.5 shadow-lg backdrop-blur-md duration-300 fade-in slide-in-from-bottom-2">
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+                    <div className="size-3 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
                     <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         Syncing
                     </span>
@@ -50,5 +50,3 @@ export function App() {
         </div>
     )
 }
-
-export default App

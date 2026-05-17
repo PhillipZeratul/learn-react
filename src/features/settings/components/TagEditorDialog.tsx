@@ -58,9 +58,9 @@ const ShadeSwatches = ({
                 Shades
             </p>
             <div className="grid grid-cols-10 gap-2">
-                {shades.map((s, idx) => (
+                {shades.map((s) => (
                     <button
-                        key={`${s}-${idx}`}
+                        key={s}
                         type="button"
                         onClick={() => onChange(s)}
                         className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${color.toLowerCase() === s.toLowerCase() ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
@@ -101,14 +101,17 @@ export const TagEditorDialog = ({
         if (!tag) return activeTags
 
         const getDescendants = (pId: string): string[] => {
-            const children = activeTags
-                .filter((t) => t.parent_id === pId)
-                .map((t) => t.id)
+            const children = activeTags.reduce<string[]>((acc, t) => {
+                if (t.parent_id === pId) {
+                    acc.push(t.id)
+                }
+                return acc
+            }, [])
             return [...children, ...children.flatMap(getDescendants)]
         }
-        const descendantIds = getDescendants(tag.id)
+        const descendantIds = new Set(getDescendants(tag.id))
         return activeTags.filter(
-            (t) => t.id !== tag.id && !descendantIds.includes(t.id)
+            (t) => t.id !== tag.id && !descendantIds.has(t.id)
         )
     }, [activeTags, tag])
 
@@ -139,17 +142,23 @@ export const TagEditorDialog = ({
                 <div className="space-y-4">
                     <div className="grid gap-4">
                         <div className="flex gap-2">
-                            <input
-                                autoFocus
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Tag name..."
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            />
+                            <div className="flex-1">
+                                <label htmlFor="tag-name" className="sr-only">
+                                    Tag Name
+                                </label>
+                                <input
+                                    id="tag-name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Tag name..."
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                />
+                            </div>
                             <div
-                                className="h-10 w-10 shrink-0 rounded-md border border-input shadow-sm"
+                                className="size-10 shrink-0 rounded-md border border-input shadow-sm"
                                 style={{ backgroundColor: color }}
+                                aria-hidden="true"
                             />
                         </div>
 
@@ -176,10 +185,14 @@ export const TagEditorDialog = ({
                         </div>
 
                         <div className="space-y-2">
-                            <p className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+                            <label
+                                htmlFor="parent-tag"
+                                className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
+                            >
                                 Parent Tag
-                            </p>
+                            </label>
                             <select
+                                id="parent-tag"
                                 value={parentId}
                                 onChange={(e) =>
                                     setParentId(e.target.value as TagId)

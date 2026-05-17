@@ -1,11 +1,28 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm"
 
-let db: any = null
+interface SQLiteDB {
+    exec(options: {
+        sql: string
+        bind?: unknown[]
+        rowMode?: "object" | "array"
+        callback?: (row: Record<string, unknown>) => void
+    }): void
+    changes(): number
+}
+
+let db: SQLiteDB | null = null
+
+interface SQLite3Module {
+    oo1: {
+        OpfsDb?: new (name: string) => SQLiteDB
+        DB: new (name: string, mode: string) => SQLiteDB
+    }
+}
 
 const initDb = async () => {
     try {
-        const sqlite3 = await sqlite3InitModule()
-        if ("opfs" in sqlite3) {
+        const sqlite3 = (await sqlite3InitModule()) as unknown as SQLite3Module
+        if (sqlite3.oo1.OpfsDb) {
             db = new sqlite3.oo1.OpfsDb("local-routine-db.sqlite3")
             console.log("Worker: SQLite OPFS Initialized")
         } else {
@@ -24,28 +41,28 @@ self.onmessage = async (e: MessageEvent) => {
 
     try {
         if (type === "EXEC") {
-            db.exec({
+            db!.exec({
                 sql: query,
                 bind: values || [],
             })
-            const changes = db.changes()
+            const changes = db!.changes()
             safePostMessage({ id, success: true, changes })
         } else if (type === "SELECT") {
-            const rows: any[] = []
-            db.exec({
+            const rows: Record<string, unknown>[] = []
+            db!.exec({
                 sql: query,
                 bind: values || [],
                 rowMode: "object",
-                callback: (row: any) => rows.push(row),
+                callback: (row: Record<string, unknown>) => rows.push(row),
             })
             safePostMessage({ id, success: true, rows })
         }
-    } catch (err: any) {
-        safePostMessage({ id, success: false, error: err.message })
+    } catch (err: unknown) {
+        safePostMessage({ id, success: false, error: (err as Error).message })
     }
 }
 
-function safePostMessage(message: any) {
+function safePostMessage(message: unknown) {
     try {
         self.postMessage(message)
     } catch (err) {

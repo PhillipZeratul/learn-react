@@ -59,44 +59,53 @@ export class SyncService {
         console.log(
             `SyncService: Initializing tables for ${this.configs.length} registered models...`
         )
-        for (const config of this.configs) {
-            // 1. Ensure table exists
-            await db.execute(config.createTableSql)
 
-            // 2. Schema Migration: Add missing columns
-            try {
-                // Get current columns
-                const tableInfo = await db.select<{ name: string }>(
-                    `PRAGMA table_info(${config.tableName})`
-                )
-                const existingColumns = tableInfo.map((col) => col.name)
+        // Parallelize table existence checks and initial creation
+        await Promise.all(
+            this.configs.map((config) => db.execute(config.createTableSql))
+        )
 
-                // Extract column definitions from createTableSql
-                // Simple regex to match "column_name TYPE" patterns
-                const columnMatches = config.createTableSql.matchAll(
-                    /\b(\w+)\s+(TEXT|INTEGER|REAL|BLOB)\b/gi
-                )
+        // Schema Migration: Add missing columns
+        // Migration is potentially sequential if it involves ALTER TABLE,
+        // but we can still parallelize the PRAGMA checks.
+        await Promise.all(
+            this.configs.map(async (config) => {
+                try {
+                    // Get current columns
+                    const tableInfo = await db.select<{ name: string }>(
+                        `PRAGMA table_info(${config.tableName})`
+                    )
+                    const existingColumns = tableInfo.map((col) => col.name)
 
-                for (const match of columnMatches) {
-                    const columnName = match[1]
-                    const columnType = match[2]
-
-                    if (!existingColumns.includes(columnName)) {
-                        console.log(
-                            `SyncService: Adding missing column '${columnName}' to '${config.tableName}'`
+                    // Extract column definitions from createTableSql
+                    // Simple regex to match "column_name TYPE" patterns
+                    const columnMatches = Array.from(
+                        config.createTableSql.matchAll(
+                            /\b(\w+)\s+(TEXT|INTEGER|REAL|BLOB)\b/gi
                         )
-                        await db.execute(
-                            `ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`
-                        )
+                    )
+
+                    for (const match of columnMatches) {
+                        const columnName = match[1]
+                        const columnType = match[2]
+
+                        if (!existingColumns.includes(columnName)) {
+                            console.log(
+                                `SyncService: Adding missing column '${columnName}' to '${config.tableName}'`
+                            )
+                            await db.execute(
+                                `ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`
+                            )
+                        }
                     }
+                } catch (err) {
+                    console.error(
+                        `SyncService: Schema migration failed for ${config.tableName}:`,
+                        err
+                    )
                 }
-            } catch (err) {
-                console.error(
-                    `SyncService: Schema migration failed for ${config.tableName}:`,
-                    err
-                )
-            }
-        }
+            })
+        )
     }
 
     static async initialize() {
@@ -111,23 +120,24 @@ export class SyncService {
 
         // Infrastructure: Ensure sync queue and metadata tables exist
         const db = await getDatabase()
-        await db.execute(`
-            CREATE TABLE IF NOT EXISTS sync_queue (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                table_name TEXT,
-                row_id TEXT,
-                action TEXT, -- 'UPSERT', 'SOFT_DELETE'
-                payload TEXT,
-                created_at TEXT
-            )
-        `)
-
-        await db.execute(`
-            CREATE TABLE IF NOT EXISTS sync_metadata (
-                user_id TEXT PRIMARY KEY,
-                last_synced_at TEXT
-            )
-        `)
+        await Promise.all([
+            db.execute(`
+                CREATE TABLE IF NOT EXISTS sync_queue (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    table_name TEXT,
+                    row_id TEXT,
+                    action TEXT, -- 'UPSERT', 'SOFT_DELETE'
+                    payload TEXT,
+                    created_at TEXT
+                )
+            `),
+            db.execute(`
+                CREATE TABLE IF NOT EXISTS sync_metadata (
+                    user_id TEXT PRIMARY KEY,
+                    last_synced_at TEXT
+                )
+            `),
+        ])
 
         // Load existing local data first for immediate UI response
         await SyncService.loadAll()
@@ -197,18 +207,32 @@ export class SyncService {
             // We use a high-water mark timestamp to avoid missing records updated in the same millisecond
             let newHighWaterMark = lastSyncedAt
 
-            for (const config of this.configs) {
-                let query = supabase!
-                    .from(config.tableName as TableName)
-                    .select("*")
-                    .eq("user_id", currentUserId)
+            const results = await Promise.all(
+                this.configs.map(async (config) => {
+                    let query = supabase!
+                        .from(config.tableName as TableName)
+                        .select("*")
+                        .eq("user_id", currentUserId)
 
-                if (lastSyncedAt) {
-                    query = query.gt("updated_at", lastSyncedAt)
-                }
+                    if (lastSyncedAt) {
+                        query = query.gt("updated_at", lastSyncedAt)
+                    }
 
-                const { data, error } = await query
+                    const { data, error } = await query
 
+                    if (error) {
+                        return { config, data: null, error }
+                    }
+
+                    return {
+                        config,
+                        data: data as Record<string, unknown>[],
+                        error: null,
+                    }
+                })
+            )
+
+            for (const { config, data, error } of results) {
                 if (error) {
                     console.error(
                         `SyncService: Failed to pull deltas for ${config.tableName}:`,
@@ -221,31 +245,36 @@ export class SyncService {
                     console.log(
                         `SyncService: Processing ${data.length} delta records for ${config.tableName}`
                     )
+
+                    // Bulk-check sync queue for all row IDs in this batch
+                    const rowIds = data.map((r) => r.id)
+                    const placeholders = rowIds.map(() => "?").join(",")
+                    const inQueueResults = await db.select<{
+                        row_id: string
+                        payload: string
+                    }>(
+                        `SELECT row_id, payload FROM sync_queue WHERE table_name = ? AND row_id IN (${placeholders})`,
+                        [config.tableName, ...rowIds]
+                    )
+                    const inQueueMap = new Map(
+                        inQueueResults.map((q) => [q.row_id, q])
+                    )
+
                     for (const row of data) {
-                        const entity = config.fromDb(
-                            row as Record<string, unknown>
-                        )
+                        const entity = config.fromDb(row)
+                        const inQueue = inQueueMap.get(entity.id)
 
-                        // Protection: Check if this record has a pending local change in the queue
-                        const inQueue = await db.select<{
-                            id: number
-                            payload: string
-                        }>(
-                            "SELECT id, payload FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
-                            [config.tableName, entity.id]
-                        )
-
-                        if (inQueue.length > 0) {
+                        if (inQueue) {
                             const pendingPayload = JSON.parse(
-                                inQueue[0].payload
+                                inQueue.payload
                             ) as BaseModel
                             if (entity.updated_at > pendingPayload.updated_at) {
                                 console.log(
                                     `SyncService: Cloud version is newer than pending local change for ${config.tableName}:${entity.id}. Overriding queue.`
                                 )
                                 await db.execute(
-                                    "DELETE FROM sync_queue WHERE id = ?",
-                                    [inQueue[0].id]
+                                    "DELETE FROM sync_queue WHERE table_name = ? AND row_id = ?",
+                                    [config.tableName, entity.id]
                                 )
                                 // Fall through to save cloud version
                             } else {
@@ -386,14 +415,16 @@ export class SyncService {
         )
 
         try {
-            for (const config of this.configs) {
-                const filter = config.loadFilter || "AND is_deleted = 0"
-                const rows = await db.select<Record<string, unknown>>(
-                    `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`,
-                    [currentUserId]
-                )
-                config.setStore(rows.map((row) => config.fromDb(row)))
-            }
+            await Promise.all(
+                this.configs.map(async (config) => {
+                    const filter = config.loadFilter || "AND is_deleted = 0"
+                    const rows = await db.select<Record<string, unknown>>(
+                        `SELECT * FROM ${config.tableName} WHERE user_id = ? ${filter}`,
+                        [currentUserId]
+                    )
+                    config.setStore(rows.map((row) => config.fromDb(row)))
+                })
+            )
         } catch (error) {
             console.error(
                 "SyncService: Failed to hydrate stores from local DB:",
@@ -477,16 +508,19 @@ export class SyncService {
     }
 
     private static async internalSync() {
-        // Defensive: Check for authenticated session before syncing
-        const {
-            data: { session },
-        } = await supabase!.auth.getSession()
+        // Parallelize session check and DB acquisition
+        const [
+            {
+                data: { session },
+            },
+            db,
+        ] = await Promise.all([supabase!.auth.getSession(), getDatabase()])
+
         if (!session) {
             console.log("SyncService: No active session, skipping push.")
             return
         }
 
-        const db = await getDatabase()
         const queue = await db.select<QueueItem>(
             "SELECT * FROM sync_queue ORDER BY created_at ASC"
         )
@@ -518,6 +552,8 @@ export class SyncService {
 
         let highWaterMark: string | null = null
 
+        const configMap = new Map(this.configs.map((c) => [c.tableName, c]))
+
         for (const table of sortedTables) {
             const tableActions = queue.filter(
                 (item) => item.table_name === table
@@ -538,7 +574,7 @@ export class SyncService {
                 ({ _sync_status, ...rest }) => rest
             )
 
-            const config = this.configs.find((c) => c.tableName === table)
+            const config = configMap.get(table)
 
             const { error } = await supabase!
                 .from(table as TableName)

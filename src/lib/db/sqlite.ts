@@ -6,11 +6,11 @@ const isCapacitor = import.meta.env.IS_CAPACITOR
 const isWeb = import.meta.env.IS_WEB
 
 class MockDatabaseService implements IDatabaseService {
-    async execute(query: string, values?: any[]): Promise<QueryResult> {
+    async execute(query: string, values?: unknown[]): Promise<QueryResult> {
         console.log(`[MOCK DB] Executing: ${query}`, values)
         return { rows: [], changes: 0 }
     }
-    async select<T>(query: string, values?: any[]): Promise<T[]> {
+    async select<T>(query: string, values?: unknown[]): Promise<T[]> {
         console.log(`[MOCK DB] Selecting: ${query}`, values)
         return []
     }

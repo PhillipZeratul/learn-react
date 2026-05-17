@@ -26,26 +26,30 @@ export class DatabaseMaintenanceService {
             )
 
             const configs = SyncService.getConfigs()
-            let totalPurged = 0
 
-            for (const config of configs) {
-                // We only delete records that are soft-deleted AND older than cutoff AND NOT in the sync queue.
-                // We also respect the model's specific purgeFilter (e.g. protecting routine tombstones).
-                const extraFilter = config.purgeFilter || ""
+            const results = await Promise.all(
+                configs.map((config) => {
+                    // We only delete records that are soft-deleted AND older than cutoff AND NOT in the sync queue.
+                    // We also respect the model's specific purgeFilter (e.g. protecting routine tombstones).
+                    const extraFilter = config.purgeFilter || ""
 
-                const res = await db.execute(
-                    `
-                    DELETE FROM ${config.tableName} 
-                    WHERE is_deleted = 1 
-                      AND updated_at < ? 
-                      AND id NOT IN (SELECT row_id FROM sync_queue WHERE table_name = ?)
-                      ${extraFilter}
-                `,
-                    [cutoffDate, config.tableName]
-                )
+                    return db.execute(
+                        `
+                        DELETE FROM ${config.tableName} 
+                        WHERE is_deleted = 1 
+                          AND updated_at < ? 
+                          AND id NOT IN (SELECT row_id FROM sync_queue WHERE table_name = ?)
+                          ${extraFilter}
+                    `,
+                        [cutoffDate, config.tableName]
+                    )
+                })
+            )
 
-                totalPurged += res.changes || 0
-            }
+            const totalPurged = results.reduce(
+                (acc, res) => acc + (res.changes || 0),
+                0
+            )
 
             if (totalPurged > 0) {
                 console.log(
@@ -105,19 +109,21 @@ export class DatabaseMaintenanceService {
                     [updatedAt, currentUserId]
                 )
 
-                for (const row of rows) {
-                    const entity = config.fromDb(row)
-                    await SyncService.addToQueue(
-                        config.tableName,
-                        entity.id,
-                        "SOFT_DELETE",
-                        {
-                            ...entity,
-                            is_deleted: true,
-                            updated_at: updatedAt,
-                        }
-                    )
-                }
+                await Promise.all(
+                    rows.map((row) => {
+                        const entity = config.fromDb(row)
+                        return SyncService.addToQueue(
+                            config.tableName,
+                            entity.id,
+                            "SOFT_DELETE",
+                            {
+                                ...entity,
+                                is_deleted: true,
+                                updated_at: updatedAt,
+                            }
+                        )
+                    })
+                )
 
                 SyncService.triggerSync(true)
             }
@@ -147,9 +153,9 @@ export class DatabaseMaintenanceService {
 
         try {
             const configs = SyncService.getConfigs()
-            for (const config of configs) {
-                await this.clearTableData(config.tableName)
-            }
+            await Promise.all(
+                configs.map((config) => this.clearTableData(config.tableName))
+            )
             console.log(
                 "DatabaseMaintenanceService: All local data cleared. Sync in progress."
             )
@@ -202,38 +208,44 @@ export class DatabaseMaintenanceService {
         try {
             const db = await getDatabase()
             const configs = SyncService.getConfigs()
-            for (const config of configs) {
-                console.log(
-                    `DatabaseMaintenanceService: Pulling ${config.tableName}...`
-                )
-                const { data, error } = await supabase
-                    .from(config.tableName as TableName)
-                    .select("*")
-                    .eq("user_id", currentUserId)
 
-                if (error) {
-                    console.error(
-                        `DatabaseMaintenanceService: Failed to pull ${config.tableName}:`,
-                        error
+            await Promise.all(
+                configs.map(async (config) => {
+                    console.log(
+                        `DatabaseMaintenanceService: Pulling ${config.tableName}...`
                     )
-                    continue
-                }
+                    const { data, error } = await supabase!
+                        .from(config.tableName as TableName)
+                        .select("*")
+                        .eq("user_id", currentUserId)
 
-                if (data && data.length > 0) {
-                    for (const row of data) {
-                        const entity = config.fromDb(
-                            row as Record<string, unknown>
+                    if (error) {
+                        console.error(
+                            `DatabaseMaintenanceService: Failed to pull ${config.tableName}:`,
+                            error
                         )
-                        await db.execute(
-                            config.saveSql,
-                            config.toSqlValues(entity)
+                        return
+                    }
+
+                    if (data && data.length > 0) {
+                        // We process saving in parallel as they are independent records
+                        await Promise.all(
+                            data.map((row) => {
+                                const entity = config.fromDb(
+                                    row as Record<string, unknown>
+                                )
+                                return db.execute(
+                                    config.saveSql,
+                                    config.toSqlValues(entity)
+                                )
+                            })
+                        )
+                        console.log(
+                            `DatabaseMaintenanceService: Pulled ${data.length} records for ${config.tableName}`
                         )
                     }
-                    console.log(
-                        `DatabaseMaintenanceService: Pulled ${data.length} records for ${config.tableName}`
-                    )
-                }
-            }
+                })
+            )
 
             // Re-hydrate stores from the now-updated local DB
             await SyncService.loadAll()

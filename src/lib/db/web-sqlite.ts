@@ -5,7 +5,10 @@ class WebDatabaseService implements IDatabaseService {
     private messageCounter = 0
     private pendingPromises: Map<
         number,
-        { resolve: Function; reject: Function }
+        {
+            resolve: (value: unknown) => void
+            reject: (reason?: unknown) => void
+        }
     > = new Map()
     private isInitializing = false
     private initPromise: Promise<void> | null = null
@@ -58,16 +61,19 @@ class WebDatabaseService implements IDatabaseService {
         return this.initPromise
     }
 
-    private async sendToWorker(
+    private async sendToWorker<T>(
         type: "EXEC" | "SELECT",
         query: string,
-        values?: any[]
-    ): Promise<any> {
+        values?: unknown[]
+    ): Promise<T> {
         if (!this.worker) await this.init()
 
         const id = ++this.messageCounter
-        return new Promise((resolve, reject) => {
-            this.pendingPromises.set(id, { resolve, reject })
+        return new Promise<T>((resolve, reject) => {
+            this.pendingPromises.set(id, {
+                resolve: resolve as (value: unknown) => void,
+                reject: reject as (reason?: unknown) => void,
+            })
 
             const attemptSend = async (retryCount = 0) => {
                 try {
@@ -75,15 +81,16 @@ class WebDatabaseService implements IDatabaseService {
                         await this.init()
                     }
                     this.worker!.postMessage({ id, type, query, values })
-                } catch (err: any) {
+                } catch (err: unknown) {
+                    const error = err as Error
                     const isDisconnected =
-                        err.message
+                        error.message
                             ?.toLowerCase()
                             .includes("disconnected port") ||
-                        err.message
+                        error.message
                             ?.toLowerCase()
                             .includes("already been terminated") ||
-                        err.name === "InvalidStateError"
+                        error.name === "InvalidStateError"
 
                     if (isDisconnected && retryCount < 2) {
                         console.warn(
@@ -114,12 +121,12 @@ class WebDatabaseService implements IDatabaseService {
         })
     }
 
-    async execute(query: string, values?: any[]): Promise<QueryResult> {
-        return this.sendToWorker("EXEC", query, values)
+    async execute(query: string, values?: unknown[]): Promise<QueryResult> {
+        return this.sendToWorker<QueryResult>("EXEC", query, values)
     }
 
-    async select<T>(query: string, values?: any[]): Promise<T[]> {
-        return this.sendToWorker("SELECT", query, values)
+    async select<T>(query: string, values?: unknown[]): Promise<T[]> {
+        return this.sendToWorker<T[]>("SELECT", query, values)
     }
 
     async transaction<T>(

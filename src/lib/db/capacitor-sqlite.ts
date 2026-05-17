@@ -1,12 +1,20 @@
 import type { IDatabaseService, QueryResult } from "./types"
 
-export class CapacitorDatabaseService implements IDatabaseService {
-    private db: any
+interface CapacitorDatabase {
+    run(
+        query: string,
+        values?: unknown[]
+    ): Promise<{ changes?: { changes: number; lastId: number } }>
+    query(query: string, values?: unknown[]): Promise<{ values: unknown[] }>
+}
 
-    constructor(db: any) {
+export class CapacitorDatabaseService implements IDatabaseService {
+    private db: CapacitorDatabase
+
+    constructor(db: CapacitorDatabase) {
         this.db = db
     }
-    async execute(query: string, values?: any[]): Promise<QueryResult> {
+    async execute(query: string, values?: unknown[]): Promise<QueryResult> {
         const result = await this.db.run(query, values)
         return {
             rows: [],
@@ -14,9 +22,9 @@ export class CapacitorDatabaseService implements IDatabaseService {
             lastInsertId: result.changes?.lastId,
         }
     }
-    async select<T>(query: string, values?: any[]): Promise<T[]> {
+    async select<T>(query: string, values?: unknown[]): Promise<T[]> {
         const result = await this.db.query(query, values)
-        return result.values || []
+        return (result.values as T[]) || []
     }
     async transaction<T>(
         callback: (db: IDatabaseService) => Promise<T>
@@ -37,5 +45,5 @@ export const initCapacitorDb = async () => {
         false
     )
     await db.open()
-    return new CapacitorDatabaseService(db)
+    return new CapacitorDatabaseService(db as unknown as CapacitorDatabase)
 }
