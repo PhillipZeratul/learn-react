@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react"
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { batch } from "@preact/signals-react"
 import { v4 as uuidv4 } from "uuid"
 import {
@@ -166,24 +166,23 @@ export default function RoutineTimeTrackerWidget() {
     const lastBackgroundTime = useRef<number | null>(null)
 
     // Scroll to current time on mount and focus
-    // memoize to satisfy exhaustive-deps
-    const scrollToCurrentTime = useMemo(() => {
-        return () => {
-            if (!scrollContainerRef.current || !now) return
+    const scrollToCurrentTime = useCallback(() => {
+        if (!scrollContainerRef.current) return
 
-            const currentMinutes = now.getHours() * 60 + now.getMinutes()
-            const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN
-            const containerHeight = scrollContainerRef.current.clientHeight
+        const scrollNow = new Date()
+        const currentMinutes =
+            scrollNow.getHours() * 60 + scrollNow.getMinutes()
+        const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN
+        const containerHeight = scrollContainerRef.current.clientHeight
 
-            scrollContainerRef.current.scrollTo({
-                top: targetY - containerHeight / 2,
-                behavior: "smooth",
-            })
-        }
-    }, [now])
+        scrollContainerRef.current.scrollTo({
+            top: targetY - containerHeight / 2,
+            behavior: "smooth",
+        })
+    }, [])
 
     useEffect(() => {
-        if (!currentDate || !now) return
+        if (!currentDate) return
 
         // Initial scroll - only if viewing today (which is the default)
         const timer = setTimeout(() => {
@@ -227,7 +226,7 @@ export default function RoutineTimeTrackerWidget() {
                 handleVisibilityChange
             )
         }
-    }, [currentDate, now, scrollToCurrentTime])
+    }, [currentDate, scrollToCurrentTime])
 
     if (!currentDate || !now) {
         return (
