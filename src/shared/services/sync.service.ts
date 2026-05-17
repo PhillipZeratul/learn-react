@@ -236,7 +236,20 @@ export class SyncService {
                 })
             )
 
-            for (const { config, data, error } of results) {
+            // Prioritize routine_time_tracker_states so that the "active ID" is updated
+            // before we process card deltas. This ensures card conflict resolution
+            // uses the freshest authoritative state.
+            const sortedResults = results.sort((a, b) => {
+                const isAState =
+                    a.config.tableName === "routine_time_tracker_states"
+                const isBState =
+                    b.config.tableName === "routine_time_tracker_states"
+                if (isAState && !isBState) return -1
+                if (!isAState && isBState) return 1
+                return 0
+            })
+
+            for (const { config, data, error } of sortedResults) {
                 if (error) {
                     console.error(
                         `SyncService: Failed to pull deltas for ${config.tableName}:`,
@@ -595,8 +608,6 @@ export class SyncService {
             return priorityA - priorityB
         })
 
-        let highWaterMark: string | null = null
-
         const configMap = new Map(this.configs.map((c) => [c.tableName, c]))
 
         for (const table of sortedTables) {
@@ -639,48 +650,12 @@ export class SyncService {
                 console.log(
                     `SyncService: Successfully synced ${tableActions.length} records to ${table}`
                 )
-
-                // Track the latest updated_at to advance last_synced_at
-                for (const payload of payloads) {
-                    if (
-                        payload.updated_at &&
-                        (!highWaterMark || payload.updated_at > highWaterMark)
-                    ) {
-                        highWaterMark = payload.updated_at
-                    }
-                }
             } else {
                 console.error(
                     `SyncService: Bulk sync error for ${table}:`,
                     error
                 )
                 break
-            }
-        }
-
-        // 2. Update last_synced_at with current high water mark if we pushed successfully
-        if (highWaterMark) {
-            const currentUserId = session.user.id
-            // Fetch current meta to avoid reverting last_synced_at if pullDeltas advanced it further
-            const meta = await db.select<SyncMetadata>(
-                "SELECT last_synced_at FROM sync_metadata WHERE user_id = ?",
-                [currentUserId]
-            )
-            const existingLastSynced =
-                meta.length > 0 ? meta[0].last_synced_at : null
-
-            if (!existingLastSynced || highWaterMark > existingLastSynced) {
-                await db.execute(
-                    `
-            INSERT INTO sync_metadata (user_id, last_synced_at)
-            VALUES (?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET last_synced_at = excluded.last_synced_at
-          `,
-                    [currentUserId, highWaterMark]
-                )
-                console.log(
-                    `SyncService: Advanced last_synced_at to ${highWaterMark} after successful push.`
-                )
             }
         }
     }
