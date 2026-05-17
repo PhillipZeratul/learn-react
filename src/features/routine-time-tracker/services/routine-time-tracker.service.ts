@@ -9,6 +9,7 @@ import {
 } from "../models/routine-time-tracker-state.model"
 import { useTagStore } from "../stores/tag.store"
 import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
+import { useTimeTrackerCardStore } from "../stores/time-tracker-card.store"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import type { TimeTrackerCardId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime, UserId } from "@/shared/models/base.model"
@@ -97,10 +98,46 @@ export class RoutineTimeTrackerService {
             return
         }
 
+        const oldId = state.active_time_tracker_id
+        const now = new Date().toISOString() as IsoDateTime
+
+        // 1. Close the old tracker
+        if (oldId) {
+            const oldCard = useTimeTrackerCardStore
+                .getState()
+                .items.find((c) => c.id === oldId)
+            if (oldCard && oldCard.end_at === null) {
+                const updatedOldCard = {
+                    ...oldCard,
+                    end_at: now,
+                    updated_at: now,
+                }
+                useTimeTrackerCardStore.getState().upsert(updatedOldCard)
+                await SyncService.save(timeTrackerCardConfig, updatedOldCard)
+            }
+        }
+
+        // 2. Open the new tracker
+        if (id) {
+            const newCard = useTimeTrackerCardStore
+                .getState()
+                .items.find((c) => c.id === id)
+            if (newCard) {
+                const updatedNewCard = {
+                    ...newCard,
+                    end_at: null,
+                    updated_at: now,
+                }
+                useTimeTrackerCardStore.getState().upsert(updatedNewCard)
+                await SyncService.save(timeTrackerCardConfig, updatedNewCard)
+            }
+        }
+
+        // 3. Update the state record
         const updatedState = {
             ...state,
             active_time_tracker_id: id,
-            updated_at: new Date().toISOString() as IsoDateTime,
+            updated_at: now,
         }
 
         useRoutineTimeTrackerStateStore.getState().set(updatedState)

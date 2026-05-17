@@ -15,7 +15,7 @@ export interface TimeTrackerCard extends BaseModel {
     title: string
     description?: string
     start_at: IsoDateTime
-    end_at: IsoDateTime
+    end_at: IsoDateTime | null
     tag_id: TagId
 }
 
@@ -30,7 +30,7 @@ export const createTimeTrackerCard = (
         title: data.title ?? "",
         description: data.description || "",
         start_at: data.start_at || now,
-        end_at: data.end_at || now,
+        end_at: data.end_at !== undefined ? data.end_at : null,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
         user_id: data.user_id || currentUserId,
         created_at: data.created_at || now,

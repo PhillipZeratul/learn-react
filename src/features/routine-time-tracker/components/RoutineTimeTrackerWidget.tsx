@@ -83,7 +83,7 @@ export default function RoutineTimeTrackerWidget() {
         useRoutineTimeTrackerStateStore(
             (state) => state.state?.active_time_tracker_id
         ) || null
-    const setActiveTimeTrackerId = (id: TimeTrackerCardId | null) =>
+    const setActiveTimeTrackerId = async (id: TimeTrackerCardId | null) =>
         RoutineTimeTrackerService.setActiveTrackerId(id)
 
     const [currentDate, setCurrentDate] = useState(() => new Date())
@@ -208,40 +208,6 @@ export default function RoutineTimeTrackerWidget() {
             )
         }
     }, [currentDate])
-
-    useEffect(() => {
-        if (!activeTimeTrackerId) return
-
-        const updateActiveTask = () => {
-            // Safety: Don't auto-save if the app is backgrounded.
-            // This prevents stale background instances from "fighting" with active ones for the tracker.
-            if (document.visibilityState !== "visible") return
-
-            const task = useTimeTrackerCardStore
-                .getState()
-                .items.find((c) => c.id === activeTimeTrackerId)
-            if (!task || task.is_deleted) return
-
-            const currentTime = new Date()
-            const updatedCard = {
-                ...task,
-                end_at: currentTime.toISOString() as IsoDateTime,
-                updated_at: currentTime.toISOString() as IsoDateTime,
-            }
-
-            upsertTimeTrackerCard(updatedCard)
-            SyncService.save(timeTrackerCardConfig, updatedCard).catch(
-                console.error
-            )
-        }
-
-        // Persistence timer: update DB every 30 seconds
-        const timer = setInterval(updateActiveTask, 30000)
-
-        return () => {
-            clearInterval(timer)
-        }
-    }, [activeTimeTrackerId, upsertTimeTrackerCard])
 
     const handleTimeTrackerAction = () => {
         if (activeTimeTrackerId) {
@@ -467,7 +433,7 @@ export default function RoutineTimeTrackerWidget() {
                 finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
             } else if (dragState.mode === "center") {
                 const durationMs =
-                    new Date(dragState.card.end_at).getTime() -
+                    new Date(dragState.card.end_at || now).getTime() -
                     new Date(dragState.card.start_at).getTime()
                 const newStart = timeToISO(formatMin(finalStartMin), dateStr)
                 finalCard.start_at = newStart
@@ -752,11 +718,13 @@ export default function RoutineTimeTrackerWidget() {
                             (c) => c.id === updated.id
                         )
                         upsertTimeTrackerCard(updated)
+                        await SyncService.save(timeTrackerCardConfig, updated)
+
                         // Only auto-start if it's a BRAND NEW card (not an update) and we are on current day
                         if (!exists && !activeTimeTrackerId && isCurrentDay) {
-                            setActiveTimeTrackerId(updated.id)
+                            await setActiveTimeTrackerId(updated.id)
                         }
-                        await SyncService.save(timeTrackerCardConfig, updated)
+
                         setEditingState(null)
                     }}
                     onDelete={async (id) => {

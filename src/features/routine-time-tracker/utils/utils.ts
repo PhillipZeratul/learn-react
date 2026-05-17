@@ -41,11 +41,11 @@ export const isTouchEvent = (
 
 export const isCardOverlappingDate = (
     startIso: string,
-    endIso: string,
+    endIso: string | null,
     currentDate: Date
 ): boolean => {
     const start = new Date(startIso).getTime()
-    const end = new Date(endIso).getTime()
+    const end = endIso ? new Date(endIso).getTime() : new Date().getTime()
 
     const startOfDay = new Date(currentDate)
     startOfDay.setHours(0, 0, 0, 0)
@@ -57,11 +57,11 @@ export const isCardOverlappingDate = (
 
 export const getVisualBoundsForDate = (
     startIso: string,
-    endIso: string,
+    endIso: string | null,
     currentDate: Date
 ) => {
     const start = new Date(startIso).getTime()
-    const end = new Date(endIso).getTime()
+    const end = endIso ? new Date(endIso).getTime() : new Date().getTime()
 
     const startOfDayDate = new Date(currentDate)
     startOfDayDate.setHours(0, 0, 0, 0)

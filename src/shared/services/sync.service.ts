@@ -16,7 +16,7 @@ interface QueueItem {
     id: number
     table_name: string
     row_id: string
-    action: "UPSERT" | "SOFT_DELETE"
+    action: "INSERT" | "UPDATE" | "SOFT_DELETE"
     payload: string
     created_at: string
 }
@@ -126,7 +126,7 @@ export class SyncService {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     table_name TEXT,
                     row_id TEXT,
-                    action TEXT, -- 'UPSERT', 'SOFT_DELETE'
+                    action TEXT, -- 'INSERT', 'UPDATE', 'SOFT_DELETE'
                     payload TEXT,
                     created_at TEXT
                 )
@@ -138,6 +138,21 @@ export class SyncService {
                 )
             `),
         ])
+
+        // V2 Migration: Clear old full-payload queues to avoid patch logic crash
+        const migrationCheck = await db.select(
+            "SELECT * FROM sync_metadata WHERE user_id = 'v2_migration'"
+        )
+        if (migrationCheck.length === 0) {
+            console.log(
+                "SyncService: Performing V2 migration, clearing legacy queue..."
+            )
+            await db.execute("DELETE FROM sync_queue")
+            await db.execute(
+                "INSERT INTO sync_metadata (user_id, last_synced_at) VALUES ('v2_migration', ?)",
+                [new Date().toISOString()]
+            )
+        }
 
         // Load existing local data first for immediate UI response
         await SyncService.loadAll()
@@ -280,72 +295,41 @@ export class SyncService {
                     for (const row of data) {
                         const entity = config.fromDb(row)
                         const inQueue = inQueueMap.get(entity.id)
+                        let finalEntity = entity
 
                         if (inQueue) {
-                            const pendingPayload = JSON.parse(
+                            const pendingPatch = JSON.parse(
                                 inQueue.payload
-                            ) as BaseModel
+                            ) as Partial<BaseModel>
 
-                            // Conflict Resolution:
-                            // 1. If cloud version is strictly newer, cloud wins.
-                            // 2. If it's a singleton state (upsertOnConflict is user_id) and the active tracker changed, cloud wins.
-                            const cloudActiveTrackerId = (
-                                entity as unknown as Record<string, unknown>
-                            ).active_time_tracker_id
-                            const localActiveTrackerId = (
-                                pendingPayload as unknown as Record<
-                                    string,
-                                    unknown
-                                >
-                            ).active_time_tracker_id
-
-                            const isActiveTrackerChanged =
-                                config.upsertOnConflict === "user_id" &&
-                                cloudActiveTrackerId !== localActiveTrackerId
-
+                            // Server Reconciliation: Apply local patch on top of authoritative cloud state
+                            // Type casting is needed because fromDb returns the specific model type T, and we merge partial properties into it.
+                            finalEntity = {
+                                ...entity,
+                                ...pendingPatch,
+                            } as typeof entity
+                            console.log(
+                                `SyncService: Server Reconciliation applied for ${config.tableName}:${entity.id}. Merged local patch.`
+                            )
+                        } else {
+                            // Check if local DB already has same or newer version (for non-queued items)
+                            const localRows = await db.select<{
+                                updated_at: string
+                            }>(
+                                `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
+                                [entity.id]
+                            )
                             if (
-                                entity.updated_at > pendingPayload.updated_at ||
-                                isActiveTrackerChanged
+                                localRows.length > 0 &&
+                                localRows[0].updated_at >= entity.updated_at
                             ) {
-                                console.log(
-                                    `SyncService: Cloud version is newer or authoritative for ${config.tableName}:${entity.id}. Overriding local queue.`
-                                )
-                                console.log(
-                                    `  Cloud updated_at: ${entity.updated_at}`
-                                )
-                                console.log(
-                                    `  Local updated_at: ${pendingPayload.updated_at}`
-                                )
-                                await db.execute(
-                                    "DELETE FROM sync_queue WHERE table_name = ? AND row_id = ?",
-                                    [config.tableName, entity.id]
-                                )
-                                // Fall through to save cloud version
-                            } else {
-                                console.log(
-                                    `SyncService: Skipping delta for ${config.tableName}:${entity.id} - local change pending and is newer or same.`
-                                )
                                 continue
                             }
                         }
 
-                        // Check if local DB already has same or newer version (for non-queued items)
-                        const localRows = await db.select<{
-                            updated_at: string
-                        }>(
-                            `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
-                            [entity.id]
-                        )
-                        if (
-                            localRows.length > 0 &&
-                            localRows[0].updated_at >= entity.updated_at
-                        ) {
-                            continue
-                        }
-
                         await db.execute(
                             config.saveSql,
-                            config.toSqlValues(entity)
+                            config.toSqlValues(finalEntity)
                         )
 
                         // Update high-water mark
@@ -357,7 +341,7 @@ export class SyncService {
                         }
 
                         // Update in-memory store
-                        config.upsertInStore(entity)
+                        config.upsertInStore(finalEntity)
                     }
                 }
             }
@@ -404,11 +388,38 @@ export class SyncService {
             ;(entity as BaseModel).user_id = currentUserId
         }
 
+        // 1. Fetch old record to compute patch
+        const rows = await db.select<Record<string, unknown>>(
+            `SELECT * FROM ${config.tableName} WHERE id = ?`,
+            [entity.id]
+        )
+
+        const patch: Record<string, unknown> = {}
+        if (rows.length > 0) {
+            const oldEntity = config.fromDb(rows[0])
+            for (const key in entity) {
+                if (entity[key as keyof T] !== oldEntity[key as keyof T]) {
+                    patch[key] = entity[key as keyof T]
+                }
+            }
+            // Always include id and updated_at
+            patch.id = entity.id
+            patch.updated_at = entity.updated_at
+        } else {
+            // It's an insert, patch is the full entity
+            Object.assign(patch, entity)
+        }
+
         await db.execute(config.saveSql, config.toSqlValues(entity))
 
         // Only sync to cloud if user_id is present
         if (entity.user_id) {
-            await this.addToQueue(config.tableName, entity.id, "UPSERT", entity)
+            await this.addToQueue(
+                config.tableName,
+                entity.id,
+                rows.length > 0 ? "UPDATE" : "INSERT",
+                patch as Partial<BaseModel>
+            )
         } else {
             console.warn(
                 `SyncService: Item saved locally but skipped cloud sync (no user_id): ${config.tableName}/${entity.id}`
@@ -433,23 +444,15 @@ export class SyncService {
         )
         if (rows.length === 0) return
 
-        const entity = config.fromDb(rows[0])
-        const updatedEntity = {
-            ...entity,
-            is_deleted: true,
-            updated_at: updatedAt,
-        }
-
         await db.execute(
             `UPDATE ${config.tableName} SET is_deleted = 1, updated_at = ? WHERE id = ?`,
             [updatedAt, id]
         )
-        await this.addToQueue(
-            config.tableName,
+        await this.addToQueue(config.tableName, id, "SOFT_DELETE", {
             id,
-            "SOFT_DELETE",
-            updatedEntity
-        )
+            is_deleted: true,
+            updated_at: updatedAt,
+        } as Partial<BaseModel>)
     }
 
     /**
@@ -498,17 +501,29 @@ export class SyncService {
     static async addToQueue(
         tableName: string,
         rowId: string,
-        action: "UPSERT" | "SOFT_DELETE",
-        payload: BaseModel
+        action: "INSERT" | "UPDATE" | "SOFT_DELETE",
+        patch: Partial<BaseModel>
     ) {
         const db = await getDatabase()
 
-        const existing = await db.select<{ id: number }>(
-            "SELECT id FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
+        const existing = await db.select<{
+            id: number
+            action: string
+            payload: string
+        }>(
+            "SELECT id, action, payload FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
             [tableName, rowId]
         )
 
         if (existing.length > 0) {
+            const oldAction = existing[0].action
+            // If it was previously INSERT, keep it as INSERT, but merge the patch.
+            // If it was SOFT_DELETE, keep it.
+            const finalAction = oldAction === "INSERT" ? "INSERT" : action
+
+            const oldPayload = JSON.parse(existing[0].payload)
+            const mergedPayload = { ...oldPayload, ...patch }
+
             await db.execute(
                 `
                 UPDATE sync_queue 
@@ -516,8 +531,8 @@ export class SyncService {
                 WHERE id = ?
             `,
                 [
-                    action,
-                    JSON.stringify(payload),
+                    finalAction,
+                    JSON.stringify(mergedPayload),
                     new Date().toISOString(),
                     existing[0].id,
                 ]
@@ -532,7 +547,7 @@ export class SyncService {
                     tableName,
                     rowId,
                     action,
-                    JSON.stringify(payload),
+                    JSON.stringify(patch),
                     new Date().toISOString(),
                 ]
             )
@@ -615,33 +630,77 @@ export class SyncService {
                 (item) => item.table_name === table
             )
 
-            // Deduplicate payloads by ID, keeping only the LATEST action for each record.
-            // This prevents "ON CONFLICT DO UPDATE command cannot affect row a second time" in Supabase.
-            const uniquePayloadMap = new Map<string, BaseModel>()
+            const latestActionsMap = new Map<string, QueueItem>()
             const actionIds = tableActions.map((item) => item.id)
 
             for (const action of tableActions) {
-                const payload = JSON.parse(action.payload) as BaseModel
-                uniquePayloadMap.set(payload.id, payload)
+                const payload = JSON.parse(action.payload) as Partial<BaseModel>
+                latestActionsMap.set(payload.id as string, action)
             }
 
-            // Strip local-only fields (like _sync_status) before sending to Supabase
-            const payloads = Array.from(uniquePayloadMap.values()).map(
-                ({ _sync_status, ...rest }) => rest
+            const config = configMap.get(table)
+            let hasError = false
+
+            // Process actions in parallel for this table
+            await Promise.all(
+                Array.from(latestActionsMap.values()).map(async (action) => {
+                    const payload = JSON.parse(
+                        action.payload
+                    ) as Partial<BaseModel>
+                    const { _sync_status, id, ...rest } =
+                        payload as Partial<BaseModel> & {
+                            _sync_status?: string
+                        }
+
+                    try {
+                        let error
+                        if (action.action === "INSERT") {
+                            // For INSERT, we have the full payload, so upsert is safe.
+                            // We MUST strip local-only fields like _sync_status to satisfy strict DB types.
+                            const { _sync_status: _, ...upsertPayload } =
+                                payload as Record<string, unknown>
+                            const { error: err } = await supabase!
+                                .from(table as TableName)
+                                .upsert(
+                                    upsertPayload as unknown as Record<
+                                        string,
+                                        unknown
+                                    >,
+                                    config?.upsertOnConflict
+                                        ? {
+                                              onConflict:
+                                                  config.upsertOnConflict,
+                                          }
+                                        : undefined
+                                )
+                            error = err
+                        } else {
+                            // For UPDATE and SOFT_DELETE, we only have a patch, must use update
+                            const { error: err } = await supabase!
+                                .from(table as TableName)
+                                .update(rest)
+                                .eq("id", id as string)
+                            error = err
+                        }
+
+                        if (error) {
+                            console.error(
+                                `SyncService: Sync error for ${table}:${id} (${action.action}):`,
+                                error
+                            )
+                            hasError = true
+                        }
+                    } catch (err) {
+                        console.error(
+                            `SyncService: Sync exception for ${table}:${id}:`,
+                            err
+                        )
+                        hasError = true
+                    }
+                })
             )
 
-            const config = configMap.get(table)
-
-            const { error } = await supabase!
-                .from(table as TableName)
-                .upsert(
-                    payloads,
-                    config?.upsertOnConflict
-                        ? { onConflict: config.upsertOnConflict }
-                        : undefined
-                )
-
-            if (!error) {
+            if (!hasError) {
                 const placeholders = actionIds.map(() => "?").join(",")
                 await db.execute(
                     `DELETE FROM sync_queue WHERE id IN (${placeholders})`,
@@ -651,9 +710,8 @@ export class SyncService {
                     `SyncService: Successfully synced ${tableActions.length} records to ${table}`
                 )
             } else {
-                console.error(
-                    `SyncService: Bulk sync error for ${table}:`,
-                    error
+                console.warn(
+                    `SyncService: Some records failed to sync for ${table}. Keeping them in queue.`
                 )
                 break
             }
@@ -731,45 +789,43 @@ export class SyncService {
                             [config.tableName, entity.id]
                         )
 
+                        let finalEntity = entity
+
                         if (inQueue.length > 0) {
-                            const pendingPayload = JSON.parse(
+                            const pendingPatch = JSON.parse(
                                 inQueue[0].payload
-                            ) as BaseModel
+                            ) as Partial<BaseModel>
+
+                            // Server Reconciliation: Apply local patch on top of authoritative cloud state
+                            finalEntity = {
+                                ...entity,
+                                ...pendingPatch,
+                            } as typeof entity
+                            console.log(
+                                `SyncService: Realtime Server Reconciliation applied for ${table}:${entity.id}. Merged local patch.`
+                            )
+                        } else {
+                            // 2. Freshness Check: is the record in DB already the same or newer?
+                            const localRows = await db.select<{
+                                updated_at: string
+                            }>(
+                                `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
+                                [entity.id]
+                            )
                             if (
-                                entity.updated_at <= pendingPayload.updated_at
+                                localRows.length > 0 &&
+                                localRows[0].updated_at >= entity.updated_at
                             ) {
-                                console.log(
-                                    `SyncService: Skipping realtime update for ${table}:${entity.id} - local pending change is newer.`
-                                )
                                 return
                             }
-                            // Local change is stale, remove it from queue
-                            await db.execute(
-                                "DELETE FROM sync_queue WHERE id = ?",
-                                [inQueue[0].id]
-                            )
-                        }
-
-                        // 2. Freshness Check: is the record in DB already the same or newer?
-                        const localRows = await db.select<{
-                            updated_at: string
-                        }>(
-                            `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
-                            [entity.id]
-                        )
-                        if (
-                            localRows.length > 0 &&
-                            localRows[0].updated_at >= entity.updated_at
-                        ) {
-                            return
                         }
 
                         // 3. Apply Update
                         await db.execute(
                             config.saveSql,
-                            config.toSqlValues(entity)
+                            config.toSqlValues(finalEntity)
                         )
-                        config.upsertInStore(entity)
+                        config.upsertInStore(finalEntity)
                         console.log(
                             `SyncService: Applied realtime ${eventType} for ${table}:${entity.id}`
                         )

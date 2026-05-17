@@ -190,7 +190,7 @@ export const TaskCard = memo(
                         display: showTime || isDragging ? "block" : "none",
                     }}
                 >
-                    {`${isoToTime(card.start_at)} - ${isoToTime(card.end_at)}`}
+                    {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
                 </div>
             </div>
         )

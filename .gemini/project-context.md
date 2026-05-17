@@ -3,6 +3,7 @@
 ## General Instructions
 
 - **Always use 'bun', not 'npm'.**
+    - Dry run compile with "bun run tsc -p tsconfig.app.json --noEmit && bun run tsc -p tsconfig.node.json --noEmit && bun run tsc -p tsconfig.test.json --noEmit"
 - Respond and code in English.
 
 ## TypeScript & Typing Strictness

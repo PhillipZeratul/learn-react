@@ -29,9 +29,11 @@ export const TimeTrackerEditor = ({
     )
     const [startAt, setStartAt] = useState(() => isoToTime(task.start_at))
     const [endDate, setEndDate] = useState(() =>
-        formatLocalDate(new Date(task.end_at))
+        formatLocalDate(new Date(task.end_at || new Date().toISOString()))
     )
-    const [endAt, setEndAt] = useState(() => isoToTime(task.end_at))
+    const [endAt, setEndAt] = useState(() =>
+        isoToTime(task.end_at || (new Date().toISOString() as string))
+    )
     const [tagId, setTagId] = useState(task.tag_id)
 
     const activeTags = tags.filter((tag) => !tag.is_deleted)
