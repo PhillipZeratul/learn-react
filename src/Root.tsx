@@ -9,8 +9,7 @@ import { supabase } from "@/lib/supabase"
 
 export function Root() {
     const [initError, setInitError] = useState<string | null>(null)
-    const setUser = useAuthStore((state) => state.setUser)
-    const setSession = useAuthStore((state) => state.setSession)
+    const setAuth = useAuthStore((state) => state.setAuth)
 
     useEffect(() => {
         console.log("Root component mounted, starting initialization...")
@@ -34,8 +33,7 @@ export function Root() {
 
                     // Handle initial state
                     if (initialSession?.user) {
-                        setSession(initialSession)
-                        setUser(initialSession.user)
+                        setAuth(initialSession.user, initialSession)
                         console.log(
                             "Root: Initial user found, triggering hydration..."
                         )
@@ -48,8 +46,7 @@ export function Root() {
                     // Listen for changes (Login/Logout/Refresh)
                     supabase.auth.onAuthStateChange(async (event, session) => {
                         const user = session?.user ?? null
-                        setSession(session)
-                        setUser(user)
+                        setAuth(user, session)
 
                         if (
                             event === "SIGNED_IN" ||

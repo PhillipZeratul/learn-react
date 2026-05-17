@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react"
+import { useMemo, useReducer } from "react"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
 import { useBackAction } from "@/hooks/useBackAction"
 import { getSortedTagsWithDepth } from "../utils/tag-utils"
+import type { TagId } from "../models/routine-time-tracker.model"
 
 interface TimeTrackerEditorProps {
     task: TimeTrackerCard
@@ -12,6 +13,45 @@ interface TimeTrackerEditorProps {
     onDelete: (id: string) => Promise<void>
     onCancel: () => void
     hideTimeFields?: boolean
+}
+
+type EditorState = {
+    title: string
+    startDate: string
+    startAt: string
+    endDate: string
+    endAt: string
+    tagId: TagId
+}
+
+type EditorAction =
+    | { type: "SET_TITLE"; value: string }
+    | { type: "SET_START_DATE"; value: string }
+    | { type: "SET_START_AT"; value: string }
+    | { type: "SET_END_DATE"; value: string }
+    | { type: "SET_END_AT"; value: string }
+    | { type: "SET_TAG_ID"; value: TagId }
+
+const editorReducer = (
+    state: EditorState,
+    action: EditorAction
+): EditorState => {
+    switch (action.type) {
+        case "SET_TITLE":
+            return { ...state, title: action.value }
+        case "SET_START_DATE":
+            return { ...state, startDate: action.value }
+        case "SET_START_AT":
+            return { ...state, startAt: action.value }
+        case "SET_END_DATE":
+            return { ...state, endDate: action.value }
+        case "SET_END_AT":
+            return { ...state, endAt: action.value }
+        case "SET_TAG_ID":
+            return { ...state, tagId: action.value }
+        default:
+            return state
+    }
 }
 
 export const TimeTrackerEditor = ({
@@ -23,18 +63,23 @@ export const TimeTrackerEditor = ({
 }: TimeTrackerEditorProps) => {
     useBackAction(onCancel, true)
     const { items: tags } = useTagStore()
-    const [title, setTitle] = useState(task.title)
-    const [startDate, setStartDate] = useState(() =>
-        formatLocalDate(new Date(task.start_at))
+
+    const [state, dispatch] = useReducer(
+        editorReducer,
+        task,
+        (initialTask) => ({
+            title: initialTask.title,
+            startDate: formatLocalDate(new Date(initialTask.start_at)),
+            startAt: isoToTime(initialTask.start_at),
+            endDate: formatLocalDate(
+                new Date(initialTask.end_at || new Date().toISOString())
+            ),
+            endAt: isoToTime(
+                initialTask.end_at || (new Date().toISOString() as string)
+            ),
+            tagId: initialTask.tag_id,
+        })
     )
-    const [startAt, setStartAt] = useState(() => isoToTime(task.start_at))
-    const [endDate, setEndDate] = useState(() =>
-        formatLocalDate(new Date(task.end_at || new Date().toISOString()))
-    )
-    const [endAt, setEndAt] = useState(() =>
-        isoToTime(task.end_at || (new Date().toISOString() as string))
-    )
-    const [tagId, setTagId] = useState(task.tag_id)
 
     const activeTags = tags.filter((tag) => !tag.is_deleted)
     const sortedTags = useMemo(
@@ -43,14 +88,14 @@ export const TimeTrackerEditor = ({
     )
 
     const handleSave = async () => {
-        const finalTitle = title.trim()
+        const finalTitle = state.title.trim()
 
         await onSave({
             ...task,
             title: finalTitle,
-            start_at: timeToISO(startAt, startDate),
-            end_at: timeToISO(endAt, endDate),
-            tag_id: tagId || DEFAULT_TAG_ID,
+            start_at: timeToISO(state.startAt, state.startDate),
+            end_at: timeToISO(state.endAt, state.endDate),
+            tag_id: state.tagId || DEFAULT_TAG_ID,
         })
     }
 
@@ -71,11 +116,16 @@ export const TimeTrackerEditor = ({
                         <input
                             id="tracker-title"
                             type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
+                            value={state.title}
+                            onChange={(e) =>
+                                dispatch({
+                                    type: "SET_TITLE",
+                                    value: e.target.value,
+                                })
+                            }
                             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             placeholder={
-                                tags.find((t) => t.id === tagId)?.name ||
+                                tags.find((t) => t.id === state.tagId)?.name ||
                                 "Time Tracker"
                             }
                         />
@@ -93,9 +143,12 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-start-date"
                                         type="date"
-                                        value={startDate}
+                                        value={state.startDate}
                                         onChange={(e) =>
-                                            setStartDate(e.target.value)
+                                            dispatch({
+                                                type: "SET_START_DATE",
+                                                value: e.target.value,
+                                            })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                     />
@@ -110,9 +163,12 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-start-time"
                                         type="time"
-                                        value={startAt}
+                                        value={state.startAt}
                                         onChange={(e) =>
-                                            setStartAt(e.target.value)
+                                            dispatch({
+                                                type: "SET_START_AT",
+                                                value: e.target.value,
+                                            })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                     />
@@ -129,9 +185,12 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-end-date"
                                         type="date"
-                                        value={endDate}
+                                        value={state.endDate}
                                         onChange={(e) =>
-                                            setEndDate(e.target.value)
+                                            dispatch({
+                                                type: "SET_END_DATE",
+                                                value: e.target.value,
+                                            })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                     />
@@ -146,9 +205,12 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-end-time"
                                         type="time"
-                                        value={endAt}
+                                        value={state.endAt}
                                         onChange={(e) =>
-                                            setEndAt(e.target.value)
+                                            dispatch({
+                                                type: "SET_END_AT",
+                                                value: e.target.value,
+                                            })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                     />
@@ -164,9 +226,14 @@ export const TimeTrackerEditor = ({
                             {sortedTags.map((tag) => (
                                 <button
                                     key={tag.id}
-                                    onClick={() => setTagId(tag.id)}
+                                    onClick={() =>
+                                        dispatch({
+                                            type: "SET_TAG_ID",
+                                            value: tag.id,
+                                        })
+                                    }
                                     className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-all ${
-                                        tagId === tag.id
+                                        state.tagId === tag.id
                                             ? "border-primary bg-primary/10"
                                             : "border-transparent bg-muted hover:border-muted-foreground/30"
                                     }`}

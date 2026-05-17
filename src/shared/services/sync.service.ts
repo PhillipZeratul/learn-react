@@ -75,7 +75,9 @@ export class SyncService {
                     const tableInfo = await db.select<{ name: string }>(
                         `PRAGMA table_info(${config.tableName})`
                     )
-                    const existingColumns = tableInfo.map((col) => col.name)
+                    const existingColumns = new Set(
+                        tableInfo.map((col) => col.name)
+                    )
 
                     // Extract column definitions from createTableSql
                     // Simple regex to match "column_name TYPE" patterns
@@ -89,7 +91,7 @@ export class SyncService {
                         const columnName = match[1]
                         const columnType = match[2]
 
-                        if (!existingColumns.includes(columnName)) {
+                        if (!existingColumns.has(columnName)) {
                             console.log(
                                 `SyncService: Adding missing column '${columnName}' to '${config.tableName}'`
                             )
@@ -299,71 +301,87 @@ export class SyncService {
                         inQueueResults.map((q) => [q.row_id, q])
                     )
 
-                    for (const row of data) {
-                        const entity = config.fromDb(row)
-                        const inQueue = inQueueMap.get(entity.id)
-                        let finalEntity = entity
-
-                        // Update high-water mark AS EARLY AS POSSIBLE
-                        // If we received this from server, we are definitely synced up to this point.
-                        if (
-                            !newHighWaterMark ||
-                            entity.updated_at > newHighWaterMark
-                        ) {
-                            newHighWaterMark = entity.updated_at
-                        }
-
-                        if (inQueue) {
-                            const pendingPatch = JSON.parse(
-                                inQueue.payload
-                            ) as Partial<BaseModel>
-
-                            // Server Reconciliation: Apply local patch on top of authoritative cloud state
-                            // We MUST ensure the resulting updated_at is at least as new as the cloud's
-                            // to avoid an infinite loop where we keep pulling the same "stale" version.
-                            const cloudUpdatedAt = entity.updated_at
-                            const localUpdatedAt =
-                                pendingPatch.updated_at || entity.updated_at
-
-                            finalEntity = {
-                                ...entity,
-                                ...pendingPatch,
-                                updated_at:
-                                    cloudUpdatedAt > localUpdatedAt
-                                        ? cloudUpdatedAt
-                                        : localUpdatedAt,
-                            } as typeof entity
-
-                            console.log(
-                                `SyncService: [RECONCILE] ${config.tableName}:${entity.id}`
-                            )
-                        } else {
-                            // Check if local DB already has same or newer version (for non-queued items)
-                            const localRows = await db.select<{
-                                updated_at: string
-                            }>(
-                                `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
-                                [entity.id]
-                            )
-                            if (
-                                localRows.length > 0 &&
-                                localRows[0].updated_at >= entity.updated_at
-                            ) {
-                                continue
-                            }
-                            console.log(
-                                `SyncService: [APPLY] ${config.tableName}:${entity.id} (Cloud is newer: ${entity.updated_at})`
-                            )
-                        }
-
-                        await db.execute(
-                            config.saveSql,
-                            config.toSqlValues(finalEntity)
+                    // Bulk-check local DB for current versions of non-queued items
+                    const nonQueuedIds = rowIds.filter(
+                        (id) => !inQueueMap.has(id)
+                    )
+                    const localVersionsMap = new Map<string, string>()
+                    if (nonQueuedIds.length > 0) {
+                        const localPlaceholders = nonQueuedIds
+                            .map(() => "?")
+                            .join(",")
+                        const localRows = await db.select<{
+                            id: string
+                            updated_at: string
+                        }>(
+                            `SELECT id, updated_at FROM ${config.tableName} WHERE id IN (${localPlaceholders})`,
+                            nonQueuedIds
                         )
-
-                        // Update in-memory store
-                        config.upsertInStore(finalEntity)
+                        for (const r of localRows) {
+                            localVersionsMap.set(r.id, r.updated_at)
+                        }
                     }
+
+                    // Perform bulk save in a transaction
+                    await db.transaction(async (tx) => {
+                        for (const row of data) {
+                            const entity = config.fromDb(row)
+                            const inQueue = inQueueMap.get(entity.id)
+                            let finalEntity = entity
+
+                            // Update high-water mark
+                            if (
+                                !newHighWaterMark ||
+                                entity.updated_at > newHighWaterMark
+                            ) {
+                                newHighWaterMark = entity.updated_at
+                            }
+
+                            if (inQueue) {
+                                const pendingPatch = JSON.parse(
+                                    inQueue.payload
+                                ) as Partial<BaseModel>
+
+                                // Server Reconciliation
+                                const cloudUpdatedAt = entity.updated_at
+                                const localUpdatedAt =
+                                    pendingPatch.updated_at || entity.updated_at
+
+                                finalEntity = {
+                                    ...entity,
+                                    ...pendingPatch,
+                                    updated_at:
+                                        cloudUpdatedAt > localUpdatedAt
+                                            ? cloudUpdatedAt
+                                            : localUpdatedAt,
+                                } as typeof entity
+
+                                console.log(
+                                    `SyncService: [RECONCILE] ${config.tableName}:${entity.id}`
+                                )
+                            } else {
+                                // Use the pre-fetched local version map
+                                const localUpdatedAt = localVersionsMap.get(
+                                    entity.id
+                                )
+                                if (
+                                    localUpdatedAt &&
+                                    localUpdatedAt >= entity.updated_at
+                                ) {
+                                    continue
+                                }
+                                console.log(
+                                    `SyncService: [APPLY] ${config.tableName}:${entity.id} (Cloud is newer: ${entity.updated_at})`
+                                )
+                            }
+
+                            await tx.execute(
+                                config.saveSql,
+                                config.toSqlValues(finalEntity)
+                            )
+                            config.upsertInStore(finalEntity)
+                        }
+                    })
                 }
             }
 
@@ -635,20 +653,19 @@ export class SyncService {
 
     private static async internalSync() {
         // Parallelize session check and DB acquisition
-        const [
-            {
-                data: { session },
-            },
-            db,
-        ] = await Promise.all([supabase!.auth.getSession(), getDatabase()])
+        // Optimization: check session FIRST to avoid unnecessary DB handle acquisition if guest
+        const {
+            data: { session },
+        } = await supabase!.auth.getSession()
 
         if (!session) {
             console.log("SyncService: No active session, skipping push.")
             return
         }
 
+        const db = await getDatabase()
         const queue = await db.select<QueueItem>(
-            "SELECT * FROM sync_queue ORDER BY created_at ASC"
+            "SELECT * FROM sync_queue ORDER BY id ASC"
         )
 
         if (queue.length === 0) {

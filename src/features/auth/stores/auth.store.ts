@@ -7,6 +7,7 @@ interface AuthState {
     session: Session | null
     isSyncing: boolean
     error: string | null
+    setAuth: (user: User | null, session: Session | null) => void
     setUser: (user: User | null) => void
     setSession: (session: Session | null) => void
 
@@ -22,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
             session: null,
             isSyncing: true,
             error: null,
+            setAuth: (user, session) => set({ user, session }),
             setUser: (user) => set({ user }),
             setSession: (session) => set({ session }),
             setSyncing: (isSyncing) => set({ isSyncing }),
