@@ -213,6 +213,10 @@ export default function RoutineTimeTrackerWidget() {
         if (!activeTimeTrackerId) return
 
         const updateActiveTask = () => {
+            // Safety: Don't auto-save if the app is backgrounded.
+            // This prevents stale background instances from "fighting" with active ones for the tracker.
+            if (document.visibilityState !== "visible") return
+
             const task = useTimeTrackerCardStore
                 .getState()
                 .items.find((c) => c.id === activeTimeTrackerId)

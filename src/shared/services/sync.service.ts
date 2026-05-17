@@ -272,9 +272,36 @@ export class SyncService {
                             const pendingPayload = JSON.parse(
                                 inQueue.payload
                             ) as BaseModel
-                            if (entity.updated_at > pendingPayload.updated_at) {
+
+                            // Conflict Resolution:
+                            // 1. If cloud version is strictly newer, cloud wins.
+                            // 2. If it's a singleton state (upsertOnConflict is user_id) and the active tracker changed, cloud wins.
+                            const cloudActiveTrackerId = (
+                                entity as unknown as Record<string, unknown>
+                            ).active_time_tracker_id
+                            const localActiveTrackerId = (
+                                pendingPayload as unknown as Record<
+                                    string,
+                                    unknown
+                                >
+                            ).active_time_tracker_id
+
+                            const isActiveTrackerChanged =
+                                config.upsertOnConflict === "user_id" &&
+                                cloudActiveTrackerId !== localActiveTrackerId
+
+                            if (
+                                entity.updated_at > pendingPayload.updated_at ||
+                                isActiveTrackerChanged
+                            ) {
                                 console.log(
-                                    `SyncService: Cloud version is newer than pending local change for ${config.tableName}:${entity.id}. Overriding queue.`
+                                    `SyncService: Cloud version is newer or authoritative for ${config.tableName}:${entity.id}. Overriding local queue.`
+                                )
+                                console.log(
+                                    `  Cloud updated_at: ${entity.updated_at}`
+                                )
+                                console.log(
+                                    `  Local updated_at: ${pendingPayload.updated_at}`
                                 )
                                 await db.execute(
                                     "DELETE FROM sync_queue WHERE table_name = ? AND row_id = ?",
@@ -287,6 +314,20 @@ export class SyncService {
                                 )
                                 continue
                             }
+                        }
+
+                        // Check if local DB already has same or newer version (for non-queued items)
+                        const localRows = await db.select<{
+                            updated_at: string
+                        }>(
+                            `SELECT updated_at FROM ${config.tableName} WHERE id = ?`,
+                            [entity.id]
+                        )
+                        if (
+                            localRows.length > 0 &&
+                            localRows[0].updated_at >= entity.updated_at
+                        ) {
+                            continue
                         }
 
                         await db.execute(
