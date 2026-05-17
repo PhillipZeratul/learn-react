@@ -163,12 +163,16 @@ export class SyncService {
             }
         })
 
-        // Downstream: Realtime Listener
+        // Downstream: Realtime Listener (will be called again on user change)
         this.startRealtimeListener()
 
         // Safety fallback: slower interval
         setInterval(() => this.triggerSync(), 1000 * 60 * 5) // 5 minutes
     }
+
+    private static realtimeChannel: ReturnType<
+        NonNullable<typeof supabase>["channel"]
+    > | null = null
 
     /**
      * Efficient Catch-up Sync: Pulls only modified records from Supabase.
@@ -640,16 +644,47 @@ export class SyncService {
         }
     }
 
-    private static async startRealtimeListener() {
+    /**
+     * Downstream Sync: Listens for changes from other devices via Supabase Realtime.
+     */
+    static startRealtimeListener() {
         if (!supabase) return
+        const currentUserId = useAuthStore.getState().user?.id
+        if (!currentUserId) {
+            if (this.realtimeChannel) {
+                console.log(
+                    "SyncService: Cleaning up realtime listener (user signed out)..."
+                )
+                supabase.removeChannel(this.realtimeChannel)
+                this.realtimeChannel = null
+            }
+            return
+        }
 
-        console.log("SyncService: Starting realtime listener...")
+        // Clean up existing channel if any
+        if (this.realtimeChannel) {
+            console.log("SyncService: Restarting realtime listener...")
+            supabase.removeChannel(this.realtimeChannel)
+        }
 
-        supabase
-            .channel("public-db-changes")
-            .on(
+        console.log(
+            `SyncService: Starting realtime listener for user ${currentUserId}...`
+        )
+
+        // Create a unique channel for this user's session
+        this.realtimeChannel = supabase.channel(`user-sync:${currentUserId}`)
+
+        // We register a separate handler for each table to allow specific user_id filtering.
+        // Supabase Realtime only supports 'filter' when a 'table' is specified.
+        for (const config of this.configs) {
+            this.realtimeChannel.on(
                 "postgres_changes",
-                { event: "*", schema: "public" },
+                {
+                    event: "*",
+                    schema: "public",
+                    table: config.tableName,
+                    filter: `user_id=eq.${currentUserId}`,
+                },
                 async (payload) => {
                     const {
                         table,
@@ -662,24 +697,16 @@ export class SyncService {
                         new: Record<string, unknown>
                         old: Record<string, unknown>
                     }
+
                     const db = await getDatabase()
-
-                    const config = this.configs.find(
-                        (c) => c.tableName === table
-                    )
-                    if (!config) {
-                        // This is expected if the feature hasn't registered its config yet
-                        return
-                    }
-
                     console.log(
-                        `SyncService: Received ${eventType} event from ${table}`
+                        `SyncService: Received ${eventType} event for ${table}`
                     )
 
                     if (eventType === "INSERT" || eventType === "UPDATE") {
                         const entity = config.fromDb(newRecord)
 
-                        // Protection: Check if this record has a pending local change in the queue
+                        // 1. Conflict Check: is there a local pending change in the queue?
                         const inQueue = await db.select<{
                             id: number
                             payload: string
@@ -695,16 +722,19 @@ export class SyncService {
                             if (
                                 entity.updated_at <= pendingPayload.updated_at
                             ) {
+                                console.log(
+                                    `SyncService: Skipping realtime update for ${table}:${entity.id} - local pending change is newer.`
+                                )
                                 return
                             }
-                            // Delete from queue because the cloud state is now more authoritative
+                            // Local change is stale, remove it from queue
                             await db.execute(
                                 "DELETE FROM sync_queue WHERE id = ?",
                                 [inQueue[0].id]
                             )
                         }
 
-                        // Check if the record in DB is already the same or newer
+                        // 2. Freshness Check: is the record in DB already the same or newer?
                         const localRows = await db.select<{
                             updated_at: string
                         }>(
@@ -718,11 +748,15 @@ export class SyncService {
                             return
                         }
 
+                        // 3. Apply Update
                         await db.execute(
                             config.saveSql,
                             config.toSqlValues(entity)
                         )
                         config.upsertInStore(entity)
+                        console.log(
+                            `SyncService: Applied realtime ${eventType} for ${table}:${entity.id}`
+                        )
                     } else if (eventType === "DELETE") {
                         const id = oldRecord.id as string
                         await db.execute(
@@ -730,9 +764,21 @@ export class SyncService {
                             [id]
                         )
                         config.removeFromStore(id)
+                        console.log(
+                            `SyncService: Applied realtime DELETE for ${table}:${id}`
+                        )
                     }
                 }
             )
-            .subscribe()
+        }
+
+        this.realtimeChannel.subscribe((status) => {
+            console.log(`SyncService: Realtime subscription status: ${status}`)
+            if (status === "CHANNEL_ERROR") {
+                console.error(
+                    "SyncService: Realtime subscription failed. Check if Realtime is enabled for your tables in the Supabase Dashboard."
+                )
+            }
+        })
     }
 }

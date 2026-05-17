@@ -39,6 +39,7 @@ export function Root() {
                         console.log(
                             "Root: Initial user found, triggering hydration..."
                         )
+                        SyncService.startRealtimeListener()
                         await Promise.all([
                             SyncService.loadAll(),
                             SyncService.pullDeltas(),
@@ -57,6 +58,7 @@ export function Root() {
                             console.log(
                                 `Root: Auth event ${event}, triggering hydration...`
                             )
+                            SyncService.startRealtimeListener()
                             await Promise.all([
                                 SyncService.loadAll(),
                                 SyncService.pullDeltas(),
@@ -65,7 +67,7 @@ export function Root() {
                         }
 
                         if (event === "SIGNED_OUT") {
-                            // Clear stores or redirect if needed
+                            SyncService.startRealtimeListener() // Will clear the channel
                         }
                     })
                 }
