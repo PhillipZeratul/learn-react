@@ -134,10 +134,19 @@ export const TaskCard = memo(
         const defaultLeft = layout ? layout.left : "0.5rem"
         const defaultWidth = layout ? layout.width : "calc(100% - 1rem)"
 
+        const leftStyle = isDragging ? "0.5rem" : defaultLeft
+        const widthStyle = isDragging ? "calc(100% - 1rem)" : defaultWidth
+        const zIndexStyle = isDragging ? 50 : undefined
+        const willChangeStyle = isDragging
+            ? "transform, height, opacity"
+            : undefined
+
         return (
             <div
                 ref={cardRef}
-                className={`${baseClasses} ${roundedClasses} ${isDragging ? draggingClasses : idleClasses}`}
+                className={`${baseClasses} ${roundedClasses} ${
+                    isDragging ? draggingClasses : idleClasses
+                } ${!isDragging && showTime ? "py-2" : "py-0"}`}
                 data-start-clamped={isStartClamped}
                 data-end-clamped={isEndClamped}
                 role="button"
@@ -147,23 +156,11 @@ export const TaskCard = memo(
                     top: 0,
                     transform: isDragging ? undefined : defaultTransform,
                     height: isDragging ? undefined : defaultHeight,
-                    left: isDragging ? "0.5rem" : defaultLeft,
-                    width: isDragging ? "calc(100% - 1rem)" : defaultWidth,
-                    zIndex: isDragging ? 50 : undefined,
-                    paddingTop: isDragging
-                        ? undefined
-                        : showTime
-                          ? "0.5rem"
-                          : "0",
-                    paddingBottom: isDragging
-                        ? undefined
-                        : showTime
-                          ? "0.5rem"
-                          : "0",
+                    left: leftStyle,
+                    width: widthStyle,
+                    zIndex: zIndexStyle,
                     // Hardware Hinting: dedicated GPU layer only when dragging
-                    willChange: isDragging
-                        ? "transform, height, opacity"
-                        : undefined,
+                    willChange: willChangeStyle,
                 }}
                 onMouseDown={onPress}
                 onTouchStart={onPress}
@@ -175,20 +172,17 @@ export const TaskCard = memo(
                 />
                 <div
                     ref={titleRef}
-                    className="card-title flex-shrink-0 truncate text-sm font-medium text-foreground"
-                    style={{
-                        display: showTitle || isDragging ? "block" : "none",
-                        lineHeight: showTime ? "1.25rem" : "1",
-                    }}
+                    className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
+                        showTitle || isDragging ? "block" : "none"
+                    } ${showTime ? "leading-tight" : "leading-none"}`}
                 >
                     {card.title || getTagName(card.tag_id)}
                 </div>
                 <div
                     ref={timeRef}
-                    className="card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums"
-                    style={{
-                        display: showTime || isDragging ? "block" : "none",
-                    }}
+                    className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
+                        showTime || isDragging ? "block" : "none"
+                    }`}
                 >
                     {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
                 </div>

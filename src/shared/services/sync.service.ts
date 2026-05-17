@@ -87,19 +87,21 @@ export class SyncService {
                         )
                     )
 
-                    for (const match of columnMatches) {
-                        const columnName = match[1]
-                        const columnType = match[2]
+                    await Promise.all(
+                        columnMatches.map(async (match) => {
+                            const columnName = match[1]
+                            const columnType = match[2]
 
-                        if (!existingColumns.has(columnName)) {
-                            console.log(
-                                `SyncService: Adding missing column '${columnName}' to '${config.tableName}'`
-                            )
-                            await db.execute(
-                                `ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`
-                            )
-                        }
-                    }
+                            if (!existingColumns.has(columnName)) {
+                                console.log(
+                                    `SyncService: Adding missing column '${columnName}' to '${config.tableName}'`
+                                )
+                                await db.execute(
+                                    `ALTER TABLE ${config.tableName} ADD COLUMN ${columnName} ${columnType}`
+                                )
+                            }
+                        })
+                    )
                 } catch (err) {
                     console.error(
                         `SyncService: Schema migration failed for ${config.tableName}:`,
@@ -273,16 +275,18 @@ export class SyncService {
                 return 0
             })
 
-            for (const { config, data, error } of sortedResults) {
-                if (error) {
-                    console.error(
-                        `SyncService: Failed to pull deltas for ${config.tableName}:`,
-                        error
-                    )
-                    continue
-                }
+            const tableDeltas = await Promise.all(
+                sortedResults.map(async ({ config, data, error }) => {
+                    if (error) {
+                        console.error(
+                            `SyncService: Failed to pull deltas for ${config.tableName}:`,
+                            error
+                        )
+                        return null
+                    }
 
-                if (data && data.length > 0) {
+                    if (!data || data.length === 0) return null
+
                     console.log(
                         `SyncService: Processing ${data.length} delta records for ${config.tableName}`
                     )
@@ -322,67 +326,74 @@ export class SyncService {
                         }
                     }
 
-                    // Perform bulk save in a transaction
-                    await db.transaction(async (tx) => {
-                        for (const row of data) {
-                            const entity = config.fromDb(row)
-                            const inQueue = inQueueMap.get(entity.id)
-                            let finalEntity = entity
+                    return { config, data, inQueueMap, localVersionsMap }
+                })
+            )
 
-                            // Update high-water mark
-                            if (
-                                !newHighWaterMark ||
-                                entity.updated_at > newHighWaterMark
-                            ) {
-                                newHighWaterMark = entity.updated_at
-                            }
+            for (const delta of tableDeltas) {
+                if (!delta) continue
+                const { config, data, inQueueMap, localVersionsMap } = delta
 
-                            if (inQueue) {
-                                const pendingPatch = JSON.parse(
-                                    inQueue.payload
-                                ) as Partial<BaseModel>
+                // Perform bulk save in a transaction
+                await db.transaction(async (tx) => {
+                    for (const row of data) {
+                        const entity = config.fromDb(row)
+                        const inQueue = inQueueMap.get(entity.id)
+                        let finalEntity = entity
 
-                                // Server Reconciliation
-                                const cloudUpdatedAt = entity.updated_at
-                                const localUpdatedAt =
-                                    pendingPatch.updated_at || entity.updated_at
-
-                                finalEntity = {
-                                    ...entity,
-                                    ...pendingPatch,
-                                    updated_at:
-                                        cloudUpdatedAt > localUpdatedAt
-                                            ? cloudUpdatedAt
-                                            : localUpdatedAt,
-                                } as typeof entity
-
-                                console.log(
-                                    `SyncService: [RECONCILE] ${config.tableName}:${entity.id}`
-                                )
-                            } else {
-                                // Use the pre-fetched local version map
-                                const localUpdatedAt = localVersionsMap.get(
-                                    entity.id
-                                )
-                                if (
-                                    localUpdatedAt &&
-                                    localUpdatedAt >= entity.updated_at
-                                ) {
-                                    continue
-                                }
-                                console.log(
-                                    `SyncService: [APPLY] ${config.tableName}:${entity.id} (Cloud is newer: ${entity.updated_at})`
-                                )
-                            }
-
-                            await tx.execute(
-                                config.saveSql,
-                                config.toSqlValues(finalEntity)
-                            )
-                            config.upsertInStore(finalEntity)
+                        // Update high-water mark
+                        if (
+                            !newHighWaterMark ||
+                            entity.updated_at > newHighWaterMark
+                        ) {
+                            newHighWaterMark = entity.updated_at
                         }
-                    })
-                }
+
+                        if (inQueue) {
+                            const pendingPatch = JSON.parse(
+                                inQueue.payload
+                            ) as Partial<BaseModel>
+
+                            // Server Reconciliation
+                            const cloudUpdatedAt = entity.updated_at
+                            const localUpdatedAt =
+                                pendingPatch.updated_at || entity.updated_at
+
+                            finalEntity = {
+                                ...entity,
+                                ...pendingPatch,
+                                updated_at:
+                                    cloudUpdatedAt > localUpdatedAt
+                                        ? cloudUpdatedAt
+                                        : localUpdatedAt,
+                            } as typeof entity
+
+                            console.log(
+                                `SyncService: [RECONCILE] ${config.tableName}:${entity.id}`
+                            )
+                        } else {
+                            // Use the pre-fetched local version map
+                            const localUpdatedAt = localVersionsMap.get(
+                                entity.id
+                            )
+                            if (
+                                localUpdatedAt &&
+                                localUpdatedAt >= entity.updated_at
+                            ) {
+                                continue
+                            }
+                            console.log(
+                                `SyncService: [APPLY] ${config.tableName}:${entity.id} (Cloud is newer: ${entity.updated_at})`
+                            )
+                        }
+
+                        await tx.execute(
+                            config.saveSql,
+                            config.toSqlValues(finalEntity)
+                        )
+                        config.upsertInStore(finalEntity)
+                    }
+                })
             }
 
             // 2. Update last_synced_at with current high water mark
@@ -653,10 +664,8 @@ export class SyncService {
 
     private static async internalSync() {
         // Parallelize session check and DB acquisition
-        // Optimization: check session FIRST to avoid unnecessary DB handle acquisition if guest
-        const {
-            data: { session },
-        } = await supabase!.auth.getSession()
+        // Optimization: check session synchronously from store FIRST to avoid unnecessary async calls
+        const session = useAuthStore.getState().session
 
         if (!session) {
             console.log("SyncService: No active session, skipping push.")

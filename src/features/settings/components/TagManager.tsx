@@ -209,9 +209,10 @@ export const TagManager = () => {
 
         // Prevent dropping onto descendants
         const getDescendants = (parentId: TagId): TagId[] => {
-            const children = activeTags
-                .filter((t) => t.parent_id === parentId)
-                .map((t) => t.id)
+            const children = activeTags.reduce<TagId[]>((acc, t) => {
+                if (t.parent_id === parentId) acc.push(t.id)
+                return acc
+            }, [])
             return [...children, ...children.flatMap(getDescendants)]
         }
         const descendantIds = getDescendants(activeId)

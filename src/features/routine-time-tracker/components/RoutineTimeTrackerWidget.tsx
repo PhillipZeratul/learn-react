@@ -86,17 +86,31 @@ export default function RoutineTimeTrackerWidget() {
     const setActiveTimeTrackerId = async (id: TimeTrackerCardId | null) =>
         RoutineTimeTrackerService.setActiveTrackerId(id)
 
-    const [currentDate, setCurrentDate] = useState(() => new Date())
-    const [now, setNow] = useState(() => new Date())
+    const [currentDate, setCurrentDate] = useState<Date | null>(null)
+    const [now, setNow] = useState<Date | null>(null)
 
     useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 1000)
-        return () => clearInterval(timer)
+        const initialDate = new Date()
+        // Defer to next tick to avoid cascading render lint error
+        const timer = setTimeout(() => {
+            setCurrentDate(initialDate)
+            setNow(initialDate)
+        }, 0)
+
+        const interval = setInterval(() => setNow(new Date()), 1000)
+        return () => {
+            clearTimeout(timer)
+            clearInterval(interval)
+        }
     }, [])
 
-    const isCurrentDay = now.toDateString() === currentDate.toDateString()
+    const isCurrentDay =
+        now && currentDate
+            ? now.toDateString() === currentDate.toDateString()
+            : false
 
     const currentDateTimeTrackerCards = useMemo(() => {
+        if (!currentDate || !now) return []
         return allTimeTrackerCards.reduce<TimeTrackerCard[]>((acc, c) => {
             if (
                 !c.is_deleted &&
@@ -123,10 +137,12 @@ export default function RoutineTimeTrackerWidget() {
     ])
 
     const currentDateRoutineCards = useMemo(() => {
+        if (!currentDate) return []
         return getRoutineInstancesForDate(allRoutineCards, currentDate)
     }, [allRoutineCards, currentDate])
 
     const routineLayoutMap = useMemo(() => {
+        if (!currentDate) return new Map()
         return calculateLayout(
             currentDateRoutineCards.filter((t) => !t.is_deleted),
             currentDate
@@ -150,21 +166,25 @@ export default function RoutineTimeTrackerWidget() {
     const lastBackgroundTime = useRef<number | null>(null)
 
     // Scroll to current time on mount and focus
-    const scrollToCurrentTime = () => {
-        if (!scrollContainerRef.current) return
+    // memoize to satisfy exhaustive-deps
+    const scrollToCurrentTime = useMemo(() => {
+        return () => {
+            if (!scrollContainerRef.current || !now) return
 
-        const now = new Date()
-        const currentMinutes = now.getHours() * 60 + now.getMinutes()
-        const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN
-        const containerHeight = scrollContainerRef.current.clientHeight
+            const currentMinutes = now.getHours() * 60 + now.getMinutes()
+            const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN
+            const containerHeight = scrollContainerRef.current.clientHeight
 
-        scrollContainerRef.current.scrollTo({
-            top: targetY - containerHeight / 2,
-            behavior: "smooth",
-        })
-    }
+            scrollContainerRef.current.scrollTo({
+                top: targetY - containerHeight / 2,
+                behavior: "smooth",
+            })
+        }
+    }, [now])
 
     useEffect(() => {
+        if (!currentDate || !now) return
+
         // Initial scroll - only if viewing today (which is the default)
         const timer = setTimeout(() => {
             if (currentDate.toDateString() === new Date().toDateString()) {
@@ -207,7 +227,15 @@ export default function RoutineTimeTrackerWidget() {
                 handleVisibilityChange
             )
         }
-    }, [currentDate])
+    }, [currentDate, now, scrollToCurrentTime])
+
+    if (!currentDate || !now) {
+        return (
+            <div className="flex h-full w-full items-center justify-center p-8 text-muted-foreground">
+                Loading tracker…
+            </div>
+        )
+    }
 
     const handleTimeTrackerAction = () => {
         if (activeTimeTrackerId) {
