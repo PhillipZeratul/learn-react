@@ -9,6 +9,7 @@ import type {
 import { DEFAULT_TAG_ID } from "./tag.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { useTimeTrackerCardStore } from "../stores/time-tracker-card.store"
+import { getMinuteNow } from "../utils/utils"
 
 export interface TimeTrackerCard extends BaseModel {
     id: TimeTrackerCardId
@@ -22,19 +23,20 @@ export interface TimeTrackerCard extends BaseModel {
 export const createTimeTrackerCard = (
     data: Partial<TimeTrackerCard> = {}
 ): TimeTrackerCard => {
-    const now = new Date().toISOString() as IsoDateTime
+    const nowFull = new Date().toISOString() as IsoDateTime
+    const nowMin = getMinuteNow()
     const currentUserId = useAuthStore.getState().user?.id as UserId
 
     return {
         id: data.id || (uuidv4() as TimeTrackerCardId),
         title: data.title ?? "",
         description: data.description === undefined ? "" : data.description,
-        start_at: data.start_at || now,
+        start_at: data.start_at || nowMin,
         end_at: data.end_at !== undefined ? data.end_at : null,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
         user_id: data.user_id || currentUserId,
-        created_at: data.created_at || now,
-        updated_at: data.updated_at || now,
+        created_at: data.created_at || nowFull,
+        updated_at: data.updated_at || nowFull,
         is_deleted: data.is_deleted || false,
     }
 }

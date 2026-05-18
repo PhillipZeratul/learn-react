@@ -1,6 +1,11 @@
 import { useMemo, useReducer } from "react"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
-import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
+import {
+    timeToISO,
+    isoToTime,
+    formatLocalDate,
+    getMinuteNow,
+} from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
 import { useBackAction } from "@/hooks/useBackAction"
@@ -72,11 +77,9 @@ export const TimeTrackerEditor = ({
             startDate: formatLocalDate(new Date(initialTask.start_at)),
             startAt: isoToTime(initialTask.start_at),
             endDate: formatLocalDate(
-                new Date(initialTask.end_at || new Date().toISOString())
+                new Date(initialTask.end_at || getMinuteNow())
             ),
-            endAt: isoToTime(
-                initialTask.end_at || (new Date().toISOString() as string)
-            ),
+            endAt: isoToTime(initialTask.end_at || getMinuteNow()),
             tagId: initialTask.tag_id,
         })
     )

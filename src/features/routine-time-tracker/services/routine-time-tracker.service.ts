@@ -11,6 +11,7 @@ import { useTagStore } from "../stores/tag.store"
 import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
 import { useTimeTrackerCardStore } from "../stores/time-tracker-card.store"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
+import { getMinuteNow } from "../utils/utils"
 import type { TimeTrackerCardId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime, UserId } from "@/shared/models/base.model"
 
@@ -99,7 +100,8 @@ export class RoutineTimeTrackerService {
         }
 
         const oldId = state.active_time_tracker_id
-        const now = new Date().toISOString() as IsoDateTime
+        const nowFull = new Date().toISOString() as IsoDateTime
+        const nowMin = getMinuteNow()
 
         // 1. Close the old tracker
         if (oldId) {
@@ -109,8 +111,8 @@ export class RoutineTimeTrackerService {
             if (oldCard && oldCard.end_at === null) {
                 const updatedOldCard = {
                     ...oldCard,
-                    end_at: now,
-                    updated_at: now,
+                    end_at: nowMin,
+                    updated_at: nowFull,
                 }
                 useTimeTrackerCardStore.getState().upsert(updatedOldCard)
                 await SyncService.save(timeTrackerCardConfig, updatedOldCard)
@@ -126,7 +128,7 @@ export class RoutineTimeTrackerService {
                 const updatedNewCard = {
                     ...newCard,
                     end_at: null,
-                    updated_at: now,
+                    updated_at: nowFull,
                 }
                 useTimeTrackerCardStore.getState().upsert(updatedNewCard)
                 await SyncService.save(timeTrackerCardConfig, updatedNewCard)
@@ -137,7 +139,7 @@ export class RoutineTimeTrackerService {
         const updatedState = {
             ...state,
             active_time_tracker_id: id,
-            updated_at: now,
+            updated_at: nowFull,
         }
 
         useRoutineTimeTrackerStateStore.getState().set(updatedState)

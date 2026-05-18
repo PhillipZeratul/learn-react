@@ -23,6 +23,7 @@ import {
     formatLocalDate,
     isCardOverlappingDate,
     getVisualBoundsForDate,
+    getMinuteNow,
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
@@ -379,17 +380,14 @@ export default function RoutineTimeTrackerWidget() {
             if (task && !task.is_deleted) {
                 setActiveTimeTrackerId(null)
 
-                const now = new Date()
-                const startHour = now.getHours()
-                const startMin = now.getMinutes()
-                const startTime = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`
-
-                const endHour = Math.min(24, startHour + 1)
-                const endTime = `${String(endHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`
+                const nowMin = getMinuteNow()
+                const endAt = new Date(
+                    new Date(nowMin).getTime() + 60 * 60 * 1000
+                ).toISOString() as IsoDateTime
 
                 const newCard = createTimeTrackerCard({
-                    start_at: timeToISO(startTime),
-                    end_at: timeToISO(endTime),
+                    start_at: nowMin,
+                    end_at: endAt,
                 })
                 setEditingState({
                     type: "timeTracker",
@@ -398,16 +396,11 @@ export default function RoutineTimeTrackerWidget() {
                 })
             }
         } else {
-            const now = new Date()
-            const startHour = now.getHours()
-            const startMin = now.getMinutes()
-            const startTime = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`
-
-            const endTime = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`
+            const nowMin = getMinuteNow()
 
             const newCard = createTimeTrackerCard({
-                start_at: timeToISO(startTime),
-                end_at: timeToISO(endTime),
+                start_at: nowMin,
+                end_at: nowMin,
             })
             setEditingState({
                 type: "timeTracker",

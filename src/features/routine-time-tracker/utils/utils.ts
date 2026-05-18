@@ -6,6 +6,16 @@ export const BOTTOM_MARGIN = 64
 export const SHOW_CARD_TITLE_HEIGHT = 20
 export const SHOW_CARD_TIME_HEIGHT = 44
 
+export const roundToMinute = (date: Date): Date => {
+    const rounded = new Date(date)
+    rounded.setSeconds(0, 0)
+    return rounded
+}
+
+export const getMinuteNow = (): IsoDateTime => {
+    return roundToMinute(new Date()).toISOString() as IsoDateTime
+}
+
 export const formatLocalDate = (date: Date): string => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, "0")
@@ -20,7 +30,7 @@ export const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
 
     // Create date in local time, then convert to UTC ISO
     const date = new Date(year, month - 1, day, hour, minute)
-    return date.toISOString() as IsoDateTime
+    return roundToMinute(date).toISOString() as IsoDateTime
 }
 
 export const isoToTime = (isoStr: string): string => {
