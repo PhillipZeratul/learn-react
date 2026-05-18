@@ -13,7 +13,10 @@ export const CurrentTimeIndicator = ({
     const indicatorRef = useRef<HTMLDivElement>(null)
 
     const currentMinutes =
-        currentTime.getHours() * 60 + currentTime.getMinutes()
+        currentTime.getHours() * 60 +
+        currentTime.getMinutes() +
+        currentTime.getSeconds() / 60 +
+        currentTime.getMilliseconds() / 60000
     const currentTimeString = currentTime.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",

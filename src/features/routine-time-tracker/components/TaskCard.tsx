@@ -269,8 +269,10 @@ export const TaskCard = memo(
                 <div
                     ref={solidBgRef}
                     className={`absolute inset-x-0 top-0 ${
-                        isCurrentlyTracking ? "bg-card/90" : "bg-transparent"
-                    }`}
+                        isCurrentlyTracking
+                            ? "border-x border-t border-border bg-card/90"
+                            : "bg-transparent"
+                    } ${roundedTClass}`}
                     style={{
                         height: isDragging ? undefined : `${initialHeight}px`,
                     }}

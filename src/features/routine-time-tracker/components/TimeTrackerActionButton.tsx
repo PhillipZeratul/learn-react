@@ -17,7 +17,10 @@ export const TimeTrackerActionButton = ({
     const buttonRef = useRef<HTMLDivElement>(null)
 
     const currentMinutes =
-        currentTime.getHours() * 60 + currentTime.getMinutes()
+        currentTime.getHours() * 60 +
+        currentTime.getMinutes() +
+        currentTime.getSeconds() / 60 +
+        currentTime.getMilliseconds() / 60000
 
     useEffect(() => {
         if (!isCurrentDay || !buttonRef.current) return

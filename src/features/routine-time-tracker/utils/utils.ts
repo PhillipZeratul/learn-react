@@ -84,8 +84,8 @@ export const getVisualBoundsForDate = (
     const visualStart = Math.max(start, startOfDay)
     const visualEnd = Math.min(end, endOfDay + 1) // +1 to treat end as 24:00 if needed
 
-    const startMin = Math.floor((visualStart - startOfDay) / 60000)
-    const duration = Math.ceil((visualEnd - visualStart) / 60000)
+    const startMin = (visualStart - startOfDay) / 60000
+    const duration = (visualEnd - visualStart) / 60000
 
     return {
         startMin,
