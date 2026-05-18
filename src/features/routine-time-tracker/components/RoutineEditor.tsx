@@ -15,6 +15,7 @@ interface RoutineEditorProps {
     onSave: (task: RoutineCard) => Promise<void>
     onDelete: (id: string) => Promise<void>
     onCancel: () => void
+    isNew?: boolean
 }
 
 const RRULE_OPTIONS = [
@@ -26,7 +27,14 @@ const RRULE_OPTIONS = [
 ]
 
 export const RoutineEditor = memo(
-    ({ task, masterTask, onSave, onDelete, onCancel }: RoutineEditorProps) => {
+    ({
+        task,
+        masterTask,
+        onSave,
+        onDelete,
+        onCancel,
+        isNew = false,
+    }: RoutineEditorProps) => {
         const { items: tags } = useTagStore()
         const [title, setTitle] = useState(task.title)
         const [startDate, setStartDate] = useState(() =>
@@ -185,7 +193,11 @@ export const RoutineEditor = memo(
                     }}
                 >
                     <h3 className="mb-4 text-lg font-semibold text-foreground">
-                        {task._isVirtual ? "Edit Occurrence" : "Routine"}
+                        {isNew
+                            ? "New Routine"
+                            : task._isVirtual
+                              ? "Edit Occurrence"
+                              : "Routine"}
                     </h3>
                     <div className="space-y-4">
                         <div>
@@ -342,7 +354,7 @@ export const RoutineEditor = memo(
                             onClick={onInitiateSave}
                             className="w-full rounded-lg bg-primary py-2 font-medium text-primary-foreground transition-opacity hover:opacity-90"
                         >
-                            Save
+                            {isNew ? "Create" : "Save"}
                         </button>
                         <div className="flex gap-2">
                             <button
@@ -351,12 +363,14 @@ export const RoutineEditor = memo(
                             >
                                 Cancel
                             </button>
-                            <button
-                                onClick={onInitiateDelete}
-                                className="rounded-lg bg-destructive/10 px-4 py-2 font-medium text-destructive transition-colors hover:bg-destructive/20"
-                            >
-                                Delete
-                            </button>
+                            {!isNew && (
+                                <button
+                                    onClick={onInitiateDelete}
+                                    className="rounded-lg bg-destructive/10 px-4 py-2 font-medium text-destructive transition-colors hover:bg-destructive/20"
+                                >
+                                    Delete
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

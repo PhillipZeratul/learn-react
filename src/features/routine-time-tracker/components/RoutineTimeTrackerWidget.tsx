@@ -50,8 +50,13 @@ import { dragTopSignal, dragHeightSignal } from "../stores/drag.store"
 import { useBackAction } from "@/hooks/useBackAction"
 
 type EditingState =
-    | { type: "routine"; card: RoutineCard }
-    | { type: "timeTracker"; card: TimeTrackerCard; hideTimeFields?: boolean }
+    | { type: "routine"; card: RoutineCard; isNew?: boolean }
+    | {
+          type: "timeTracker"
+          card: TimeTrackerCard
+          hideTimeFields?: boolean
+          isNew?: boolean
+      }
     | null
 
 type DragMode = "top" | "center" | "bottom"
@@ -378,13 +383,12 @@ export default function RoutineTimeTrackerWidget() {
             start_at: nowIso,
             end_at: null,
         })
-        upsertTimeTrackerCard(newCard)
-        await SyncService.save(timeTrackerCardConfig, newCard)
 
         setEditingState({
             type: "timeTracker",
             card: newCard,
             hideTimeFields: true,
+            isNew: true,
         })
     }
 
@@ -433,13 +437,13 @@ export default function RoutineTimeTrackerWidget() {
                 start_at: startIso,
                 end_at: endIso,
             })
-            setEditingState({ type: "timeTracker", card: newCard })
+            setEditingState({ type: "timeTracker", card: newCard, isNew: true })
         } else {
             const newCard = createRoutineCard({
                 start_at: startIso,
                 end_at: endIso,
             })
-            setEditingState({ type: "routine", card: newCard })
+            setEditingState({ type: "routine", card: newCard, isNew: true })
         }
     }
 
@@ -823,6 +827,7 @@ export default function RoutineTimeTrackerWidget() {
                 <RoutineEditor
                     key={editingState.card.id}
                     task={editingState.card}
+                    isNew={editingState.isNew}
                     masterTask={(() => {
                         const task = editingState.card
                         if (task._isVirtual) {
@@ -863,6 +868,7 @@ export default function RoutineTimeTrackerWidget() {
                     key={editingState.card.id}
                     task={editingState.card}
                     hideTimeFields={editingState.hideTimeFields}
+                    isNew={editingState.isNew}
                     onSave={async (updated) => {
                         upsertTimeTrackerCard(updated)
                         await SyncService.save(timeTrackerCardConfig, updated)
