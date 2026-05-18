@@ -79,8 +79,17 @@ export default function RoutineTimeTrackerWidget() {
     } = useRoutineCardStore()
 
     const { items: tags } = useTagStore()
-    const toggleTracker = async (id: TimeTrackerCardId) =>
-        RoutineTimeTrackerService.toggleTracker(id)
+    const handleStopTracker = async (id: TimeTrackerCardId) => {
+        const activeCount = allTimeTrackerCards.filter(
+            (c) => c.end_at === null && !c.is_deleted
+        ).length
+
+        await RoutineTimeTrackerService.toggleTracker(id)
+
+        if (activeCount === 1) {
+            handleTimeTrackerAction()
+        }
+    }
 
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
 
@@ -744,7 +753,7 @@ export default function RoutineTimeTrackerWidget() {
                                             })
                                         }
                                     }}
-                                    onStop={() => toggleTracker(task.id)}
+                                    onStop={() => handleStopTracker(task.id)}
                                     layout={timeTrackerLayoutMap.get(task.id)}
                                 />
                             ))}
