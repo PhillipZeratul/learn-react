@@ -11,12 +11,10 @@
 bun run typecheck
 
 3. Run tests
-bun run test -- -t "test name" # Single suite
-bun run test:file -- "glob" # Specific files
+bun run test -- -t "test name"  # Single suite
 
 4. Lint
-bun run lint:file -- "file1.ts" # Specific files
-bun run lint # All files
+bun run lint                    # All files
 
 5. Dry run build
 bun run tsc -p tsconfig.app.json --noEmit && bun run tsc -p tsconfig.node.json --noEmit && bun run tsc -p tsconfig.test.json --noEmit

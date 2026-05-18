@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { useRoutineTimeTrackerStateStore } from "./routine-time-tracker-state.store"
 import { createRoutineTimeTrackerState } from "../models/routine-time-tracker-state.model"
-import type { TimeTrackerCardId } from "../models/routine-time-tracker.model"
 
 describe("useRoutineTimeTrackerStateStore", () => {
     beforeEach(() => {
@@ -14,13 +13,10 @@ describe("useRoutineTimeTrackerStateStore", () => {
     })
 
     it("should set the state", () => {
-        const testState = createRoutineTimeTrackerState({
-            active_time_tracker_id: "test-id" as TimeTrackerCardId,
-        })
+        const testState = createRoutineTimeTrackerState()
         useRoutineTimeTrackerStateStore.getState().set(testState)
-        expect(
-            useRoutineTimeTrackerStateStore.getState().state
-                ?.active_time_tracker_id
-        ).toBe("test-id")
+        expect(useRoutineTimeTrackerStateStore.getState().state?.id).toBe(
+            testState.id
+        )
     })
 })

@@ -4,14 +4,12 @@ import { TOP_MARGIN } from "../utils/utils"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 interface TimeTrackerActionButtonProps {
-    activeTimeTrackerId: string | null
     onAction: () => void
     isCurrentDay: boolean
     currentTime: Date
 }
 
 export const TimeTrackerActionButton = ({
-    activeTimeTrackerId,
     onAction,
     isCurrentDay,
     currentTime,
@@ -46,16 +44,10 @@ export const TimeTrackerActionButton = ({
                     e.stopPropagation()
                     onAction()
                 }}
-                className={`pointer-events-auto flex items-center gap-1.5 rounded-full px-4 py-2 text-[10px] font-bold shadow-lg transition-[background-color,color,transform] active:scale-95 ${
-                    activeTimeTrackerId
-                        ? "text-destructive-foreground bg-destructive shadow-destructive/20 hover:bg-destructive/90"
-                        : "bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90"
-                }`}
+                className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[10px] font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-[background-color,color,transform] hover:bg-primary/90 active:scale-95"
             >
-                <div
-                    className={`h-2 w-2 rounded-full ${activeTimeTrackerId ? "animate-pulse bg-white" : "bg-white/50"}`}
-                />
-                {activeTimeTrackerId ? "FINISH" : "BEGIN"}
+                <div className="h-2 w-2 rounded-full bg-white/50" />
+                BEGIN
             </button>
         </div>
     )

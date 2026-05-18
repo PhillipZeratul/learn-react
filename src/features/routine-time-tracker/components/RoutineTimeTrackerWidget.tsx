@@ -27,16 +27,11 @@ import {
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
-import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
-import { RoutineTimeTrackerService } from "../services/routine-time-tracker.service"
 import { RoutineEditor } from "./RoutineEditor"
 import { TimeTrackerEditor } from "./TimeTrackerEditor"
 import { getRoutineInstancesForDate } from "../utils/routine-expansion"
 import type { IsoDateTime } from "@/shared/models/base.model"
-import type {
-    RoutineCardId,
-    TimeTrackerCardId,
-} from "../models/routine-time-tracker.model"
+import type { RoutineCardId } from "../models/routine-time-tracker.model"
 import { AUTO_SWITCH_TO_TODAY_MS } from "@/features/settings/stores/settings.store"
 
 // Extracted components and utilities
@@ -80,12 +75,6 @@ export default function RoutineTimeTrackerWidget() {
     } = useRoutineCardStore()
 
     const { items: tags } = useTagStore()
-    const activeTimeTrackerId =
-        useRoutineTimeTrackerStateStore(
-            (state) => state.state?.active_time_tracker_id
-        ) || null
-    const setActiveTimeTrackerId = async (id: TimeTrackerCardId | null) =>
-        RoutineTimeTrackerService.setActiveTrackerId(id)
 
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
     const [now, setNow] = useState<Date | null>(null)
@@ -117,8 +106,8 @@ export default function RoutineTimeTrackerWidget() {
                 !c.is_deleted &&
                 isCardOverlappingDate(c.start_at, c.end_at, currentDate)
             ) {
-                // For the active task on the current day, virtualize end_at to 'now' for real-time UI updates
-                if (c.id === activeTimeTrackerId && isCurrentDay) {
+                // For active tasks on the current day, virtualize end_at to 'now' for real-time UI updates
+                if (c.end_at === null && isCurrentDay) {
                     acc.push({
                         ...c,
                         end_at: now.toISOString() as IsoDateTime,
@@ -129,13 +118,7 @@ export default function RoutineTimeTrackerWidget() {
             }
             return acc
         }, [])
-    }, [
-        allTimeTrackerCards,
-        currentDate,
-        activeTimeTrackerId,
-        isCurrentDay,
-        now,
-    ])
+    }, [allTimeTrackerCards, currentDate, isCurrentDay, now])
 
     const currentDateRoutineCards = useMemo(() => {
         if (!currentDate) return []
@@ -353,7 +336,7 @@ export default function RoutineTimeTrackerWidget() {
             container.removeEventListener("gesturestart", handleGestureStart)
             container.removeEventListener("gesturechange", handleGestureChange)
         }
-    }, [currentDate !== null])
+    }, [currentDate])
 
     if (!currentDate || !now) {
         return (
@@ -364,41 +347,17 @@ export default function RoutineTimeTrackerWidget() {
     }
 
     const handleTimeTrackerAction = () => {
-        if (activeTimeTrackerId) {
-            const task = allTimeTrackerCards.find(
-                (c) => c.id === activeTimeTrackerId
-            )
-            if (task && !task.is_deleted) {
-                setActiveTimeTrackerId(null)
+        const nowMin = getMinuteNow()
 
-                const nowMin = getMinuteNow()
-                const endAt = new Date(
-                    new Date(nowMin).getTime() + 60 * 60 * 1000
-                ).toISOString() as IsoDateTime
-
-                const newCard = createTimeTrackerCard({
-                    start_at: nowMin,
-                    end_at: endAt,
-                })
-                setEditingState({
-                    type: "timeTracker",
-                    card: newCard,
-                    hideTimeFields: true,
-                })
-            }
-        } else {
-            const nowMin = getMinuteNow()
-
-            const newCard = createTimeTrackerCard({
-                start_at: nowMin,
-                end_at: nowMin,
-            })
-            setEditingState({
-                type: "timeTracker",
-                card: newCard,
-                hideTimeFields: true,
-            })
-        }
+        const newCard = createTimeTrackerCard({
+            start_at: nowMin,
+            end_at: null,
+        })
+        setEditingState({
+            type: "timeTracker",
+            card: newCard,
+            hideTimeFields: true,
+        })
     }
 
     const getTagColor = (tagId: string) => {
@@ -749,6 +708,11 @@ export default function RoutineTimeTrackerWidget() {
                                     card={task}
                                     currentDate={currentDate}
                                     isDragging={dragState?.card.id === task.id}
+                                    isActive={
+                                        allTimeTrackerCards.find(
+                                            (c) => c.id === task.id
+                                        )?.end_at === null && isCurrentDay
+                                    }
                                     getTagColor={getTagColor}
                                     getTagName={getTagName}
                                     onPress={(e) => {
@@ -765,7 +729,6 @@ export default function RoutineTimeTrackerWidget() {
                                 />
                             ))}
                             <TimeTrackerActionButton
-                                activeTimeTrackerId={activeTimeTrackerId}
                                 onAction={handleTimeTrackerAction}
                                 isCurrentDay={isCurrentDay}
                                 currentTime={now}
@@ -871,16 +834,8 @@ export default function RoutineTimeTrackerWidget() {
                     task={editingState.card}
                     hideTimeFields={editingState.hideTimeFields}
                     onSave={async (updated) => {
-                        const exists = allTimeTrackerCards.some(
-                            (c) => c.id === updated.id
-                        )
                         upsertTimeTrackerCard(updated)
                         await SyncService.save(timeTrackerCardConfig, updated)
-
-                        // Only auto-start if it's a BRAND NEW card (not an update) and we are on current day
-                        if (!exists && !activeTimeTrackerId && isCurrentDay) {
-                            await setActiveTimeTrackerId(updated.id)
-                        }
 
                         setEditingState(null)
                     }}

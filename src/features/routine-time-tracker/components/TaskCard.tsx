@@ -16,6 +16,7 @@ import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 interface TaskCardProps {
     card: RoutineCard | TimeTrackerCard
     isDragging: boolean
+    isActive?: boolean
     getTagColor: (tagId: string) => string
     getTagName: (tagId: string) => string
     onPress: (e: React.MouseEvent | React.TouchEvent) => void
@@ -28,6 +29,7 @@ export const TaskCard = memo(
     ({
         card,
         isDragging,
+        isActive = false,
         getTagColor,
         getTagName,
         onPress,
@@ -38,9 +40,15 @@ export const TaskCard = memo(
         const cardRef = useRef<HTMLDivElement>(null)
         const titleRef = useRef<HTMLDivElement>(null)
         const timeRef = useRef<HTMLDivElement>(null)
+        const solidBgRef = useRef<HTMLDivElement>(null)
+        const ghostBgRef = useRef<HTMLDivElement>(null)
+        const contentWrapperRef = useRef<HTMLDivElement>(null)
 
         const { startMin, duration, isStartClamped, isEndClamped } =
             getVisualBoundsForDate(card.start_at, card.end_at, currentDate)
+
+        const GHOST_EXTENSION_PX = 60
+        const isCurrentlyTracking = isActive || !card.end_at
 
         useEffect(() => {
             const dispose = effect(() => {
@@ -57,9 +65,19 @@ export const TaskCard = memo(
                     Object.assign(container.style, {
                         transform: `translateY(${top}px) scale(1.02)`,
                         height: `${dragHeight}px`,
-                        paddingTop: showTime ? "0.5rem" : "0",
-                        paddingBottom: showTime ? "0.5rem" : "0",
                     })
+
+                    if (solidBgRef.current) {
+                        solidBgRef.current.style.height = `${dragHeight}px`
+                    }
+
+                    if (contentWrapperRef.current) {
+                        Object.assign(contentWrapperRef.current.style, {
+                            height: `${dragHeight}px`,
+                            paddingTop: showTime ? "0.5rem" : "0",
+                            paddingBottom: showTime ? "0.5rem" : "0",
+                        })
+                    }
 
                     if (titleRef.current) {
                         Object.assign(titleRef.current.style, {
@@ -90,15 +108,32 @@ export const TaskCard = memo(
                     }
                 } else {
                     const height = duration * ppm
-                    const showTitle = height >= SHOW_CARD_TITLE_HEIGHT
-                    const showTime = height >= SHOW_CARD_TIME_HEIGHT
+                    const totalHeight = isCurrentlyTracking
+                        ? height + GHOST_EXTENSION_PX
+                        : height
+                    const showTitle = totalHeight >= SHOW_CARD_TITLE_HEIGHT
+                    const showTime = totalHeight >= SHOW_CARD_TIME_HEIGHT
 
                     Object.assign(container.style, {
                         transform: `translateY(${startMin * ppm + TOP_MARGIN}px)`,
                         height: `${height}px`,
-                        paddingTop: showTime ? "0.5rem" : "0",
-                        paddingBottom: showTime ? "0.5rem" : "0",
                     })
+
+                    if (solidBgRef.current) {
+                        solidBgRef.current.style.height = `${height}px`
+                    }
+
+                    if (ghostBgRef.current) {
+                        ghostBgRef.current.style.top = `${height}px`
+                    }
+
+                    if (contentWrapperRef.current) {
+                        Object.assign(contentWrapperRef.current.style, {
+                            height: `${height}px`,
+                            paddingTop: showTime ? "0.5rem" : "0",
+                            paddingBottom: showTime ? "0.5rem" : "0",
+                        })
+                    }
 
                     if (titleRef.current) {
                         Object.assign(titleRef.current.style, {
@@ -117,7 +152,7 @@ export const TaskCard = memo(
             })
 
             return () => dispose()
-        }, [isDragging, card, startMin, duration])
+        }, [isDragging, card, startMin, duration, isCurrentlyTracking])
 
         const handleKeyDown = (e: React.KeyboardEvent) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -126,16 +161,20 @@ export const TaskCard = memo(
             }
         }
 
-        const baseClasses = `task-card absolute border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`
+        const baseClasses = `task-card absolute px-3 pointer-events-auto flex flex-col justify-start`
         const idleClasses =
             "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm"
         const draggingClasses =
-            "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm"
+            "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm rounded-xl"
 
-        const roundedClasses = `${!isStartClamped ? "rounded-t-xl" : ""} ${!isEndClamped ? "rounded-b-xl" : ""}`
+        const roundedTClass = !isStartClamped ? "rounded-t-xl" : ""
+        const roundedBClass = !isEndClamped ? "rounded-b-xl" : ""
 
         const ppm = pixelsPerMinuteSignal.peek()
         const initialHeight = duration * ppm
+        const initialTotalHeight = isCurrentlyTracking
+            ? initialHeight + GHOST_EXTENSION_PX
+            : initialHeight
         const initialTransform = `translateY(${startMin * ppm + TOP_MARGIN}px)`
         const initialShowTitle = initialHeight >= SHOW_CARD_TITLE_HEIGHT
         const initialShowTime = initialHeight >= SHOW_CARD_TIME_HEIGHT
@@ -145,7 +184,7 @@ export const TaskCard = memo(
 
         const leftStyle = isDragging ? "0.5rem" : defaultLeft
         const widthStyle = isDragging ? "calc(100% - 1rem)" : defaultWidth
-        const zIndexStyle = isDragging ? 50 : undefined
+        const zIndexStyle = isDragging ? 50 : 10
         const willChangeStyle = isDragging
             ? "transform, height, opacity"
             : undefined
@@ -153,9 +192,9 @@ export const TaskCard = memo(
         return (
             <div
                 ref={cardRef}
-                className={`${baseClasses} ${roundedClasses} ${
+                className={`${baseClasses} ${
                     isDragging ? draggingClasses : idleClasses
-                } ${!isDragging && initialShowTime ? "py-2" : "py-0"}`}
+                }`}
                 data-start-clamped={isStartClamped}
                 data-end-clamped={isEndClamped}
                 role="button"
@@ -164,36 +203,89 @@ export const TaskCard = memo(
                 style={{
                     top: 0,
                     transform: isDragging ? undefined : initialTransform,
-                    height: isDragging ? undefined : `${initialHeight}px`,
+                    height: isDragging ? undefined : `${initialTotalHeight}px`,
                     left: leftStyle,
                     width: widthStyle,
                     zIndex: zIndexStyle,
-                    // Hardware Hinting: dedicated GPU layer only when dragging
                     willChange: willChangeStyle,
                 }}
                 onMouseDown={onPress}
                 onTouchStart={onPress}
                 onClick={onClick}
             >
+                {/* Ghost Extension Layer (Rendered underneath solid part) */}
+                {isCurrentlyTracking && !isDragging && (
+                    <div
+                        ref={ghostBgRef}
+                        className="pointer-events-none absolute inset-x-0 h-[60px] overflow-visible"
+                        style={{ top: `${initialHeight}px` }}
+                    >
+                        <div
+                            className={`absolute inset-x-0 border-x border-b border-dashed border-primary/40 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent ${roundedBClass}`}
+                            style={{ height: "60px", top: 0 }}
+                        />
+                        {/* Tag color gradient */}
+                        <div
+                            className="absolute top-0 bottom-0 left-0 w-1.5 opacity-80"
+                            style={{
+                                height: "60px",
+                                backgroundImage: `linear-gradient(to bottom, ${getTagColor(card.tag_id)}, transparent)`,
+                            }}
+                        />
+                        {/* Scanning animation */}
+                        <div className="animate-scan-down absolute inset-x-0 h-1 bg-primary/40 blur-[2px]" />
+                    </div>
+                )}
+
+                {/* Solid Background Layer */}
                 <div
-                    className="absolute top-0 bottom-0 left-0 z-10 w-1.5"
-                    style={{ backgroundColor: getTagColor(card.tag_id) }}
-                />
-                <div
-                    ref={titleRef}
-                    className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
-                        initialShowTitle || isDragging ? "block" : "none"
-                    } ${initialShowTime ? "leading-tight" : "leading-none"}`}
-                >
-                    {card.title || getTagName(card.tag_id)}
-                </div>
-                <div
-                    ref={timeRef}
-                    className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
-                        initialShowTime || isDragging ? "block" : "none"
+                    ref={solidBgRef}
+                    className={`absolute inset-x-0 top-0 ${
+                        isCurrentlyTracking
+                            ? "border-2 border-primary bg-card/90"
+                            : "border border-border bg-card/60"
+                    } shadow-md ${roundedTClass} ${
+                        !isCurrentlyTracking || isDragging ? roundedBClass : ""
                     }`}
+                    style={{
+                        height: isDragging ? undefined : `${initialHeight}px`,
+                    }}
+                />
+
+                {/* Content Wrapper */}
+                <div
+                    ref={contentWrapperRef}
+                    className={`relative z-10 flex w-full flex-col justify-center ${
+                        !isDragging && initialShowTime ? "py-2" : "py-0"
+                    }`}
+                    style={{
+                        height: isDragging ? undefined : `${initialHeight}px`,
+                    }}
                 >
-                    {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
+                    <div
+                        className={`absolute top-0 bottom-0 left-0 z-10 w-1.5 ${roundedTClass} ${
+                            !isCurrentlyTracking || isDragging
+                                ? roundedBClass
+                                : ""
+                        }`}
+                        style={{ backgroundColor: getTagColor(card.tag_id) }}
+                    />
+                    <div
+                        ref={titleRef}
+                        className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
+                            initialShowTitle || isDragging ? "block" : "none"
+                        } ${initialShowTime ? "leading-tight" : "leading-none"}`}
+                    >
+                        {card.title || getTagName(card.tag_id)}
+                    </div>
+                    <div
+                        ref={timeRef}
+                        className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
+                            initialShowTime || isDragging ? "block" : "none"
+                        }`}
+                    >
+                        {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
+                    </div>
                 </div>
             </div>
         )

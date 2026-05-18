@@ -90,59 +90,35 @@ export class RoutineTimeTrackerService {
         }
     }
 
-    static async setActiveTrackerId(id: TimeTrackerCardId | null) {
+    static async toggleTracker(id: TimeTrackerCardId) {
         await this.ensureStateRecord()
-        const state = useRoutineTimeTrackerStateStore.getState().state!
-
-        // Prevent redundant updates if the state is already the same
-        if (state.active_time_tracker_id === id) {
-            return
-        }
-
-        const oldId = state.active_time_tracker_id
         const nowFull = new Date().toISOString() as IsoDateTime
         const nowMin = getMinuteNow()
 
-        // 1. Close the old tracker
-        if (oldId) {
-            const oldCard = useTimeTrackerCardStore
-                .getState()
-                .items.find((c) => c.id === oldId)
-            if (oldCard && oldCard.end_at === null) {
-                const updatedOldCard = {
-                    ...oldCard,
-                    end_at: nowMin,
-                    updated_at: nowFull,
-                }
-                useTimeTrackerCardStore.getState().upsert(updatedOldCard)
-                await SyncService.save(timeTrackerCardConfig, updatedOldCard)
+        const card = useTimeTrackerCardStore
+            .getState()
+            .items.find((c) => c.id === id)
+
+        if (!card) return
+
+        if (card.end_at === null) {
+            // Stop tracking
+            const updatedCard = {
+                ...card,
+                end_at: nowMin,
+                updated_at: nowFull,
             }
-        }
-
-        // 2. Open the new tracker
-        if (id) {
-            const newCard = useTimeTrackerCardStore
-                .getState()
-                .items.find((c) => c.id === id)
-            if (newCard) {
-                const updatedNewCard = {
-                    ...newCard,
-                    end_at: null,
-                    updated_at: nowFull,
-                }
-                useTimeTrackerCardStore.getState().upsert(updatedNewCard)
-                await SyncService.save(timeTrackerCardConfig, updatedNewCard)
+            useTimeTrackerCardStore.getState().upsert(updatedCard)
+            await SyncService.save(timeTrackerCardConfig, updatedCard)
+        } else {
+            // Start tracking
+            const updatedCard = {
+                ...card,
+                end_at: null,
+                updated_at: nowFull,
             }
+            useTimeTrackerCardStore.getState().upsert(updatedCard)
+            await SyncService.save(timeTrackerCardConfig, updatedCard)
         }
-
-        // 3. Update the state record
-        const updatedState = {
-            ...state,
-            active_time_tracker_id: id,
-            updated_at: nowFull,
-        }
-
-        useRoutineTimeTrackerStateStore.getState().set(updatedState)
-        await SyncService.save(routineTimeTrackerStateConfig, updatedState)
     }
 }

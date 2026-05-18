@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from "uuid"
-import type { TimeTrackerCardId } from "./routine-time-tracker.model"
 import type {
     UserId,
     BaseModel,
@@ -9,8 +8,9 @@ import type {
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface RoutineTimeTrackerState extends BaseModel {
-    active_time_tracker_id: TimeTrackerCardId | null
+    // This interface is currently empty but reserved for future state extensions
 }
 
 export const createRoutineTimeTrackerState = (
@@ -25,7 +25,6 @@ export const createRoutineTimeTrackerState = (
         // and simplify conflict resolution during sync.
         id: data.id || userId || uuidv4(),
         user_id: userId,
-        active_time_tracker_id: data.active_time_tracker_id || null,
         created_at: data.created_at || now,
         updated_at: data.updated_at || now,
         is_deleted: data.is_deleted || false,
@@ -40,7 +39,6 @@ export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState>
         CREATE TABLE IF NOT EXISTS routine_time_tracker_states (
             id TEXT PRIMARY KEY,
             user_id TEXT UNIQUE,
-            active_time_tracker_id TEXT,
             created_at TEXT,
             updated_at TEXT,
             is_deleted INTEGER DEFAULT 0
@@ -48,13 +46,12 @@ export const routineTimeTrackerStateConfig: ModelConfig<RoutineTimeTrackerState>
     `,
         saveSql: `
         INSERT OR REPLACE INTO routine_time_tracker_states 
-        (id, user_id, active_time_tracker_id, created_at, updated_at, is_deleted)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (id, user_id, created_at, updated_at, is_deleted)
+        VALUES (?, ?, ?, ?, ?)
     `,
         toSqlValues: (state) => [
             state.id,
             state.user_id,
-            state.active_time_tracker_id,
             state.created_at,
             state.updated_at,
             state.is_deleted ? 1 : 0,
