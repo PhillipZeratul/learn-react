@@ -133,6 +133,14 @@ export default function RoutineTimeTrackerWidget() {
         )
     }, [currentDateRoutineCards, currentDate])
 
+    const timeTrackerLayoutMap = useMemo(() => {
+        if (!currentDate) return new Map()
+        return calculateLayout(
+            currentDateTimeTrackerCards.filter((t) => !t.is_deleted),
+            currentDate
+        )
+    }, [currentDateTimeTrackerCards, currentDate])
+
     const [editingState, setEditingState] = useState<EditingState>(null)
     const [dragState, setDragState] = useState<DragState | null>(null)
     const [confirmDragState, setConfirmDragState] = useState<{
@@ -726,6 +734,7 @@ export default function RoutineTimeTrackerWidget() {
                                             })
                                         }
                                     }}
+                                    layout={timeTrackerLayoutMap.get(task.id)}
                                 />
                             ))}
                             <TimeTrackerActionButton
