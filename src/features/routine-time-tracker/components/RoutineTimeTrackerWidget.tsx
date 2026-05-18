@@ -23,7 +23,7 @@ import {
     formatLocalDate,
     isCardOverlappingDate,
     getVisualBoundsForDate,
-    getMinuteNow,
+    getNowISO,
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
@@ -355,10 +355,10 @@ export default function RoutineTimeTrackerWidget() {
     }
 
     const handleTimeTrackerAction = async () => {
-        const nowMin = getMinuteNow()
+        const nowIso = getNowISO()
 
         const newCard = createTimeTrackerCard({
-            start_at: nowMin,
+            start_at: nowIso,
             end_at: null,
         })
         upsertTimeTrackerCard(newCard)

@@ -4,7 +4,7 @@ import {
     timeToISO,
     isoToTime,
     formatLocalDate,
-    getMinuteNow,
+    getNowISO,
 } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
@@ -78,9 +78,9 @@ export const TimeTrackerEditor = ({
             startDate: formatLocalDate(new Date(initialTask.start_at)),
             startAt: isoToTime(initialTask.start_at),
             endDate: formatLocalDate(
-                new Date(initialTask.end_at || getMinuteNow())
+                new Date(initialTask.end_at || getNowISO())
             ),
-            endAt: isoToTime(initialTask.end_at || getMinuteNow()),
+            endAt: isoToTime(initialTask.end_at || getNowISO()),
             tagId: initialTask.tag_id,
         })
     )

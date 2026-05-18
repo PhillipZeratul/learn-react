@@ -11,7 +11,7 @@ import { useTagStore } from "../stores/tag.store"
 import { useRoutineTimeTrackerStateStore } from "../stores/routine-time-tracker-state.store"
 import { useTimeTrackerCardStore } from "../stores/time-tracker-card.store"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
-import { getMinuteNow } from "../utils/utils"
+import { getNowISO } from "../utils/utils"
 import type { TimeTrackerCardId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime, UserId } from "@/shared/models/base.model"
 
@@ -68,7 +68,7 @@ export class RoutineTimeTrackerService {
         }
 
         if (state && (!state.user_id || state.id !== currentUser.id)) {
-            // Migration logic...
+            // Migration logic for older versions where id wasn't user_id
             const oldId = state.id
             const updatedState = {
                 ...state,
@@ -93,7 +93,7 @@ export class RoutineTimeTrackerService {
     static async toggleTracker(id: TimeTrackerCardId) {
         await this.ensureStateRecord()
         const nowFull = new Date().toISOString() as IsoDateTime
-        const nowMin = getMinuteNow()
+        const nowIso = getNowISO()
 
         const card = useTimeTrackerCardStore
             .getState()
@@ -105,7 +105,7 @@ export class RoutineTimeTrackerService {
             // Stop tracking
             const updatedCard = {
                 ...card,
-                end_at: nowMin,
+                end_at: nowIso,
                 updated_at: nowFull,
             }
             useTimeTrackerCardStore.getState().upsert(updatedCard)

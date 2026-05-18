@@ -6,14 +6,15 @@ export const BOTTOM_MARGIN = 64
 export const SHOW_CARD_TITLE_HEIGHT = 20
 export const SHOW_CARD_TIME_HEIGHT = 44
 
-export const roundToMinute = (date: Date): Date => {
-    const rounded = new Date(date)
-    rounded.setSeconds(0, 0)
-    return rounded
+export const getNowISO = (): IsoDateTime => {
+    return new Date().toISOString() as IsoDateTime
 }
 
 export const getMinuteNow = (): IsoDateTime => {
-    return roundToMinute(new Date()).toISOString() as IsoDateTime
+    const rounded = new Date()
+    rounded.setSeconds(0, 0)
+    rounded.setMilliseconds(0)
+    return rounded.toISOString() as IsoDateTime
 }
 
 export const formatLocalDate = (date: Date): string => {
@@ -26,16 +27,22 @@ export const formatLocalDate = (date: Date): string => {
 export const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
     const datePart = dateStr || formatLocalDate(new Date())
     const [year, month, day] = datePart.split("-").map(Number)
-    const [hour, minute] = timeStr.split(":").map(Number)
+    const parts = timeStr.split(":").map(Number)
+    const hour = parts[0]
+    const minute = parts[1]
+    const second = parts[2] || 0
 
     // Create date in local time, then convert to UTC ISO
-    const date = new Date(year, month - 1, day, hour, minute)
-    return roundToMinute(date).toISOString() as IsoDateTime
+    const date = new Date(year, month - 1, day, hour, minute, second)
+    return date.toISOString() as IsoDateTime
 }
 
-export const isoToTime = (isoStr: string): string => {
+export const isoToTime = (isoStr: string, includeSeconds = true): string => {
     const date = new Date(isoStr)
-    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
+    const h = String(date.getHours()).padStart(2, "0")
+    const m = String(date.getMinutes()).padStart(2, "0")
+    const s = String(date.getSeconds()).padStart(2, "0")
+    return includeSeconds ? `${h}:${m}:${s}` : `${h}:${m}`
 }
 
 export const isoToMinutes = (isoStr: string) => {
