@@ -1,13 +1,15 @@
 import { useEffect, useRef } from "react"
 import { effect } from "@preact/signals-react"
 import { TOP_MARGIN } from "../utils/utils"
-import { pixelsPerMinuteSignal } from "../stores/zoom.store"
+import { pixelsPerMinuteSignal, zoomLevelSignal } from "../stores/zoom.store"
 
 export const TimelineGrid = () => {
     const containerRef = useRef<HTMLDivElement>(null)
     const elementsRef = useRef<{
-        lines: HTMLElement[]
-        labels: HTMLElement[]
+        hourLines: HTMLElement[]
+        hourLabels: HTMLElement[]
+        halfLines: HTMLElement[]
+        tenLines: HTMLElement[]
     } | null>(null)
 
     useEffect(() => {
@@ -16,25 +18,56 @@ export const TimelineGrid = () => {
         // Initial cache
         const container = containerRef.current
         elementsRef.current = {
-            lines: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-line")
+            hourLines: Array.from(
+                container.querySelectorAll<HTMLElement>(".grid-line-hour")
             ),
-            labels: Array.from(
+            hourLabels: Array.from(
                 container.querySelectorAll<HTMLElement>(".grid-time-label")
+            ),
+            halfLines: Array.from(
+                container.querySelectorAll<HTMLElement>(".grid-line-half")
+            ),
+            tenLines: Array.from(
+                container.querySelectorAll<HTMLElement>(".grid-line-ten")
             ),
         }
 
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
+            const zoom = zoomLevelSignal.value
             const cached = elementsRef.current
             if (!cached) return
 
-            cached.lines.forEach((line, hour) => {
+            // 1. Update Hour Markers (Always visible)
+            cached.hourLines.forEach((line, hour) => {
                 line.style.top = `${hour * 60 * ppm + TOP_MARGIN}px`
             })
-
-            cached.labels.forEach((label, hour) => {
+            cached.hourLabels.forEach((label, hour) => {
                 label.style.top = `${hour * 60 * ppm + TOP_MARGIN}px`
+            })
+
+            // 2. Update Half-Hour Markers (Visible if zoom > 2x)
+            const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
+            cached.halfLines.forEach((line, i) => {
+                const hour = Math.floor(i)
+                line.style.top = `${(hour * 60 + 30) * ppm + TOP_MARGIN}px`
+                line.style.opacity = halfOpacity.toString()
+                line.style.display = halfOpacity > 0 ? "block" : "none"
+            })
+
+            // 3. Update 10-Minute Markers (Visible if zoom > 4x)
+            const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
+            cached.tenLines.forEach((line, i) => {
+                const hour = Math.floor(i / 5)
+                const tenMin = ((i % 5) + 1) * 10
+                // Skip the half-hour point (30m) as it's already a distinct marker
+                if (tenMin === 30) {
+                    line.style.display = "none"
+                    return
+                }
+                line.style.top = `${(hour * 60 + tenMin) * ppm + TOP_MARGIN}px`
+                line.style.opacity = tenOpacity.toString()
+                line.style.display = tenOpacity > 0 ? "block" : "none"
             })
         })
 
@@ -46,12 +79,30 @@ export const TimelineGrid = () => {
             ref={containerRef}
             className="pointer-events-none absolute inset-0"
         >
+            {/* Hour Lines */}
             {[...Array(25)].map((_, hour) => (
                 <div
                     key={`grid-line-hour-${hour}`}
-                    className="grid-line absolute right-0 left-0 -translate-y-1/2 border-t border-dashed border-border"
+                    className="grid-line-hour absolute right-0 left-0 -translate-y-1/2 border-t border-dashed border-border"
                 />
             ))}
+
+            {/* Half-Hour Lines */}
+            {[...Array(24)].map((_, hour) => (
+                <div
+                    key={`grid-line-half-${hour}`}
+                    className="grid-line-half absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-border/40"
+                />
+            ))}
+
+            {/* 10-Minute Lines */}
+            {[...Array(24 * 6)].map((_, i) => (
+                <div
+                    key={`grid-line-ten-${i}`}
+                    className="grid-line-ten absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-border/20"
+                />
+            ))}
+
             <div className="absolute inset-0 flex">
                 <div className="flex-1" /> {/* Left spacer */}
                 <div className="relative flex h-full w-fit flex-col items-center">

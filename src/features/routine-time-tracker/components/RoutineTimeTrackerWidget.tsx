@@ -288,7 +288,7 @@ export default function RoutineTimeTrackerWidget() {
                 const delta = -e.deltaY * 0.005
                 const nextZoom = Math.max(
                     1,
-                    Math.min(3, zoomLevelSignal.value + delta)
+                    Math.min(6, zoomLevelSignal.value + delta)
                 )
                 updateZoom(nextZoom, focalYViewport)
             }
@@ -304,7 +304,7 @@ export default function RoutineTimeTrackerWidget() {
             const gestureEvent = e as unknown as { scale: number }
             const nextZoom = Math.max(
                 1,
-                Math.min(3, initialZoom * gestureEvent.scale)
+                Math.min(6, initialZoom * gestureEvent.scale)
             )
 
             // For Safari gestures, use center of container as focal point
@@ -336,7 +336,7 @@ export default function RoutineTimeTrackerWidget() {
                 const focalYViewport = pinchCenterY - rect.top
 
                 const scale = currentDistance / initialTouchDistance
-                const nextZoom = Math.max(1, Math.min(3, initialZoom * scale))
+                const nextZoom = Math.max(1, Math.min(6, initialZoom * scale))
                 updateZoom(nextZoom, focalYViewport)
             }
         }
@@ -764,7 +764,7 @@ export default function RoutineTimeTrackerWidget() {
                         ref={zoomSliderRef}
                         type="range"
                         min="1"
-                        max="3"
+                        max="6"
                         step="0.1"
                         defaultValue={zoomLevelSignal.peek()}
                         onChange={handleSliderChange}
