@@ -239,13 +239,31 @@ export default function RoutineTimeTrackerWidget() {
         const handleWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault()
-                const delta = e.deltaY > 0 ? -0.1 : 0.1
+                // Smooth multiplier for trackpad and mouse wheel
+                // Trackpads typically send many small deltaY events per pinch
+                const delta = -e.deltaY * 0.005
                 const nextZoom = Math.max(
                     1,
                     Math.min(3, zoomLevelSignal.value + delta)
                 )
                 zoomLevelSignal.value = nextZoom
             }
+        }
+
+        const handleGestureStart = (e: Event) => {
+            e.preventDefault()
+            initialZoom = zoomLevelSignal.value
+        }
+
+        const handleGestureChange = (e: Event) => {
+            e.preventDefault()
+            // Safari provides a direct scale property for pinch gestures
+            const gestureEvent = e as unknown as { scale: number }
+            const nextZoom = Math.max(
+                1,
+                Math.min(3, initialZoom * gestureEvent.scale)
+            )
+            zoomLevelSignal.value = nextZoom
         }
 
         const handleTouchStart = (e: TouchEvent) => {
@@ -281,12 +299,16 @@ export default function RoutineTimeTrackerWidget() {
             passive: false,
         })
         container.addEventListener("dblclick", handleDoubleClick)
+        container.addEventListener("gesturestart", handleGestureStart)
+        container.addEventListener("gesturechange", handleGestureChange)
 
         return () => {
             container.removeEventListener("wheel", handleWheel)
             container.removeEventListener("touchstart", handleTouchStart)
             container.removeEventListener("touchmove", handleTouchMove)
             container.removeEventListener("dblclick", handleDoubleClick)
+            container.removeEventListener("gesturestart", handleGestureStart)
+            container.removeEventListener("gesturechange", handleGestureChange)
         }
     }, [])
 
