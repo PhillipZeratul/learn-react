@@ -241,18 +241,26 @@ export const TaskCard = memo(
                 }}
                 onMouseDown={onPress}
                 onTouchStart={onPress}
-                onClick={onClick}
+                onClick={(e) => {
+                    if (isCurrentlyTracking && !isDragging) {
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        const relativeY = e.clientY - rect.top
+                        const currentPpm = pixelsPerMinuteSignal.value
+                        const currentSolidHeight = duration * currentPpm
+                        if (relativeY > currentSolidHeight) {
+                            onStop?.()
+                            return
+                        }
+                    }
+                    onClick()
+                }}
             >
                 {/* Ghost Extension Layer (Rendered underneath solid part) */}
                 {isCurrentlyTracking && !isDragging && (
                     <div
                         ref={ghostBgRef}
-                        className="pointer-events-auto absolute inset-x-0 h-[60px] cursor-pointer"
+                        className="pointer-events-none absolute inset-x-0 h-[60px]"
                         style={{ top: `${initialHeight}px` }}
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onStop?.()
-                        }}
                     >
                         <div
                             className="absolute inset-x-0 bg-primary/20"
