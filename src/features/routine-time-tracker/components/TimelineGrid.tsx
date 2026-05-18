@@ -105,14 +105,14 @@ export const TimelineGrid = () => {
             {[...Array(24)].map((_, hour) => (
                 <div
                     key={`grid-line-half-${hour}`}
-                    className="grid-line-half absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/20"
+                    className="grid-line-half absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/25"
                 />
             ))}
 
             {[...Array(24 * 4)].map((_, i) => (
                 <div
                     key={`grid-line-ten-${i}`}
-                    className="grid-line-ten absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/10"
+                    className="grid-line-ten absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/20"
                 />
             ))}
 
@@ -140,7 +140,7 @@ export const TimelineGrid = () => {
                     {[...Array(24)].map((_, hour) => (
                         <div
                             key={`grid-time-label-half-${hour}`}
-                            className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/70"
+                            className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/80"
                         >
                             <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
                                 {String(hour).padStart(2, "0")}:30
@@ -155,7 +155,7 @@ export const TimelineGrid = () => {
                         return (
                             <div
                                 key={`grid-time-label-ten-${i}`}
-                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-[8px] text-muted-foreground/50"
+                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60"
                             >
                                 <span className="pointer-events-auto bg-background px-1 tabular-nums">
                                     {String(hour).padStart(2, "0")}:
