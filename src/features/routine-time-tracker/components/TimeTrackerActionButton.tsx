@@ -28,7 +28,8 @@ export const TimeTrackerActionButton = ({
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
             if (buttonRef.current) {
-                buttonRef.current.style.top = `${currentMinutes * ppm + TOP_MARGIN + 24}px`
+                // Positioned below the 60px ghost extension (60 + 24 spacing)
+                buttonRef.current.style.top = `${currentMinutes * ppm + TOP_MARGIN + 84}px`
             }
         })
 
