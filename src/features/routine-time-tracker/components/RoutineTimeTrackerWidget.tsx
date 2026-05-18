@@ -737,6 +737,7 @@ export default function RoutineTimeTrackerWidget() {
                                             })
                                         }
                                     }}
+                                    onStop={() => toggleTracker(task.id)}
                                     layout={timeTrackerLayoutMap.get(task.id)}
                                 />
                             ))}

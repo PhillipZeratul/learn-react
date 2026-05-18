@@ -21,6 +21,7 @@ interface TaskCardProps {
     getTagName: (tagId: string) => string
     onPress: (e: React.MouseEvent | React.TouchEvent) => void
     onClick: () => void
+    onStop?: () => void
     currentDate: Date
     layout?: { left: string; width: string }
 }
@@ -34,6 +35,7 @@ export const TaskCard = memo(
         getTagName,
         onPress,
         onClick,
+        onStop,
         currentDate,
         layout,
     }: TaskCardProps) => {
@@ -245,8 +247,12 @@ export const TaskCard = memo(
                 {isCurrentlyTracking && !isDragging && (
                     <div
                         ref={ghostBgRef}
-                        className="pointer-events-none absolute inset-x-0 h-[60px]"
+                        className="pointer-events-auto absolute inset-x-0 h-[60px] cursor-pointer"
                         style={{ top: `${initialHeight}px` }}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onStop?.()
+                        }}
                     >
                         <div
                             className="absolute inset-x-0 bg-primary/20"
