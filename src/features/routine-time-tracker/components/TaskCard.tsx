@@ -5,8 +5,6 @@ import {
     isoToTime,
     timeToISO,
     TOP_MARGIN,
-    SHOW_CARD_TITLE_HEIGHT,
-    SHOW_CARD_TIME_HEIGHT,
     getDurationString,
 } from "../utils/utils"
 import type { RoutineCard } from "../models/routine-card.model"
@@ -27,6 +25,8 @@ interface TaskCardProps {
     layout?: { left: string; width: string }
 }
 
+const SHOW_CARD_TITLE_HEIGHT = 20
+const SHOW_CARD_TIME_HEIGHT = 44
 const SHOW_CARD_DURATION_HEIGHT = 58
 
 export const TaskCard = memo(
@@ -125,7 +125,7 @@ export const TaskCard = memo(
                         durationRef.current.style.display = showDuration
                             ? "block"
                             : "none"
-                        durationRef.current.textContent = `(${getDurationString(dragHeight / ppm)})`
+                        durationRef.current.textContent = `${getDurationString(dragHeight / ppm)}`
                     }
                 } else {
                     const height = duration * ppm
@@ -186,7 +186,7 @@ export const TaskCard = memo(
                         durationRef.current.style.display = showDuration
                             ? "block"
                             : "none"
-                        durationRef.current.textContent = `(${getDurationString(totalHeight / ppm)})`
+                        durationRef.current.textContent = `${getDurationString(duration)}`
                     }
                 }
             })
@@ -220,7 +220,10 @@ export const TaskCard = memo(
             ? Math.max(initialHeight, 1) + GHOST_EXTENSION_PX
             : initialHeight
         const initialTransform = `translateY(${startMin * ppm + TOP_MARGIN}px)`
-        const initialShowTime = initialHeight >= SHOW_CARD_TIME_HEIGHT
+        const initialShowTitle = initialTotalHeight >= SHOW_CARD_TITLE_HEIGHT
+        const initialShowTime = initialTotalHeight >= SHOW_CARD_TIME_HEIGHT
+        const initialShowDuration =
+            initialTotalHeight >= SHOW_CARD_DURATION_HEIGHT
 
         const defaultLeft = layout ? layout.left : "0.5rem"
         const defaultWidth = layout ? layout.width : "calc(100% - 1rem)"
@@ -338,7 +341,7 @@ export const TaskCard = memo(
                     <div
                         ref={titleRef}
                         className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
-                            isDragging ? "block" : "none"
+                            isDragging || initialShowTitle ? "block" : "none"
                         } ${initialShowTime ? "leading-tight" : "leading-none"}`}
                     >
                         {card.title || getTagName(card.tag_id)}
@@ -346,7 +349,7 @@ export const TaskCard = memo(
                     <div
                         ref={timeRef}
                         className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
-                            isDragging ? "block" : "none"
+                            isDragging || initialShowTime ? "block" : "none"
                         }`}
                     >
                         {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
@@ -354,10 +357,10 @@ export const TaskCard = memo(
                     <div
                         ref={durationRef}
                         className={`card-duration flex-shrink-0 truncate text-[10px] text-muted-foreground/80 tabular-nums ${
-                            isDragging ? "block" : "none"
+                            isDragging || initialShowDuration ? "block" : "none"
                         }`}
                     >
-                        {`(${getDurationString(initialTotalHeight / ppm)})`}
+                        {`${getDurationString(duration)}`}
                     </div>
                 </div>
             </div>

@@ -3,8 +3,6 @@ import type { IsoDateTime } from "@/shared/models/base.model"
 export const BASE_PIXELS_PER_MINUTE = 1
 export const TOP_MARGIN = 32
 export const BOTTOM_MARGIN = 64
-export const SHOW_CARD_TITLE_HEIGHT = 20
-export const SHOW_CARD_TIME_HEIGHT = 44
 
 export const getNowISO = (): IsoDateTime => {
     return new Date().toISOString() as IsoDateTime
