@@ -30,12 +30,21 @@ export const timeToISO = (timeStr: string, dateStr?: string): IsoDateTime => {
     return date.toISOString() as IsoDateTime
 }
 
-export const isoToTime = (isoStr: string, includeSeconds = true): string => {
+export const isoToTime = (isoStr: string, includeSeconds = false): string => {
     const date = new Date(isoStr)
     const h = String(date.getHours()).padStart(2, "0")
     const m = String(date.getMinutes()).padStart(2, "0")
     const s = String(date.getSeconds()).padStart(2, "0")
     return includeSeconds ? `${h}:${m}:${s}` : `${h}:${m}`
+}
+
+export const getDurationString = (minutes: number): string => {
+    const h = Math.floor(minutes / 60)
+    const m = Math.round(minutes % 60)
+    if (h > 0) {
+        return `${h}h ${m}m`
+    }
+    return `${m}m`
 }
 
 export const isoToMinutes = (isoStr: string) => {

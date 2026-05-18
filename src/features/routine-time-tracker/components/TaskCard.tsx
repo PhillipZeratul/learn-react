@@ -7,6 +7,7 @@ import {
     TOP_MARGIN,
     SHOW_CARD_TITLE_HEIGHT,
     SHOW_CARD_TIME_HEIGHT,
+    getDurationString,
 } from "../utils/utils"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
@@ -26,6 +27,8 @@ interface TaskCardProps {
     layout?: { left: string; width: string }
 }
 
+const SHOW_CARD_DURATION_HEIGHT = 58
+
 export const TaskCard = memo(
     ({
         card,
@@ -42,6 +45,7 @@ export const TaskCard = memo(
         const cardRef = useRef<HTMLDivElement>(null)
         const titleRef = useRef<HTMLDivElement>(null)
         const timeRef = useRef<HTMLDivElement>(null)
+        const durationRef = useRef<HTMLDivElement>(null)
         const solidBgRef = useRef<HTMLDivElement>(null)
         const ghostBgRef = useRef<HTMLDivElement>(null)
         const contentWrapperRef = useRef<HTMLDivElement>(null)
@@ -64,6 +68,7 @@ export const TaskCard = memo(
                     const top = dragTopSignal.value
                     const showTitle = dragHeight >= SHOW_CARD_TITLE_HEIGHT
                     const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT
+                    const showDuration = dragHeight >= SHOW_CARD_DURATION_HEIGHT
 
                     Object.assign(container.style, {
                         transform: `translateY(${top}px) scale(1.02)`,
@@ -115,6 +120,13 @@ export const TaskCard = memo(
 
                         timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))}`
                     }
+
+                    if (durationRef.current) {
+                        durationRef.current.style.display = showDuration
+                            ? "block"
+                            : "none"
+                        durationRef.current.textContent = `(${getDurationString(dragHeight / ppm)})`
+                    }
                 } else {
                     const height = duration * ppm
                     const totalHeight = isCurrentlyTracking
@@ -122,6 +134,8 @@ export const TaskCard = memo(
                         : height
                     const showTitle = totalHeight >= SHOW_CARD_TITLE_HEIGHT
                     const showTime = totalHeight >= SHOW_CARD_TIME_HEIGHT
+                    const showDuration =
+                        totalHeight >= SHOW_CARD_DURATION_HEIGHT
 
                     Object.assign(container.style, {
                         transform: `translateY(${startMin * ppm + TOP_MARGIN}px)`,
@@ -166,6 +180,13 @@ export const TaskCard = memo(
                             ? "block"
                             : "none"
                         timeRef.current.textContent = `${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`
+                    }
+
+                    if (durationRef.current) {
+                        durationRef.current.style.display = showDuration
+                            ? "block"
+                            : "none"
+                        durationRef.current.textContent = `(${getDurationString(totalHeight / ppm)})`
                     }
                 }
             })
@@ -329,6 +350,14 @@ export const TaskCard = memo(
                         }`}
                     >
                         {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
+                    </div>
+                    <div
+                        ref={durationRef}
+                        className={`card-duration flex-shrink-0 truncate text-[10px] text-muted-foreground/80 tabular-nums ${
+                            isDragging ? "block" : "none"
+                        }`}
+                    >
+                        {`(${getDurationString(initialTotalHeight / ppm)})`}
                     </div>
                 </div>
             </div>
