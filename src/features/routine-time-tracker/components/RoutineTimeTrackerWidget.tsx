@@ -354,13 +354,16 @@ export default function RoutineTimeTrackerWidget() {
         )
     }
 
-    const handleTimeTrackerAction = () => {
+    const handleTimeTrackerAction = async () => {
         const nowMin = getMinuteNow()
 
         const newCard = createTimeTrackerCard({
             start_at: nowMin,
             end_at: null,
         })
+        upsertTimeTrackerCard(newCard)
+        await SyncService.save(timeTrackerCardConfig, newCard)
+
         setEditingState({
             type: "timeTracker",
             card: newCard,
@@ -719,7 +722,7 @@ export default function RoutineTimeTrackerWidget() {
                                     isActive={
                                         allTimeTrackerCards.find(
                                             (c) => c.id === task.id
-                                        )?.end_at === null && isCurrentDay
+                                        )?.end_at === null
                                     }
                                     getTagColor={getTagColor}
                                     getTagName={getTagName}

@@ -109,7 +109,7 @@ export const TaskCard = memo(
                 } else {
                     const height = duration * ppm
                     const totalHeight = isCurrentlyTracking
-                        ? height + GHOST_EXTENSION_PX
+                        ? Math.max(height, 1) + GHOST_EXTENSION_PX
                         : height
                     const showTitle = totalHeight >= SHOW_CARD_TITLE_HEIGHT
                     const showTime = totalHeight >= SHOW_CARD_TIME_HEIGHT

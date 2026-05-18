@@ -93,11 +93,23 @@ export const TimeTrackerEditor = ({
     const handleSave = async () => {
         const finalTitle = state.title.trim()
 
+        // If the task was active (end_at is null), we should only set end_at if it's explicitly edited.
+        // However, for newly created tasks via BEGIN button, hideTimeFields is true.
+        // We'll trust the editor state unless it's a null transition.
+
+        let finalEndAt = timeToISO(state.endAt, state.endDate)
+
+        // If we are editing an active task and the time fields were hidden,
+        // keep it active (null end_at)
+        if (task.end_at === null && hideTimeFields) {
+            finalEndAt = null as unknown as IsoDateTime
+        }
+
         await onSave({
             ...task,
             title: finalTitle,
             start_at: timeToISO(state.startAt, state.startDate),
-            end_at: timeToISO(state.endAt, state.endDate),
+            end_at: finalEndAt,
             tag_id: state.tagId || DEFAULT_TAG_ID,
         })
     }
