@@ -1,4 +1,7 @@
-import { PIXELS_PER_MINUTE, TOP_MARGIN } from "../utils/utils"
+import { useEffect, useRef } from "react"
+import { effect } from "@preact/signals-react"
+import { TOP_MARGIN } from "../utils/utils"
+import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 interface TimeTrackerActionButtonProps {
     activeTimeTrackerId: string | null
@@ -13,17 +16,30 @@ export const TimeTrackerActionButton = ({
     isCurrentDay,
     currentTime,
 }: TimeTrackerActionButtonProps) => {
-    if (!isCurrentDay) return null
+    const buttonRef = useRef<HTMLDivElement>(null)
 
     const currentMinutes =
         currentTime.getHours() * 60 + currentTime.getMinutes()
 
+    useEffect(() => {
+        if (!isCurrentDay || !buttonRef.current) return
+
+        const dispose = effect(() => {
+            const ppm = pixelsPerMinuteSignal.value
+            if (buttonRef.current) {
+                buttonRef.current.style.top = `${currentMinutes * ppm + TOP_MARGIN + 24}px`
+            }
+        })
+
+        return () => dispose()
+    }, [isCurrentDay, currentMinutes])
+
+    if (!isCurrentDay) return null
+
     return (
         <div
+            ref={buttonRef}
             className="pointer-events-none absolute right-0 left-0 z-30 flex justify-center"
-            style={{
-                top: `${currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN + 24}px`,
-            }}
         >
             <button
                 onClick={(e) => {

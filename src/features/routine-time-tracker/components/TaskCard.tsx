@@ -4,7 +4,6 @@ import {
     getVisualBoundsForDate,
     isoToTime,
     timeToISO,
-    PIXELS_PER_MINUTE,
     TOP_MARGIN,
     SHOW_CARD_TITLE_HEIGHT,
     SHOW_CARD_TIME_HEIGHT,
@@ -12,6 +11,7 @@ import {
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 import { dragTopSignal, dragHeightSignal } from "../stores/drag.store"
+import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 interface TaskCardProps {
     card: RoutineCard | TimeTrackerCard
@@ -41,35 +41,20 @@ export const TaskCard = memo(
 
         const { startMin, duration, isStartClamped, isEndClamped } =
             getVisualBoundsForDate(card.start_at, card.end_at, currentDate)
-        const height = duration * PIXELS_PER_MINUTE
-
-        // GPU-Accelerated Positioning
-        const defaultTransform = `translateY(${startMin * PIXELS_PER_MINUTE + TOP_MARGIN}px)`
-        const defaultHeight = `${height}px`
 
         useEffect(() => {
-            if (!isDragging) {
-                if (cardRef.current) {
-                    Object.assign(cardRef.current.style, {
-                        paddingTop: "",
-                        paddingBottom: "",
-                    })
-                }
-                if (titleRef.current) {
-                    titleRef.current.style.lineHeight = ""
-                }
-                return
-            }
-
             const dispose = effect(() => {
-                const dragHeight = dragHeightSignal.value
-                const top = dragTopSignal.value
+                const ppm = pixelsPerMinuteSignal.value
+                const container = cardRef.current
+                if (!container) return
 
-                if (cardRef.current) {
+                if (isDragging) {
+                    const dragHeight = dragHeightSignal.value
+                    const top = dragTopSignal.value
                     const showTitle = dragHeight >= SHOW_CARD_TITLE_HEIGHT
                     const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT
 
-                    Object.assign(cardRef.current.style, {
+                    Object.assign(container.style, {
                         transform: `translateY(${top}px) scale(1.02)`,
                         height: `${dragHeight}px`,
                         paddingTop: showTime ? "0.5rem" : "0",
@@ -89,14 +74,10 @@ export const TaskCard = memo(
                             : "none"
 
                         const currentStartMin =
-                            Math.round(
-                                (top - TOP_MARGIN) / PIXELS_PER_MINUTE / 5
-                            ) * 5
+                            Math.round((top - TOP_MARGIN) / ppm / 5) * 5
                         const currentEndMin =
                             Math.round(
-                                (top + dragHeight - TOP_MARGIN) /
-                                    PIXELS_PER_MINUTE /
-                                    5
+                                (top + dragHeight - TOP_MARGIN) / ppm / 5
                             ) * 5
 
                         const formatMin = (m: number) => {
@@ -107,11 +88,36 @@ export const TaskCard = memo(
 
                         timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))}`
                     }
+                } else {
+                    const height = duration * ppm
+                    const showTitle = height >= SHOW_CARD_TITLE_HEIGHT
+                    const showTime = height >= SHOW_CARD_TIME_HEIGHT
+
+                    Object.assign(container.style, {
+                        transform: `translateY(${startMin * ppm + TOP_MARGIN}px)`,
+                        height: `${height}px`,
+                        paddingTop: showTime ? "0.5rem" : "0",
+                        paddingBottom: showTime ? "0.5rem" : "0",
+                    })
+
+                    if (titleRef.current) {
+                        Object.assign(titleRef.current.style, {
+                            display: showTitle ? "block" : "none",
+                            lineHeight: showTime ? "1.25rem" : "1",
+                        })
+                    }
+
+                    if (timeRef.current) {
+                        timeRef.current.style.display = showTime
+                            ? "block"
+                            : "none"
+                        timeRef.current.textContent = `${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`
+                    }
                 }
             })
 
             return () => dispose()
-        }, [isDragging])
+        }, [isDragging, card, startMin, duration])
 
         const handleKeyDown = (e: React.KeyboardEvent) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -128,8 +134,11 @@ export const TaskCard = memo(
 
         const roundedClasses = `${!isStartClamped ? "rounded-t-xl" : ""} ${!isEndClamped ? "rounded-b-xl" : ""}`
 
-        const showTitle = height >= SHOW_CARD_TITLE_HEIGHT
-        const showTime = height >= SHOW_CARD_TIME_HEIGHT
+        const ppm = pixelsPerMinuteSignal.peek()
+        const initialHeight = duration * ppm
+        const initialTransform = `translateY(${startMin * ppm + TOP_MARGIN}px)`
+        const initialShowTitle = initialHeight >= SHOW_CARD_TITLE_HEIGHT
+        const initialShowTime = initialHeight >= SHOW_CARD_TIME_HEIGHT
 
         const defaultLeft = layout ? layout.left : "0.5rem"
         const defaultWidth = layout ? layout.width : "calc(100% - 1rem)"
@@ -146,7 +155,7 @@ export const TaskCard = memo(
                 ref={cardRef}
                 className={`${baseClasses} ${roundedClasses} ${
                     isDragging ? draggingClasses : idleClasses
-                } ${!isDragging && showTime ? "py-2" : "py-0"}`}
+                } ${!isDragging && initialShowTime ? "py-2" : "py-0"}`}
                 data-start-clamped={isStartClamped}
                 data-end-clamped={isEndClamped}
                 role="button"
@@ -154,8 +163,8 @@ export const TaskCard = memo(
                 onKeyDown={handleKeyDown}
                 style={{
                     top: 0,
-                    transform: isDragging ? undefined : defaultTransform,
-                    height: isDragging ? undefined : defaultHeight,
+                    transform: isDragging ? undefined : initialTransform,
+                    height: isDragging ? undefined : `${initialHeight}px`,
                     left: leftStyle,
                     width: widthStyle,
                     zIndex: zIndexStyle,
@@ -173,15 +182,15 @@ export const TaskCard = memo(
                 <div
                     ref={titleRef}
                     className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
-                        showTitle || isDragging ? "block" : "none"
-                    } ${showTime ? "leading-tight" : "leading-none"}`}
+                        initialShowTitle || isDragging ? "block" : "none"
+                    } ${initialShowTime ? "leading-tight" : "leading-none"}`}
                 >
                     {card.title || getTagName(card.tag_id)}
                 </div>
                 <div
                     ref={timeRef}
                     className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
-                        showTime || isDragging ? "block" : "none"
+                        initialShowTime || isDragging ? "block" : "none"
                     }`}
                 >
                     {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}

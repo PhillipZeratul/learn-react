@@ -1,6 +1,6 @@
 import type { IsoDateTime } from "@/shared/models/base.model"
 
-export const PIXELS_PER_MINUTE = 1
+export const BASE_PIXELS_PER_MINUTE = 1
 export const TOP_MARGIN = 32
 export const BOTTOM_MARGIN = 64
 export const SHOW_CARD_TITLE_HEIGHT = 20

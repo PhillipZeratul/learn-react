@@ -15,6 +15,7 @@ import { useRoutineCardStore } from "../stores/routine-card.store"
 import { useTimeTrackerCardStore } from "../stores/time-tracker-card.store"
 import { useTagStore } from "../stores/tag.store"
 import { SyncService } from "@/shared/services/sync.service"
+import { pixelsPerMinuteSignal, zoomLevelSignal } from "../stores/zoom.store"
 import {
     timeToISO,
     isoToTime,
@@ -22,7 +23,6 @@ import {
     formatLocalDate,
     isCardOverlappingDate,
     getVisualBoundsForDate,
-    PIXELS_PER_MINUTE,
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
@@ -172,7 +172,8 @@ export default function RoutineTimeTrackerWidget() {
         const scrollNow = new Date()
         const currentMinutes =
             scrollNow.getHours() * 60 + scrollNow.getMinutes()
-        const targetY = currentMinutes * PIXELS_PER_MINUTE + TOP_MARGIN
+        const targetY =
+            currentMinutes * pixelsPerMinuteSignal.value + TOP_MARGIN
         const containerHeight = scrollContainerRef.current.clientHeight
 
         scrollContainerRef.current.scrollTo({
@@ -227,6 +228,67 @@ export default function RoutineTimeTrackerWidget() {
             )
         }
     }, [currentDate, scrollToCurrentTime])
+
+    useEffect(() => {
+        if (!scrollContainerRef.current) return
+        const container = scrollContainerRef.current
+
+        let initialTouchDistance = 0
+        let initialZoom = 1
+
+        const handleWheel = (e: WheelEvent) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault()
+                const delta = e.deltaY > 0 ? -0.1 : 0.1
+                const nextZoom = Math.max(
+                    1,
+                    Math.min(3, zoomLevelSignal.value + delta)
+                )
+                zoomLevelSignal.value = nextZoom
+            }
+        }
+
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 2) {
+                initialTouchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                )
+                initialZoom = zoomLevelSignal.value
+            }
+        }
+
+        const handleTouchMove = (e: TouchEvent) => {
+            if (e.touches.length === 2 && initialTouchDistance > 0) {
+                e.preventDefault()
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                )
+                const scale = currentDistance / initialTouchDistance
+                const nextZoom = Math.max(1, Math.min(3, initialZoom * scale))
+                zoomLevelSignal.value = nextZoom
+            }
+        }
+
+        const handleDoubleClick = () => {
+            zoomLevelSignal.value = 1
+        }
+
+        container.addEventListener("wheel", handleWheel, { passive: false })
+        container.addEventListener("touchstart", handleTouchStart)
+        container.addEventListener("touchmove", handleTouchMove, {
+            passive: false,
+        })
+        container.addEventListener("dblclick", handleDoubleClick)
+
+        return () => {
+            container.removeEventListener("wheel", handleWheel)
+            container.removeEventListener("touchstart", handleTouchStart)
+            container.removeEventListener("touchmove", handleTouchMove)
+            container.removeEventListener("dblclick", handleDoubleClick)
+        }
+    }, [])
 
     if (!currentDate || !now) {
         return (
@@ -301,7 +363,9 @@ export default function RoutineTimeTrackerWidget() {
         const relativeX = clientX - rect.left
         const contentWidth = scrollContainerRef.current.clientWidth
 
-        const minutes = Math.floor((relativeY - TOP_MARGIN) / PIXELS_PER_MINUTE)
+        const minutes = Math.floor(
+            (relativeY - TOP_MARGIN) / pixelsPerMinuteSignal.value
+        )
         if (minutes < 0 || minutes >= 24 * 60) return
 
         const roundedMinutes = Math.round(minutes / 30) * 30
@@ -382,8 +446,9 @@ export default function RoutineTimeTrackerWidget() {
             )
 
             batch(() => {
-                dragTopSignal.value = startMin * PIXELS_PER_MINUTE + TOP_MARGIN
-                dragHeightSignal.value = duration * PIXELS_PER_MINUTE
+                dragTopSignal.value =
+                    startMin * pixelsPerMinuteSignal.value + TOP_MARGIN
+                dragHeightSignal.value = duration * pixelsPerMinuteSignal.value
             })
 
             setDragState({
@@ -434,11 +499,13 @@ export default function RoutineTimeTrackerWidget() {
             const finalTop = dragTopSignal.value
             const finalHeight = dragHeightSignal.value
             const finalStartMin =
-                Math.round((finalTop - TOP_MARGIN) / PIXELS_PER_MINUTE / 5) * 5
+                Math.round(
+                    (finalTop - TOP_MARGIN) / pixelsPerMinuteSignal.value / 5
+                ) * 5
             const finalEndMin =
                 Math.round(
                     (finalTop + finalHeight - TOP_MARGIN) /
-                        PIXELS_PER_MINUTE /
+                        pixelsPerMinuteSignal.value /
                         5
                 ) * 5
 
@@ -518,48 +585,53 @@ export default function RoutineTimeTrackerWidget() {
             const deltaY = clientY - dragState.initialMouseY
 
             let newTop =
-                dragState.initialStartMin * PIXELS_PER_MINUTE + TOP_MARGIN
+                dragState.initialStartMin * pixelsPerMinuteSignal.value +
+                TOP_MARGIN
             let newHeight =
                 (dragState.initialEndMin - dragState.initialStartMin) *
-                PIXELS_PER_MINUTE
+                pixelsPerMinuteSignal.value
 
             if (dragState.mode === "top") {
                 const requestedTop =
-                    dragState.initialStartMin * PIXELS_PER_MINUTE +
+                    dragState.initialStartMin * pixelsPerMinuteSignal.value +
                     TOP_MARGIN +
                     deltaY
                 const minTop = TOP_MARGIN
                 const maxTop =
-                    (dragState.initialEndMin - 5) * PIXELS_PER_MINUTE +
+                    (dragState.initialEndMin - 5) *
+                        pixelsPerMinuteSignal.value +
                     TOP_MARGIN
                 newTop = Math.max(minTop, Math.min(maxTop, requestedTop))
                 newHeight =
-                    dragState.initialEndMin * PIXELS_PER_MINUTE +
+                    dragState.initialEndMin * pixelsPerMinuteSignal.value +
                     TOP_MARGIN -
                     newTop
             } else if (dragState.mode === "bottom") {
                 const requestedHeight =
                     (dragState.initialEndMin - dragState.initialStartMin) *
-                        PIXELS_PER_MINUTE +
+                        pixelsPerMinuteSignal.value +
                     deltaY
-                const minHeight = 5 * PIXELS_PER_MINUTE
+                const minHeight = 5 * pixelsPerMinuteSignal.value
                 const maxHeight =
-                    (24 * 60 - dragState.initialStartMin) * PIXELS_PER_MINUTE
+                    (24 * 60 - dragState.initialStartMin) *
+                    pixelsPerMinuteSignal.value
                 newHeight = Math.max(
                     minHeight,
                     Math.min(maxHeight, requestedHeight)
                 )
             } else {
                 const requestedTop =
-                    dragState.initialStartMin * PIXELS_PER_MINUTE +
+                    dragState.initialStartMin * pixelsPerMinuteSignal.value +
                     TOP_MARGIN +
                     deltaY
                 const duration =
                     (dragState.initialEndMin - dragState.initialStartMin) *
-                    PIXELS_PER_MINUTE
+                    pixelsPerMinuteSignal.value
                 const minTop = TOP_MARGIN
                 const maxTop =
-                    24 * 60 * PIXELS_PER_MINUTE + TOP_MARGIN - duration
+                    24 * 60 * pixelsPerMinuteSignal.value +
+                    TOP_MARGIN -
+                    duration
                 newTop = Math.max(minTop, Math.min(maxTop, requestedTop))
             }
 
@@ -605,7 +677,7 @@ export default function RoutineTimeTrackerWidget() {
                 <div
                     className="pointer-events-none relative mx-auto w-full max-w-2xl"
                     style={{
-                        height: `${24 * 60 * PIXELS_PER_MINUTE + BOTTOM_MARGIN}px`,
+                        height: `${24 * 60 * pixelsPerMinuteSignal.value + BOTTOM_MARGIN}px`,
                     }}
                 >
                     <TimelineGrid />
