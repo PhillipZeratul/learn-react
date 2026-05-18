@@ -84,10 +84,11 @@ export default function RoutineTimeTrackerWidget() {
             (c) => c.end_at === null && !c.is_deleted
         ).length
 
-        await RoutineTimeTrackerService.toggleTracker(id)
+        const now = getNowISO()
+        await RoutineTimeTrackerService.toggleTracker(id, now)
 
         if (activeCount === 1) {
-            handleTimeTrackerAction()
+            handleTimeTrackerAction(now)
         }
     }
 
@@ -370,8 +371,8 @@ export default function RoutineTimeTrackerWidget() {
         )
     }
 
-    const handleTimeTrackerAction = async () => {
-        const nowIso = getNowISO()
+    const handleTimeTrackerAction = async (timestamp?: IsoDateTime) => {
+        const nowIso = timestamp || getNowISO()
 
         const newCard = createTimeTrackerCard({
             start_at: nowIso,

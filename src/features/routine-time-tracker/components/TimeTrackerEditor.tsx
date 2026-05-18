@@ -76,11 +76,11 @@ export const TimeTrackerEditor = ({
         (initialTask) => ({
             title: initialTask.title,
             startDate: formatLocalDate(new Date(initialTask.start_at)),
-            startAt: isoToTime(initialTask.start_at),
+            startAt: isoToTime(initialTask.start_at, true),
             endDate: formatLocalDate(
                 new Date(initialTask.end_at || getNowISO())
             ),
-            endAt: isoToTime(initialTask.end_at || getNowISO()),
+            endAt: isoToTime(initialTask.end_at || getNowISO(), true),
             tagId: initialTask.tag_id,
         })
     )
@@ -109,7 +109,9 @@ export const TimeTrackerEditor = ({
         await onSave({
             ...task,
             title: finalTitle,
-            start_at: timeToISO(state.startAt, state.startDate),
+            start_at: hideTimeFields
+                ? task.start_at
+                : timeToISO(state.startAt, state.startDate),
             end_at: finalEndAt,
             tag_id: state.tagId || DEFAULT_TAG_ID,
         })
@@ -117,7 +119,7 @@ export const TimeTrackerEditor = ({
 
     return (
         <div className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
-            <div className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95">
+            <div className="max-sm w-full animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95">
                 <h3 className="mb-4 text-lg font-semibold text-foreground">
                     Time Tracker
                 </h3>
@@ -179,6 +181,7 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-start-time"
                                         type="time"
+                                        step="1"
                                         value={state.startAt}
                                         onChange={(e) =>
                                             dispatch({
@@ -221,6 +224,7 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-end-time"
                                         type="time"
+                                        step="1"
                                         value={state.endAt}
                                         onChange={(e) =>
                                             dispatch({

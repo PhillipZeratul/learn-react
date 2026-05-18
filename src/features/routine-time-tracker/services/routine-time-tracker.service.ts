@@ -90,9 +90,9 @@ export class RoutineTimeTrackerService {
         }
     }
 
-    static async toggleTracker(id: TimeTrackerCardId) {
+    static async toggleTracker(id: TimeTrackerCardId, timestamp?: IsoDateTime) {
         await this.ensureStateRecord()
-        const now = getNowISO()
+        const now = timestamp || getNowISO()
 
         const card = useTimeTrackerCardStore
             .getState()

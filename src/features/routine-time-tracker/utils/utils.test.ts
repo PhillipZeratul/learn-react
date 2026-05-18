@@ -33,6 +33,12 @@ describe("routine-time-tracker utils", () => {
             expect(result).toBe(expected)
         })
 
+        it("should handle seconds in time string", () => {
+            const result = timeToISO("14:30:45")
+            const expected = new Date(2026, 3, 22, 14, 30, 45).toISOString()
+            expect(result).toBe(expected)
+        })
+
         it("should convert time string to ISO with specified date", () => {
             const result = timeToISO("09:15", "2026-12-25")
             const expected = new Date(2026, 11, 25, 9, 15, 0).toISOString()
@@ -49,6 +55,11 @@ describe("routine-time-tracker utils", () => {
         it("should handle single digit hours and minutes", () => {
             const iso = new Date("2026-04-22T08:05:00").toISOString()
             expect(isoToTime(iso)).toBe("08:05")
+        })
+
+        it("should include seconds when requested", () => {
+            const iso = new Date("2026-04-22T14:30:45").toISOString()
+            expect(isoToTime(iso, true)).toBe("14:30:45")
         })
     })
 
