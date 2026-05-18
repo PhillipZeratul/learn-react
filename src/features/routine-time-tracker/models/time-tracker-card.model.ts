@@ -23,19 +23,19 @@ export interface TimeTrackerCard extends BaseModel {
 export const createTimeTrackerCard = (
     data: Partial<TimeTrackerCard> = {}
 ): TimeTrackerCard => {
-    const nowFull = getNowISO()
+    const now = getNowISO()
     const currentUserId = useAuthStore.getState().user?.id as UserId
 
     return {
         id: data.id || (uuidv4() as TimeTrackerCardId),
         title: data.title ?? "",
         description: data.description === undefined ? "" : data.description,
-        start_at: data.start_at || nowFull,
+        start_at: data.start_at || now,
         end_at: data.end_at !== undefined ? data.end_at : null,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
         user_id: data.user_id || currentUserId,
-        created_at: data.created_at || nowFull,
-        updated_at: data.updated_at || nowFull,
+        created_at: data.created_at || now,
+        updated_at: data.updated_at || now,
         is_deleted: data.is_deleted || false,
     }
 }

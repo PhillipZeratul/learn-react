@@ -92,8 +92,7 @@ export class RoutineTimeTrackerService {
 
     static async toggleTracker(id: TimeTrackerCardId) {
         await this.ensureStateRecord()
-        const nowFull = new Date().toISOString() as IsoDateTime
-        const nowIso = getNowISO()
+        const now = getNowISO()
 
         const card = useTimeTrackerCardStore
             .getState()
@@ -105,8 +104,8 @@ export class RoutineTimeTrackerService {
             // Stop tracking
             const updatedCard = {
                 ...card,
-                end_at: nowIso,
-                updated_at: nowFull,
+                end_at: now,
+                updated_at: now,
             }
             useTimeTrackerCardStore.getState().upsert(updatedCard)
             await SyncService.save(timeTrackerCardConfig, updatedCard)
@@ -115,7 +114,7 @@ export class RoutineTimeTrackerService {
             const updatedCard = {
                 ...card,
                 end_at: null,
-                updated_at: nowFull,
+                updated_at: now,
             }
             useTimeTrackerCardStore.getState().upsert(updatedCard)
             await SyncService.save(timeTrackerCardConfig, updatedCard)

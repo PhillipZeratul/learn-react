@@ -27,19 +27,19 @@ export interface RoutineCard extends BaseModel {
 export const createRoutineCard = (
     data: Partial<RoutineCard> = {}
 ): RoutineCard => {
-    const nowFull = getNowISO()
+    const now = getNowISO()
     const currentUserId = useAuthStore.getState().user?.id as UserId
 
     return {
         id: data.id || (uuidv4() as RoutineCardId),
         title: data.title ?? "",
         description: data.description === undefined ? "" : data.description,
-        start_at: data.start_at || nowFull,
-        end_at: data.end_at || nowFull,
+        start_at: data.start_at || now,
+        end_at: data.end_at || now,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
         user_id: data.user_id || currentUserId,
-        created_at: data.created_at || nowFull,
-        updated_at: data.updated_at || nowFull,
+        created_at: data.created_at || now,
+        updated_at: data.updated_at || now,
         is_deleted: data.is_deleted || false,
         rrule: data.rrule,
         parent_routine_id: data.parent_routine_id,
