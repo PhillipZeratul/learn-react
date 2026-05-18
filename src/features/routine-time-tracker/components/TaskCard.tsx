@@ -117,6 +117,12 @@ export const TaskCard = memo(
                     Object.assign(container.style, {
                         transform: `translateY(${startMin * ppm + TOP_MARGIN}px)`,
                         height: `${totalHeight}px`,
+                        WebkitMaskImage: isCurrentlyTracking
+                            ? `linear-gradient(to bottom, black 0%, black ${height}px, transparent ${totalHeight}px)`
+                            : "",
+                        maskImage: isCurrentlyTracking
+                            ? `linear-gradient(to bottom, black 0%, black ${height}px, transparent ${totalHeight}px)`
+                            : "",
                     })
 
                     if (solidBgRef.current) {
@@ -192,9 +198,9 @@ export const TaskCard = memo(
         return (
             <div
                 ref={cardRef}
-                className={`${baseClasses} ${roundedTClass} ${roundedBClass} ${
-                    isDragging ? draggingClasses : idleClasses
-                }`}
+                className={`${baseClasses} ${roundedTClass} ${
+                    !isCurrentlyTracking || isDragging ? roundedBClass : ""
+                } ${isDragging ? draggingClasses : idleClasses}`}
                 data-start-clamped={isStartClamped}
                 data-end-clamped={isEndClamped}
                 role="button"
@@ -208,6 +214,14 @@ export const TaskCard = memo(
                     width: widthStyle,
                     zIndex: zIndexStyle,
                     willChange: willChangeStyle,
+                    WebkitMaskImage:
+                        isCurrentlyTracking && !isDragging
+                            ? `linear-gradient(to bottom, black 0%, black ${initialHeight}px, transparent ${initialTotalHeight}px)`
+                            : undefined,
+                    maskImage:
+                        isCurrentlyTracking && !isDragging
+                            ? `linear-gradient(to bottom, black 0%, black ${initialHeight}px, transparent ${initialTotalHeight}px)`
+                            : undefined,
                 }}
                 onMouseDown={onPress}
                 onTouchStart={onPress}
@@ -221,15 +235,15 @@ export const TaskCard = memo(
                         style={{ top: `${initialHeight}px` }}
                     >
                         <div
-                            className="absolute inset-x-0 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent"
+                            className="absolute inset-x-0 bg-primary/20"
                             style={{ height: "60px", top: 0 }}
                         />
-                        {/* Tag color gradient */}
+                        {/* Tag color (handled by global mask) */}
                         <div
                             className="absolute top-0 bottom-0 left-0 w-1.5 opacity-80"
                             style={{
                                 height: "60px",
-                                backgroundImage: `linear-gradient(to bottom, ${getTagColor(card.tag_id)}, transparent)`,
+                                backgroundColor: getTagColor(card.tag_id),
                             }}
                         />
                         {/* Scanning animation */}
