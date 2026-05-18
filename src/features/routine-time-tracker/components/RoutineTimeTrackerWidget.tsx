@@ -27,11 +27,15 @@ import {
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
+import { RoutineTimeTrackerService } from "../services/routine-time-tracker.service"
 import { RoutineEditor } from "./RoutineEditor"
 import { TimeTrackerEditor } from "./TimeTrackerEditor"
 import { getRoutineInstancesForDate } from "../utils/routine-expansion"
 import type { IsoDateTime } from "@/shared/models/base.model"
-import type { RoutineCardId } from "../models/routine-time-tracker.model"
+import type {
+    RoutineCardId,
+    TimeTrackerCardId,
+} from "../models/routine-time-tracker.model"
 import { AUTO_SWITCH_TO_TODAY_MS } from "@/features/settings/stores/settings.store"
 
 // Extracted components and utilities
@@ -75,8 +79,11 @@ export default function RoutineTimeTrackerWidget() {
     } = useRoutineCardStore()
 
     const { items: tags } = useTagStore()
+    const toggleTracker = async (id: TimeTrackerCardId) =>
+        RoutineTimeTrackerService.toggleTracker(id)
 
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
+
     const [now, setNow] = useState<Date | null>(null)
 
     useEffect(() => {
