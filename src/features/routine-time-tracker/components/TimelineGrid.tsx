@@ -5,24 +5,35 @@ import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 export const TimelineGrid = () => {
     const containerRef = useRef<HTMLDivElement>(null)
+    const elementsRef = useRef<{
+        lines: HTMLElement[]
+        labels: HTMLElement[]
+    } | null>(null)
 
     useEffect(() => {
         if (!containerRef.current) return
 
+        // Initial cache
+        const container = containerRef.current
+        elementsRef.current = {
+            lines: Array.from(
+                container.querySelectorAll<HTMLElement>(".grid-line")
+            ),
+            labels: Array.from(
+                container.querySelectorAll<HTMLElement>(".grid-time-label")
+            ),
+        }
+
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
-            const container = containerRef.current
-            if (!container) return
+            const cached = elementsRef.current
+            if (!cached) return
 
-            const lines = container.querySelectorAll<HTMLElement>(".grid-line")
-            const labels =
-                container.querySelectorAll<HTMLElement>(".grid-time-label")
-
-            lines.forEach((line, hour) => {
+            cached.lines.forEach((line, hour) => {
                 line.style.top = `${hour * 60 * ppm + TOP_MARGIN}px`
             })
 
-            labels.forEach((label, hour) => {
+            cached.labels.forEach((label, hour) => {
                 label.style.top = `${hour * 60 * ppm + TOP_MARGIN}px`
             })
         })

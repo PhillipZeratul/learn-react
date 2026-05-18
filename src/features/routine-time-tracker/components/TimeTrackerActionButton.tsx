@@ -46,7 +46,7 @@ export const TimeTrackerActionButton = ({
                     e.stopPropagation()
                     onAction()
                 }}
-                className={`pointer-events-auto flex items-center gap-1.5 rounded-full px-4 py-2 text-[10px] font-bold shadow-lg transition-all active:scale-95 ${
+                className={`pointer-events-auto flex items-center gap-1.5 rounded-full px-4 py-2 text-[10px] font-bold shadow-lg transition-[background-color,color,transform] active:scale-95 ${
                     activeTimeTrackerId
                         ? "text-destructive-foreground bg-destructive shadow-destructive/20 hover:bg-destructive/90"
                         : "bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90"

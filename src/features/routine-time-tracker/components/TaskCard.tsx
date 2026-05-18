@@ -128,7 +128,7 @@ export const TaskCard = memo(
 
         const baseClasses = `task-card absolute border border-border px-3 pointer-events-auto overflow-hidden flex flex-col justify-center bg-card/60`
         const idleClasses =
-            "transition-all hover:shadow-md cursor-pointer shadow-sm"
+            "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm"
         const draggingClasses =
             "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm"
 
