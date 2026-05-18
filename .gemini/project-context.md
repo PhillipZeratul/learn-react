@@ -3,8 +3,23 @@
 ## General Instructions
 
 - **Always use 'bun', not 'npm'.**
-    - Dry run compile with "bun run tsc -p tsconfig.app.json --noEmit && bun run tsc -p tsconfig.node.json --noEmit && bun run tsc -p tsconfig.test.json --noEmit"
 - Respond and code in English.
+
+1. Make changes.
+
+2. Typecheck (fast)
+bun run typecheck
+
+3. Run tests
+bun run test -- -t "test name" # Single suite
+bun run test:file -- "glob" # Specific files
+
+4. Lint
+bun run lint:file -- "file1.ts" # Specific files
+bun run lint # All files
+
+5. Dry run build
+bun run tsc -p tsconfig.app.json --noEmit && bun run tsc -p tsconfig.node.json --noEmit && bun run tsc -p tsconfig.test.json --noEmit
 
 ## TypeScript & Typing Strictness
 
