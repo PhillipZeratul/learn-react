@@ -162,8 +162,6 @@ export default function RoutineTimeTrackerWidget() {
 
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const timelineContainerRef = useRef<HTMLDivElement>(null)
-    const zoomSliderRef = useRef<HTMLInputElement>(null)
-    const zoomLabelRef = useRef<HTMLSpanElement>(null)
 
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const lastTouchPos = useRef<{ x: number; y: number } | null>(null)
@@ -174,16 +172,9 @@ export default function RoutineTimeTrackerWidget() {
     useEffect(() => {
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
-            const zoom = zoomLevelSignal.value
 
             if (timelineContainerRef.current) {
                 timelineContainerRef.current.style.height = `${24 * 60 * ppm + BOTTOM_MARGIN}px`
-            }
-            if (zoomSliderRef.current) {
-                zoomSliderRef.current.value = zoom.toString()
-            }
-            if (zoomLabelRef.current) {
-                zoomLabelRef.current.textContent = `${zoom.toFixed(1)}x`
             }
         })
         return () => dispose()
@@ -723,61 +714,9 @@ export default function RoutineTimeTrackerWidget() {
         }
     }
 
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const nextZoom = parseFloat(e.target.value)
-        const container = scrollContainerRef.current
-        if (!container) {
-            zoomLevelSignal.value = nextZoom
-            return
-        }
-
-        const oldZoom = zoomLevelSignal.value
-        if (oldZoom === nextZoom) return
-
-        const s1 = container.scrollTop
-        const focalYViewport = container.clientHeight / 2
-
-        // Apply new zoom
-        zoomLevelSignal.value = nextZoom
-
-        // Adjust scroll position to keep center fixed
-        const nextScrollTop =
-            (s1 + focalYViewport - TOP_MARGIN) * (nextZoom / oldZoom) +
-            TOP_MARGIN -
-            focalYViewport
-
-        container.scrollTop = nextScrollTop
-    }
-
     return (
         <div className="relative flex h-full w-full flex-col overflow-hidden">
-            <div className="flex items-center justify-between border-b bg-card px-4 py-2">
-                <DateNavigator
-                    date={currentDate}
-                    onDateChange={setCurrentDate}
-                />
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-                        Zoom
-                    </span>
-                    <input
-                        ref={zoomSliderRef}
-                        type="range"
-                        min="1"
-                        max="6"
-                        step="0.1"
-                        defaultValue={zoomLevelSignal.peek()}
-                        onChange={handleSliderChange}
-                        className="h-1 w-20 cursor-pointer appearance-none rounded-lg bg-muted accent-primary"
-                    />
-                    <span
-                        ref={zoomLabelRef}
-                        className="w-8 text-right font-mono text-[10px] font-bold text-muted-foreground"
-                    >
-                        {zoomLevelSignal.peek().toFixed(1)}x
-                    </span>
-                </div>
-            </div>
+            <DateNavigator date={currentDate} onDateChange={setCurrentDate} />
 
             <div
                 ref={scrollContainerRef}
