@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
-import { batch } from "@preact/signals-react"
+import { batch, effect } from "@preact/signals-react"
 import { v4 as uuidv4 } from "uuid"
 import {
     createRoutineCard,
@@ -160,10 +160,33 @@ export default function RoutineTimeTrackerWidget() {
     useBackAction(() => setConfirmDragState(null), !!confirmDragState)
 
     const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const timelineContainerRef = useRef<HTMLDivElement>(null)
+    const zoomSliderRef = useRef<HTMLInputElement>(null)
+    const zoomLabelRef = useRef<HTMLSpanElement>(null)
+
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const lastTouchPos = useRef<{ x: number; y: number } | null>(null)
     const wasDragged = useRef(false)
     const lastBackgroundTime = useRef<number | null>(null)
+
+    // Synchronize zoom signal with DOM elements to avoid React re-renders
+    useEffect(() => {
+        const dispose = effect(() => {
+            const ppm = pixelsPerMinuteSignal.value
+            const zoom = zoomLevelSignal.value
+
+            if (timelineContainerRef.current) {
+                timelineContainerRef.current.style.height = `${24 * 60 * ppm + BOTTOM_MARGIN}px`
+            }
+            if (zoomSliderRef.current) {
+                zoomSliderRef.current.value = zoom.toString()
+            }
+            if (zoomLabelRef.current) {
+                zoomLabelRef.current.textContent = `${zoom.toFixed(1)}x`
+            }
+        })
+        return () => dispose()
+    }, [])
 
     // Scroll to current time on mount and focus
     const scrollToCurrentTime = useCallback(() => {
@@ -681,7 +704,35 @@ export default function RoutineTimeTrackerWidget() {
 
     return (
         <div className="relative flex h-full w-full flex-col overflow-hidden">
-            <DateNavigator date={currentDate} onDateChange={setCurrentDate} />
+            <div className="flex items-center justify-between border-b bg-card px-4 py-2">
+                <DateNavigator
+                    date={currentDate}
+                    onDateChange={setCurrentDate}
+                />
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+                        Zoom
+                    </span>
+                    <input
+                        ref={zoomSliderRef}
+                        type="range"
+                        min="1"
+                        max="3"
+                        step="0.1"
+                        defaultValue={zoomLevelSignal.peek()}
+                        onChange={(e) =>
+                            (zoomLevelSignal.value = parseFloat(e.target.value))
+                        }
+                        className="h-1 w-20 cursor-pointer appearance-none rounded-lg bg-muted accent-primary"
+                    />
+                    <span
+                        ref={zoomLabelRef}
+                        className="w-8 text-right font-mono text-[10px] font-bold text-muted-foreground"
+                    >
+                        {zoomLevelSignal.peek().toFixed(1)}x
+                    </span>
+                </div>
+            </div>
 
             <div
                 ref={scrollContainerRef}
@@ -697,9 +748,10 @@ export default function RoutineTimeTrackerWidget() {
                 aria-label="Daily timeline grid"
             >
                 <div
+                    ref={timelineContainerRef}
                     className="pointer-events-none relative mx-auto w-full max-w-2xl"
                     style={{
-                        height: `${24 * 60 * pixelsPerMinuteSignal.value + BOTTOM_MARGIN}px`,
+                        height: `${24 * 60 * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
                     }}
                 >
                     <TimelineGrid />
