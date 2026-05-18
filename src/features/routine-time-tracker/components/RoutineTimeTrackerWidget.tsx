@@ -766,6 +766,9 @@ export default function RoutineTimeTrackerWidget() {
                                 onAction={handleTimeTrackerAction}
                                 isCurrentDay={isCurrentDay}
                                 currentTime={now}
+                                hasActiveTasks={allTimeTrackerCards.some(
+                                    (c) => c.end_at === null && !c.is_deleted
+                                )}
                             />
                         </div>
 
