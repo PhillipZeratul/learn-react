@@ -116,7 +116,7 @@ export const TaskCard = memo(
 
                     Object.assign(container.style, {
                         transform: `translateY(${startMin * ppm + TOP_MARGIN}px)`,
-                        height: `${height}px`,
+                        height: `${totalHeight}px`,
                     })
 
                     if (solidBgRef.current) {
@@ -129,7 +129,7 @@ export const TaskCard = memo(
 
                     if (contentWrapperRef.current) {
                         Object.assign(contentWrapperRef.current.style, {
-                            height: `${height}px`,
+                            height: `${totalHeight}px`,
                             paddingTop: showTime ? "0.5rem" : "0",
                             paddingBottom: showTime ? "0.5rem" : "0",
                         })
@@ -161,7 +161,7 @@ export const TaskCard = memo(
             }
         }
 
-        const baseClasses = `task-card absolute px-3 pointer-events-auto flex flex-col justify-start`
+        const baseClasses = `task-card absolute pointer-events-auto flex flex-col justify-start overflow-hidden`
         const idleClasses =
             "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm"
         const draggingClasses =
@@ -192,7 +192,7 @@ export const TaskCard = memo(
         return (
             <div
                 ref={cardRef}
-                className={`${baseClasses} ${
+                className={`${baseClasses} ${roundedTClass} ${roundedBClass} ${
                     isDragging ? draggingClasses : idleClasses
                 }`}
                 data-start-clamped={isStartClamped}
@@ -217,11 +217,11 @@ export const TaskCard = memo(
                 {isCurrentlyTracking && !isDragging && (
                     <div
                         ref={ghostBgRef}
-                        className="pointer-events-none absolute inset-x-0 h-[60px] overflow-visible"
+                        className="pointer-events-none absolute inset-x-0 h-[60px]"
                         style={{ top: `${initialHeight}px` }}
                     >
                         <div
-                            className={`absolute inset-x-0 border-x border-b border-dashed border-primary/40 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent ${roundedBClass}`}
+                            className="absolute inset-x-0 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent"
                             style={{ height: "60px", top: 0 }}
                         />
                         {/* Tag color gradient */}
@@ -242,10 +242,8 @@ export const TaskCard = memo(
                     ref={solidBgRef}
                     className={`absolute inset-x-0 top-0 ${
                         isCurrentlyTracking
-                            ? "border-2 border-primary bg-card/90"
+                            ? "bg-card/90"
                             : "border border-border bg-card/60"
-                    } shadow-md ${roundedTClass} ${
-                        !isCurrentlyTracking || isDragging ? roundedBClass : ""
                     }`}
                     style={{
                         height: isDragging ? undefined : `${initialHeight}px`,
@@ -255,20 +253,23 @@ export const TaskCard = memo(
                 {/* Content Wrapper */}
                 <div
                     ref={contentWrapperRef}
-                    className={`relative z-10 flex w-full flex-col justify-center ${
+                    className={`absolute inset-x-0 top-0 z-10 flex flex-col justify-center px-3 ${
                         !isDragging && initialShowTime ? "py-2" : "py-0"
                     }`}
                     style={{
-                        height: isDragging ? undefined : `${initialHeight}px`,
+                        height: isDragging
+                            ? undefined
+                            : `${initialTotalHeight}px`,
                     }}
                 >
                     <div
-                        className={`absolute top-0 bottom-0 left-0 z-10 w-1.5 ${roundedTClass} ${
-                            !isCurrentlyTracking || isDragging
-                                ? roundedBClass
-                                : ""
-                        }`}
-                        style={{ backgroundColor: getTagColor(card.tag_id) }}
+                        className="absolute top-0 bottom-0 left-0 z-10 w-1.5"
+                        style={{
+                            backgroundColor: getTagColor(card.tag_id),
+                            height: isDragging
+                                ? undefined
+                                : `${initialTotalHeight}px`,
+                        }}
                     />
                     <div
                         ref={titleRef}
