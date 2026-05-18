@@ -256,29 +256,46 @@ export default function RoutineTimeTrackerWidget() {
         if (!scrollContainerRef.current) return
         const container = scrollContainerRef.current
 
-        console.log("SyncService: Zoom listeners attached to container.")
-
         let initialTouchDistance = 0
         let initialZoom = 1
+
+        const updateZoom = (nextZoom: number, focalYViewport: number) => {
+            const oldZoom = zoomLevelSignal.value
+            if (oldZoom === nextZoom) return
+
+            const s1 = container.scrollTop
+
+            // Apply new zoom
+            zoomLevelSignal.value = nextZoom
+
+            // Adjust scroll position to keep focal point fixed relative to the viewport
+            // s2 = (s1 + y - TOP_MARGIN) * (z2 / z1) + TOP_MARGIN - y
+            const nextScrollTop =
+                (s1 + focalYViewport - TOP_MARGIN) * (nextZoom / oldZoom) +
+                TOP_MARGIN -
+                focalYViewport
+
+            container.scrollTop = nextScrollTop
+        }
 
         const handleWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault()
-                // Smooth multiplier for trackpad and mouse wheel
+                const rect = container.getBoundingClientRect()
+                const focalYViewport = e.clientY - rect.top
+
                 const delta = -e.deltaY * 0.005
                 const nextZoom = Math.max(
                     1,
                     Math.min(3, zoomLevelSignal.value + delta)
                 )
-                zoomLevelSignal.value = nextZoom
-                console.log(`SyncService: [WHEEL ZOOM] ${nextZoom.toFixed(2)}x`)
+                updateZoom(nextZoom, focalYViewport)
             }
         }
 
         const handleGestureStart = (e: Event) => {
             e.preventDefault()
             initialZoom = zoomLevelSignal.value
-            console.log("SyncService: [GESTURE START]")
         }
 
         const handleGestureChange = (e: Event) => {
@@ -288,8 +305,10 @@ export default function RoutineTimeTrackerWidget() {
                 1,
                 Math.min(3, initialZoom * gestureEvent.scale)
             )
-            zoomLevelSignal.value = nextZoom
-            console.log(`SyncService: [GESTURE ZOOM] ${nextZoom.toFixed(2)}x`)
+
+            // For Safari gestures, use center of container as focal point
+            const focalYViewport = container.clientHeight / 2
+            updateZoom(nextZoom, focalYViewport)
         }
 
         const handleTouchStart = (e: TouchEvent) => {
@@ -299,7 +318,6 @@ export default function RoutineTimeTrackerWidget() {
                     e.touches[0].clientY - e.touches[1].clientY
                 )
                 initialZoom = zoomLevelSignal.value
-                console.log("SyncService: [TOUCH ZOOM START]")
             }
         }
 
@@ -310,16 +328,20 @@ export default function RoutineTimeTrackerWidget() {
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 )
+
+                const rect = container.getBoundingClientRect()
+                const pinchCenterY =
+                    (e.touches[0].clientY + e.touches[1].clientY) / 2
+                const focalYViewport = pinchCenterY - rect.top
+
                 const scale = currentDistance / initialTouchDistance
                 const nextZoom = Math.max(1, Math.min(3, initialZoom * scale))
-                zoomLevelSignal.value = nextZoom
-                console.log(`SyncService: [TOUCH ZOOM] ${nextZoom.toFixed(2)}x`)
+                updateZoom(nextZoom, focalYViewport)
             }
         }
 
         const handleDoubleClick = () => {
             zoomLevelSignal.value = 1
-            console.log("SyncService: [ZOOM RESET]")
         }
 
         container.addEventListener("wheel", handleWheel, { passive: false })
@@ -332,7 +354,6 @@ export default function RoutineTimeTrackerWidget() {
         container.addEventListener("gesturechange", handleGestureChange)
 
         return () => {
-            console.log("SyncService: Zoom listeners detached.")
             container.removeEventListener("wheel", handleWheel)
             container.removeEventListener("touchstart", handleTouchStart)
             container.removeEventListener("touchmove", handleTouchMove)
@@ -709,6 +730,32 @@ export default function RoutineTimeTrackerWidget() {
         }
     }
 
+    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const nextZoom = parseFloat(e.target.value)
+        const container = scrollContainerRef.current
+        if (!container) {
+            zoomLevelSignal.value = nextZoom
+            return
+        }
+
+        const oldZoom = zoomLevelSignal.value
+        if (oldZoom === nextZoom) return
+
+        const s1 = container.scrollTop
+        const focalYViewport = container.clientHeight / 2
+
+        // Apply new zoom
+        zoomLevelSignal.value = nextZoom
+
+        // Adjust scroll position to keep center fixed
+        const nextScrollTop =
+            (s1 + focalYViewport - TOP_MARGIN) * (nextZoom / oldZoom) +
+            TOP_MARGIN -
+            focalYViewport
+
+        container.scrollTop = nextScrollTop
+    }
+
     return (
         <div className="relative flex h-full w-full flex-col overflow-hidden">
             <div className="flex items-center justify-between border-b bg-card px-4 py-2">
@@ -727,9 +774,7 @@ export default function RoutineTimeTrackerWidget() {
                         max="3"
                         step="0.1"
                         defaultValue={zoomLevelSignal.peek()}
-                        onChange={(e) =>
-                            (zoomLevelSignal.value = parseFloat(e.target.value))
-                        }
+                        onChange={handleSliderChange}
                         className="h-1 w-20 cursor-pointer appearance-none rounded-lg bg-muted accent-primary"
                     />
                     <span
