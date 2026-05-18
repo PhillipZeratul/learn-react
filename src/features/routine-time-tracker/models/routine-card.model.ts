@@ -9,7 +9,7 @@ import type {
 } from "@/shared/models/base.model"
 import { useRoutineCardStore } from "../stores/routine-card.store"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
-import { getMinuteNow } from "../utils/utils"
+import { getNowISO } from "../utils/utils"
 
 export interface RoutineCard extends BaseModel {
     id: RoutineCardId
@@ -27,16 +27,15 @@ export interface RoutineCard extends BaseModel {
 export const createRoutineCard = (
     data: Partial<RoutineCard> = {}
 ): RoutineCard => {
-    const nowFull = new Date().toISOString() as IsoDateTime
-    const nowMin = getMinuteNow()
+    const nowFull = getNowISO()
     const currentUserId = useAuthStore.getState().user?.id as UserId
 
     return {
         id: data.id || (uuidv4() as RoutineCardId),
         title: data.title ?? "",
         description: data.description === undefined ? "" : data.description,
-        start_at: data.start_at || nowMin,
-        end_at: data.end_at || nowMin,
+        start_at: data.start_at || nowFull,
+        end_at: data.end_at || nowFull,
         tag_id: data.tag_id || DEFAULT_TAG_ID,
         user_id: data.user_id || currentUserId,
         created_at: data.created_at || nowFull,

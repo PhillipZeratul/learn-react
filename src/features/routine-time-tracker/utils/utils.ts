@@ -10,13 +10,6 @@ export const getNowISO = (): IsoDateTime => {
     return new Date().toISOString() as IsoDateTime
 }
 
-export const getMinuteNow = (): IsoDateTime => {
-    const rounded = new Date()
-    rounded.setSeconds(0, 0)
-    rounded.setMilliseconds(0)
-    return rounded.toISOString() as IsoDateTime
-}
-
 export const formatLocalDate = (date: Date): string => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, "0")
