@@ -65,6 +65,8 @@ export const TaskCard = memo(
                     Object.assign(container.style, {
                         transform: `translateY(${top}px) scale(1.02)`,
                         height: `${dragHeight}px`,
+                        webkitMaskImage: "",
+                        maskImage: "",
                     })
 
                     if (solidBgRef.current) {
@@ -168,21 +170,24 @@ export const TaskCard = memo(
         }
 
         const baseClasses = `task-card absolute pointer-events-auto flex flex-col justify-start overflow-hidden`
-        const idleClasses =
-            "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm"
+        const idleClasses = isCurrentlyTracking
+            ? "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm"
+            : "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm border border-border bg-card/60"
         const draggingClasses =
             "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm rounded-xl"
 
         const roundedTClass = !isStartClamped ? "rounded-t-xl" : ""
         const roundedBClass = !isEndClamped ? "rounded-b-xl" : ""
+        const currentRounding = `${roundedTClass} ${
+            !isCurrentlyTracking || isDragging ? roundedBClass : ""
+        }`
 
         const ppm = pixelsPerMinuteSignal.peek()
         const initialHeight = duration * ppm
         const initialTotalHeight = isCurrentlyTracking
-            ? initialHeight + GHOST_EXTENSION_PX
+            ? Math.max(initialHeight, 1) + GHOST_EXTENSION_PX
             : initialHeight
         const initialTransform = `translateY(${startMin * ppm + TOP_MARGIN}px)`
-        const initialShowTitle = initialHeight >= SHOW_CARD_TITLE_HEIGHT
         const initialShowTime = initialHeight >= SHOW_CARD_TIME_HEIGHT
 
         const defaultLeft = layout ? layout.left : "0.5rem"
@@ -198,9 +203,9 @@ export const TaskCard = memo(
         return (
             <div
                 ref={cardRef}
-                className={`${baseClasses} ${roundedTClass} ${
-                    !isCurrentlyTracking || isDragging ? roundedBClass : ""
-                } ${isDragging ? draggingClasses : idleClasses}`}
+                className={`${baseClasses} ${currentRounding} ${
+                    isDragging ? draggingClasses : idleClasses
+                }`}
                 data-start-clamped={isStartClamped}
                 data-end-clamped={isEndClamped}
                 role="button"
@@ -251,13 +256,11 @@ export const TaskCard = memo(
                     </div>
                 )}
 
-                {/* Solid Background Layer */}
+                {/* Solid Background Layer (Only active for tracking tasks) */}
                 <div
                     ref={solidBgRef}
                     className={`absolute inset-x-0 top-0 ${
-                        isCurrentlyTracking
-                            ? "bg-card/90"
-                            : "border border-border bg-card/60"
+                        isCurrentlyTracking ? "bg-card/90" : "bg-transparent"
                     }`}
                     style={{
                         height: isDragging ? undefined : `${initialHeight}px`,
@@ -288,7 +291,7 @@ export const TaskCard = memo(
                     <div
                         ref={titleRef}
                         className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
-                            initialShowTitle || isDragging ? "block" : "none"
+                            isDragging ? "block" : "none"
                         } ${initialShowTime ? "leading-tight" : "leading-none"}`}
                     >
                         {card.title || getTagName(card.tag_id)}
@@ -296,7 +299,7 @@ export const TaskCard = memo(
                     <div
                         ref={timeRef}
                         className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
-                            initialShowTime || isDragging ? "block" : "none"
+                            isDragging ? "block" : "none"
                         }`}
                     >
                         {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
