@@ -43,6 +43,7 @@ export const TaskCard = memo(
         const solidBgRef = useRef<HTMLDivElement>(null)
         const ghostBgRef = useRef<HTMLDivElement>(null)
         const contentWrapperRef = useRef<HTMLDivElement>(null)
+        const tagStripeRef = useRef<HTMLDivElement>(null)
 
         const { startMin, duration, isStartClamped, isEndClamped } =
             getVisualBoundsForDate(card.start_at, card.end_at, currentDate)
@@ -79,6 +80,10 @@ export const TaskCard = memo(
                             paddingTop: showTime ? "0.5rem" : "0",
                             paddingBottom: showTime ? "0.5rem" : "0",
                         })
+                    }
+
+                    if (tagStripeRef.current) {
+                        tagStripeRef.current.style.height = `${dragHeight}px`
                     }
 
                     if (titleRef.current) {
@@ -141,6 +146,10 @@ export const TaskCard = memo(
                             paddingTop: showTime ? "0.5rem" : "0",
                             paddingBottom: showTime ? "0.5rem" : "0",
                         })
+                    }
+
+                    if (tagStripeRef.current) {
+                        tagStripeRef.current.style.height = `${totalHeight}px`
                     }
 
                     if (titleRef.current) {
@@ -280,6 +289,7 @@ export const TaskCard = memo(
                     }}
                 >
                     <div
+                        ref={tagStripeRef}
                         className="absolute top-0 bottom-0 left-0 z-10 w-1.5"
                         style={{
                             backgroundColor: getTagColor(card.tag_id),
