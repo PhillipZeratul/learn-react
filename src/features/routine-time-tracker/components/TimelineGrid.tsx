@@ -56,14 +56,12 @@ export const TimelineGrid = () => {
 
             // 2. Update Half-Hour Markers (Visible if zoom > 2x)
             const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
-            cached.halfLines.forEach((line, i) => {
-                const hour = Math.floor(i)
+            cached.halfLines.forEach((line, hour) => {
                 line.style.top = `${(hour * 60 + 30) * ppm + TOP_MARGIN}px`
                 line.style.opacity = halfOpacity.toString()
                 line.style.display = halfOpacity > 0 ? "block" : "none"
             })
-            cached.halfLabels.forEach((label, i) => {
-                const hour = Math.floor(i)
+            cached.halfLabels.forEach((label, hour) => {
                 label.style.top = `${(hour * 60 + 30) * ppm + TOP_MARGIN}px`
                 label.style.opacity = halfOpacity.toString()
                 label.style.display = halfOpacity > 0 ? "block" : "none"
@@ -71,25 +69,18 @@ export const TimelineGrid = () => {
 
             // 3. Update 10-Minute Markers (Visible if zoom > 4x)
             const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
+            const tenMins = [10, 20, 40, 50]
             cached.tenLines.forEach((line, i) => {
-                const hour = Math.floor(i / 5)
-                const tenMin = ((i % 5) + 1) * 10
-                if (tenMin === 30) {
-                    line.style.display = "none"
-                    return
-                }
-                line.style.top = `${(hour * 60 + tenMin) * ppm + TOP_MARGIN}px`
+                const hour = Math.floor(i / 4)
+                const minute = tenMins[i % 4]
+                line.style.top = `${(hour * 60 + minute) * ppm + TOP_MARGIN}px`
                 line.style.opacity = tenOpacity.toString()
                 line.style.display = tenOpacity > 0 ? "block" : "none"
             })
             cached.tenLabels.forEach((label, i) => {
-                const hour = Math.floor(i / 5)
-                const tenMin = ((i % 5) + 1) * 10
-                if (tenMin === 30) {
-                    label.style.display = "none"
-                    return
-                }
-                label.style.top = `${(hour * 60 + tenMin) * ppm + TOP_MARGIN}px`
+                const hour = Math.floor(i / 4)
+                const minute = tenMins[i % 4]
+                label.style.top = `${(hour * 60 + minute) * ppm + TOP_MARGIN}px`
                 label.style.opacity = tenOpacity.toString()
                 label.style.display = tenOpacity > 0 ? "block" : "none"
             })
@@ -118,7 +109,7 @@ export const TimelineGrid = () => {
                 />
             ))}
 
-            {[...Array(24 * 6)].map((_, i) => (
+            {[...Array(24 * 4)].map((_, i) => (
                 <div
                     key={`grid-line-ten-${i}`}
                     className="grid-line-ten absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/10"
@@ -158,10 +149,9 @@ export const TimelineGrid = () => {
                     ))}
 
                     {/* 10-Minute Labels */}
-                    {[...Array(24 * 6)].map((_, i) => {
-                        const hour = Math.floor(i / 5)
-                        const tenMin = ((i % 5) + 1) * 10
-                        if (tenMin === 30) return null
+                    {[...Array(24 * 4)].map((_, i) => {
+                        const hour = Math.floor(i / 4)
+                        const minute = [10, 20, 40, 50][i % 4]
                         return (
                             <div
                                 key={`grid-time-label-ten-${i}`}
@@ -169,7 +159,7 @@ export const TimelineGrid = () => {
                             >
                                 <span className="pointer-events-auto bg-background px-1 tabular-nums">
                                     {String(hour).padStart(2, "0")}:
-                                    {String(tenMin).padStart(2, "0")}
+                                    {String(minute).padStart(2, "0")}
                                 </span>
                             </div>
                         )
