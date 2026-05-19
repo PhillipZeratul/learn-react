@@ -135,16 +135,25 @@ export { book }
 export function generateCSS() {
     const css = new Renderer(book, "css-variables").render()
 
-    const clean = (scopeName: string) => {
-        return css
-            .split("\n")
-            .filter((line) => line.includes(`--${scopeName}-`))
-            .map((line) => line.replace(`--${scopeName}-`, "--").trim())
+    const lines = css
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith("--"))
+
+    // 1. Keep values exactly as they are (including --values- prefix)
+    const valuesVars = lines.filter((l) => l.startsWith("--values-")).join("\n")
+
+    // 2. Extract semantic vars and strip the scope prefix (light- or dark-)
+    const extractSemantic = (scopeName: string) => {
+        return lines
+            .filter((l) => l.startsWith(`--${scopeName}-`))
+            .map((l) => l.replace(`--${scopeName}-`, "--"))
             .join("\n")
     }
 
     return {
-        light: clean("light"),
-        dark: clean("dark"),
+        values: valuesVars,
+        light: extractSemantic("light"),
+        dark: extractSemantic("dark"),
     }
 }

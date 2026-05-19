@@ -52,8 +52,9 @@ function applyDesignBookTheme(theme: ResolvedTheme) {
         document.head.appendChild(styleEl)
     }
 
-    const css = theme === "dark" ? designBookCSS.dark : designBookCSS.light
-    styleEl.textContent = `:root {\n${css}\n}`
+    const themeVars =
+        theme === "dark" ? designBookCSS.dark : designBookCSS.light
+    styleEl.textContent = `:root {\n${designBookCSS.values}\n${themeVars}\n}`
 }
 
 function disableTransitionsTemporarily() {
