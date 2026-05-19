@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
+import { generateCSS } from "@/lib/design-book"
 
 type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
@@ -37,6 +38,22 @@ function getSystemTheme(): ResolvedTheme {
     }
 
     return "light"
+}
+
+const designBookCSS = generateCSS()
+
+function applyDesignBookTheme(theme: ResolvedTheme) {
+    let styleEl = document.getElementById(
+        "design-book-vars"
+    ) as HTMLStyleElement
+    if (!styleEl) {
+        styleEl = document.createElement("style")
+        styleEl.id = "design-book-vars"
+        document.head.appendChild(styleEl)
+    }
+
+    const css = theme === "dark" ? designBookCSS.dark : designBookCSS.light
+    styleEl.textContent = `:root {\n${css}\n}`
 }
 
 function disableTransitionsTemporarily() {
@@ -112,6 +129,8 @@ export function ThemeProvider({
 
             root.classList.remove("light", "dark")
             root.classList.add(resolvedTheme)
+
+            applyDesignBookTheme(resolvedTheme)
 
             if (restoreTransitions) {
                 restoreTransitions()
