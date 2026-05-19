@@ -1,3 +1,7 @@
+if (import.meta.env.DEV) {
+    await import("react-grab")
+}
+
 import { createRoot } from "react-dom/client"
 import "@preact/signals-react/runtime"
 import "./index.css"

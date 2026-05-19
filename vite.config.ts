@@ -22,7 +22,7 @@ const isCapacitor =
 export default defineConfig({
     plugins: [react(), tailwindcss(), basicSsl()],
     optimizeDeps: {
-        exclude: ["@sqlite.org/sqlite-wasm"],
+        exclude: ["@sqlite.org/sqlite-wasm", "react-grab"],
     },
     server: {
         headers: {
