@@ -129,11 +129,10 @@ export const LinkIndicator = ({
     return (
         <div
             ref={containerRef}
-            className="pointer-events-none absolute z-40"
+            className="pointer-events-none absolute z-[60]"
             style={{ transform: "translate(-50%, -50%)" }}
         >
             <div className="link-chain-container linked">
-                <div className="link-chain-glow" />
                 <div className="link-chain-half top-half" />
                 <div className="link-chain-half bottom-half" />
             </div>
