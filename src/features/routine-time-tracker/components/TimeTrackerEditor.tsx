@@ -144,7 +144,7 @@ export const TimeTrackerEditor = ({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
+        <div className="fixed inset-0 z-[100] flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
             <div className="max-sm w-full animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95">
                 <h3 className="mb-4 text-lg font-semibold text-foreground">
                     {isNew ? "New Tracking Task" : "Time Tracker"}

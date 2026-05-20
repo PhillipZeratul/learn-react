@@ -122,7 +122,7 @@ export const TagEditorDialog = ({
     }
 
     return (
-        <div className="fixed inset-0 z-60 flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-xs duration-200 fade-in">
+        <div className="fixed inset-0 z-[110] flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-xs duration-200 fade-in">
             <div className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95">
                 <h3 className="mb-4 text-lg font-semibold text-foreground">
                     {tag ? "Edit Tag" : "Add Tag"}

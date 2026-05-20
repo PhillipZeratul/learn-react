@@ -36,7 +36,7 @@ export default function App() {
             </div>
 
             {isSyncing && (
-                <div className="fixed bottom-6 left-6 z-50 flex animate-in items-center gap-2 rounded-full border border-border bg-background/60 px-3 py-1.5 shadow-lg backdrop-blur-md duration-300 fade-in slide-in-from-bottom-2">
+                <div className="fixed bottom-6 left-6 z-[100] flex animate-in items-center gap-2 rounded-full border border-border bg-background/60 px-3 py-1.5 shadow-lg backdrop-blur-md duration-300 fade-in slide-in-from-bottom-2">
                     <div className="size-3 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
                     <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                         Syncing

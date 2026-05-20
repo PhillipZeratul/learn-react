@@ -12,7 +12,7 @@ export const SettingsMenu = ({ onClose }: SettingsMenuProps) => {
     useBackAction(onClose, true)
 
     return (
-        <div className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
+        <div className="fixed inset-0 z-[100] flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
             <div className="flex max-h-[90vh] w-full max-w-md animate-in flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl duration-200 zoom-in-95">
                 <div className="flex items-center justify-between border-b bg-muted/30 p-4">
                     <h2 className="font-heading text-xl font-semibold text-foreground">

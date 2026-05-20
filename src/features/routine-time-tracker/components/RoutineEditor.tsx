@@ -190,7 +190,7 @@ export const RoutineEditor = memo(
         }
 
         return (
-            <div className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in">
+            <div className="fixed inset-0 z-[100] flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in">
                 <div
                     className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                     style={{
@@ -382,7 +382,7 @@ export const RoutineEditor = memo(
                 </div>
 
                 {confirmAction && (
-                    <div className="fixed inset-0 z-[60] flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-[4px] duration-200 fade-in">
+                    <div className="fixed inset-0 z-[110] flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-[4px] duration-200 fade-in">
                         <div
                             className="w-full max-w-[280px] animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                             style={{
