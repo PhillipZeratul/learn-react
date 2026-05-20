@@ -105,8 +105,8 @@ export const LinkIndicator = ({
             const pos = computePosition() // reads signals → auto-subscribed
             const el = containerRef.current
             if (!el || !pos) return
-            el.style.top = `${pos.top}px`
-            el.style.left = `${pos.leftPct}%`
+            el.style.top = `calc(${pos.top}px - 7px)`
+            el.style.left = `calc(${pos.leftPct}% - 7px)`
         })
         return dispose
     }, [computePosition])
@@ -127,11 +127,7 @@ export const LinkIndicator = ({
     }, [isLinked, onAnimationDone])
 
     return (
-        <div
-            ref={containerRef}
-            className="pointer-events-none absolute z-[60]"
-            style={{ transform: "translate(-50%, -50%)" }}
-        >
+        <div ref={containerRef} className="pointer-events-none absolute">
             <div className="link-chain-container linked">
                 <div className="link-ring-half left-half" />
                 <div className="link-ring-half right-half" />
