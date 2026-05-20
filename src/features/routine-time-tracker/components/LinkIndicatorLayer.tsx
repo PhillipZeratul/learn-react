@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import { getVisualBoundsForDate, TOP_MARGIN } from "../utils/utils"
 import { dragOverridesSignal } from "../stores/drag.store"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
@@ -9,111 +9,117 @@ import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 interface LinkIndicatorLayerProps {
     cards: Array<RoutineCard | TimeTrackerCard>
     currentDate: Date | null
+    layoutMap: Map<string, { left: string; width: string }>
 }
 
 interface KnownLink {
     id: string
-    top: number
+    cardAId: string
+    cardBId: string
 }
 
 /**
- * Computes the set of currently active link boundaries from the cards' visual
- * positions, reading live drag overrides and zoom level.
+ * Determine which card-pairs share a visual boundary right now.
+ * Uses peek() so this does NOT subscribe to signals (called during render).
  */
-function computeActiveLinks(
+function computeActiveBoundaries(
     cards: Array<RoutineCard | TimeTrackerCard>,
-    currentDate: Date,
-    ppm: number
-): Map<string, number> {
+    currentDate: Date
+): Set<string> {
+    const ppm = pixelsPerMinuteSignal.peek()
+    const overrides = dragOverridesSignal.peek()
+
     const bounds = cards.map((c) => {
         const { startMin, duration } = getVisualBoundsForDate(
             c.start_at,
             c.end_at,
             currentDate
         )
-        const override = dragOverridesSignal.value[c.id]
-        const top = override ? override.top : startMin * ppm + TOP_MARGIN
-        const height = override ? override.height : duration * ppm
+        const ov = overrides[c.id]
+        const top = ov ? ov.top : startMin * ppm + TOP_MARGIN
+        const height = ov ? ov.height : duration * ppm
         return { id: c.id, top, bottom: top + height }
     })
 
-    const result = new Map<string, number>()
+    const active = new Set<string>()
     for (let i = 0; i < bounds.length; i++) {
         for (let j = 0; j < bounds.length; j++) {
             if (i === j) continue
-            const a = bounds[i]
-            const b = bounds[j]
-            if (Math.abs(a.bottom - b.top) < 1.5) {
-                result.set(`${a.id}_to_${b.id}`, b.top)
+            if (Math.abs(bounds[i].bottom - bounds[j].top) < 1.5) {
+                active.add(`${bounds[i].id}_to_${bounds[j].id}`)
             }
         }
     }
-    return result
+    return active
 }
 
 export const LinkIndicatorLayer = ({
     cards,
     currentDate,
+    layoutMap,
 }: LinkIndicatorLayerProps) => {
-    // ─── All hooks declared unconditionally before any early return ───────────
-    const ppm = pixelsPerMinuteSignal.value
+    // ── All hooks unconditionally before any early return ─────────────────────
 
-    // Active links derived purely from props + signals (no side-effects needed).
-    const activeLinks = useMemo(
-        () =>
-            currentDate
-                ? computeActiveLinks(cards, currentDate, ppm)
-                : new Map<string, number>(),
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- dragOverridesSignal is a signal (external)
-        [cards, currentDate, ppm, dragOverridesSignal.value]
-    )
+    // Stable refs so LinkIndicator's useCallback never needs to re-create itself.
+    const cardsRef = useRef(cards)
+    const layoutMapRef = useRef(layoutMap)
 
-    // Registry of all known links (active + in-exit-animation). We seed it from
-    // activeLinks on first render and add new entries as they appear. Removal
-    // only happens when the LinkIndicator calls onAnimationDone after its exit.
-    const [knownLinks, setKnownLinks] = useState<KnownLink[]>(() =>
-        Array.from(activeLinks.entries()).map(([id, top]) => ({ id, top }))
-    )
+    // Keep refs current without triggering re-renders.
+    useEffect(() => {
+        cardsRef.current = cards
+    }, [cards])
+    useEffect(() => {
+        layoutMapRef.current = layoutMap
+    }, [layoutMap])
 
-    // Merge new active links + update positions of existing ones (pure in-render).
-    const mergedLinks = useMemo(() => {
-        const next = knownLinks.map((item) => {
-            const newTop = activeLinks.get(item.id)
-            return newTop !== undefined ? { ...item, top: newTop } : item
+    const [knownLinks, setKnownLinks] = useState<KnownLink[]>(() => {
+        if (!currentDate) return []
+        const active = computeActiveBoundaries(cards, currentDate)
+        return Array.from(active).map((id) => {
+            const [cardAId, , cardBId] = id.split("_to_")
+            return { id, cardAId, cardBId }
         })
-        activeLinks.forEach((top, linkId) => {
-            if (!next.some((item) => item.id === linkId)) {
-                next.push({ id: linkId, top })
-            }
-        })
-        return next
-    }, [knownLinks, activeLinks])
+    })
 
-    // Sync knownLinks with mergedLinks without a useEffect: schedule via callback
-    // pattern. We compare lengths/ids to detect additions and schedule one state
-    // update via a stable callback that is invoked at the end of the render batch.
     const removeLink = useCallback((linkId: string) => {
         setKnownLinks((prev) => prev.filter((l) => l.id !== linkId))
     }, [])
 
-    // If mergedLinks has more entries than knownLinks, there are new active links;
-    // update state on the next microtask (outside render) to trigger a re-render
-    // that will include the new entries.
-    if (mergedLinks.length !== knownLinks.length) {
-        // This is safe: we only call setState here when a new link appears (not on
-        // every render), and queueMicrotask keeps it outside the current call stack.
-        queueMicrotask(() => setKnownLinks(mergedLinks))
-    }
-
+    // ── Guard ────────────────────────────────────────────────────────────────
     if (!currentDate) return null
+
+    // ── Derived state (snapshot, not reactive) ───────────────────────────────
+    const activeBoundaries = computeActiveBoundaries(cards, currentDate)
+
+    // Add any newly formed links via microtask (keeps setState outside render).
+    const newLinkIds = Array.from(activeBoundaries).filter(
+        (id) => !knownLinks.some((l) => l.id === id)
+    )
+    if (newLinkIds.length > 0) {
+        queueMicrotask(() => {
+            setKnownLinks((prev) => {
+                const additions = newLinkIds
+                    .filter((id) => !prev.some((l) => l.id === id))
+                    .map((id) => {
+                        const [cardAId, , cardBId] = id.split("_to_")
+                        return { id, cardAId, cardBId }
+                    })
+                return additions.length > 0 ? [...prev, ...additions] : prev
+            })
+        })
+    }
 
     return (
         <>
-            {mergedLinks.map((link) => (
+            {knownLinks.map((link) => (
                 <LinkIndicator
                     key={link.id}
-                    isLinked={activeLinks.has(link.id)}
-                    top={link.top}
+                    isLinked={activeBoundaries.has(link.id)}
+                    cardAId={link.cardAId}
+                    cardBId={link.cardBId}
+                    cardsRef={cardsRef}
+                    currentDate={currentDate}
+                    layoutMapRef={layoutMapRef}
                     onAnimationDone={() => removeLink(link.id)}
                 />
             ))}

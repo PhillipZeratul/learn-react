@@ -1082,6 +1082,7 @@ export default function RoutineTimeTrackerWidget() {
                                     (t) => !t.is_deleted
                                 )}
                                 currentDate={currentDate}
+                                layoutMap={timeTrackerLayoutMap}
                             />
                         </div>
 
@@ -1134,6 +1135,7 @@ export default function RoutineTimeTrackerWidget() {
                                     (r) => !r.is_deleted
                                 )}
                                 currentDate={currentDate}
+                                layoutMap={routineLayoutMap}
                             />
                         </div>
                     </div>
