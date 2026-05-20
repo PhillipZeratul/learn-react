@@ -45,6 +45,7 @@ import { DateNavigator } from "./DateNavigator"
 import { CurrentTimeIndicator } from "./CurrentTimeIndicator"
 import { TimeTrackerActionButton } from "./TimeTrackerActionButton"
 import { TaskCard } from "./TaskCard"
+import { LinkIndicatorLayer } from "./LinkIndicatorLayer"
 import { TimelineGrid } from "./TimelineGrid"
 import { SaveChangeDialog } from "./SaveChangeDialog"
 import {
@@ -1076,6 +1077,12 @@ export default function RoutineTimeTrackerWidget() {
                                     (c) => c.end_at === null && !c.is_deleted
                                 )}
                             />
+                            <LinkIndicatorLayer
+                                cards={currentDateTimeTrackerCards.filter(
+                                    (t) => !t.is_deleted
+                                )}
+                                currentDate={currentDate}
+                            />
                         </div>
 
                         {/* Center Timeline Spacer (for layout alignment) */}
@@ -1122,6 +1129,12 @@ export default function RoutineTimeTrackerWidget() {
                                 },
                                 []
                             )}
+                            <LinkIndicatorLayer
+                                cards={currentDateRoutineCards.filter(
+                                    (r) => !r.is_deleted
+                                )}
+                                currentDate={currentDate}
+                            />
                         </div>
                     </div>
 
