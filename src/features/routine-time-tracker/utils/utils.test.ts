@@ -6,6 +6,8 @@ import {
     formatLocalDate,
     isCardOverlappingDate,
     getVisualBoundsForDate,
+    resolveTagColor,
+    findNearestPresetAndShade,
 } from "./utils"
 
 describe("routine-time-tracker utils", () => {
@@ -150,6 +152,30 @@ describe("routine-time-tracker utils", () => {
             expect(bounds.duration).toBe(1440)
             expect(bounds.isStartClamped).toBe(true)
             expect(bounds.isEndClamped).toBe(true)
+        })
+    })
+
+    describe("resolveTagColor", () => {
+        it("should resolve valid preset and shade index format", () => {
+            const hex = resolveTagColor("0-5")
+            expect(hex).toBe("#e93c40") // 5th shade of preset 0
+        })
+
+        it("should return the string directly if it is a fallback hex color", () => {
+            expect(resolveTagColor("#aabbcc")).toBe("#aabbcc")
+        })
+
+        it("should fallback to a default color for empty or invalid values", () => {
+            expect(resolveTagColor("")).toBe("#787878")
+            expect(resolveTagColor("invalid-format")).toBe("invalid-format")
+        })
+    })
+
+    describe("findNearestPresetAndShade", () => {
+        it("should map a hex color to the mathematically closest preset and shade", () => {
+            // #fc4447 matches preset 0, shade 4 with high-vibrancy targets
+            const result = findNearestPresetAndShade("#fc4447")
+            expect(result).toBe("0-4")
         })
     })
 })

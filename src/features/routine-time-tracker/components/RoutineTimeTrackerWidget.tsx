@@ -24,6 +24,7 @@ import {
     isCardOverlappingDate,
     getVisualBoundsForDate,
     getNowISO,
+    resolveTagColor,
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
@@ -394,7 +395,7 @@ export default function RoutineTimeTrackerWidget() {
 
     const getTagColor = (tagId: string) => {
         const tag = tags.find((t) => t.id === tagId)
-        return tag?.color || "#94a3b8" // Fallback to slate-400 if tag not found
+        return resolveTagColor(tag?.color || "#94a3b8")
     }
 
     const getTagName = (tagId: string) => {

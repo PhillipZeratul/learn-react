@@ -165,8 +165,13 @@ dark.set("popover", ref("values.neutral-900"))
 dark.set("popover-foreground", ref("values.neutral-100"))
 
 dark.set("primary", ref("values.brand-600"))
+dark.set("primary-foreground", bestContrastWith(ref("dark.primary"), values))
 
 dark.set("secondary", ref("values.neutral-800"))
+dark.set(
+    "secondary-foreground",
+    bestContrastWith(ref("dark.secondary"), values)
+)
 
 dark.set("muted", ref("values.neutral-900"))
 dark.set("muted-foreground", ref("values.neutral-400"))
@@ -179,8 +184,8 @@ dark.set("accent-foreground", ref("values.brand-200"))
 
 dark.set("destructive", ref("values.danger-600"))
 
-dark.set("border", ref("values.neutral-800"))
-dark.set("input", ref("values.neutral-800"))
+dark.set("border", ref("values.neutral-700"))
+dark.set("input", ref("values.neutral-700"))
 dark.set("ring", ref("values.brand-400"))
 
 dark.set("sidebar", ref("values.neutral-900"))
@@ -195,7 +200,7 @@ dark.set(
     colorMix(ref("dark.sidebar"), ref("dark.sidebar-primary"), { ratio: 0.12 })
 )
 dark.set("sidebar-accent-foreground", ref("values.brand-200"))
-dark.set("sidebar-border", ref("values.neutral-800"))
+dark.set("sidebar-border", ref("values.neutral-700"))
 dark.set("sidebar-ring", ref("values.brand-400"))
 
 export { book }

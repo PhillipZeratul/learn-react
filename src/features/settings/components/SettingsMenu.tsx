@@ -26,10 +26,6 @@ export const SettingsMenu = ({ onClose }: SettingsMenuProps) => {
                 <div className="overflow-y-auto p-6">
                     <TagManager />
                 </div>
-
-                <div className="flex justify-end border-t bg-muted/30 p-4">
-                    <Button onClick={onClose}>Close Settings</Button>
-                </div>
             </div>
         </div>
     )

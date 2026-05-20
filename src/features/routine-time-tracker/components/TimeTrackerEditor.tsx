@@ -5,6 +5,7 @@ import {
     isoToTime,
     formatLocalDate,
     getNowISO,
+    resolveTagColor,
 } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
@@ -262,7 +263,11 @@ export const TimeTrackerEditor = ({
                                 >
                                     <div
                                         className="size-2 rounded-full"
-                                        style={{ backgroundColor: tag.color }}
+                                        style={{
+                                            backgroundColor: resolveTagColor(
+                                                tag.color
+                                            ),
+                                        }}
                                     />
                                     {tag.name}
                                 </button>

@@ -8,6 +8,7 @@ import type {
 } from "@/shared/models/base.model"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { useTagStore } from "../stores/tag.store"
+import { findNearestPresetAndShade } from "../utils/utils"
 
 export const DEFAULT_TAG_ID = "b0ec7c88-ddd7-40ad-8fdd-478f02ac1941" as TagId
 
@@ -23,10 +24,15 @@ export const createTag = (data: Partial<Tag> = {}): Tag => {
     const now = new Date().toISOString() as IsoDateTime
     const currentUserId = useAuthStore.getState().user?.id as UserId
 
+    let tagColor = data.color || "17-5"
+    if (tagColor.startsWith("#")) {
+        tagColor = findNearestPresetAndShade(tagColor)
+    }
+
     return {
         id: data.id || (uuidv4() as TagId),
         name: data.name || "Default",
-        color: data.color || "#787878",
+        color: tagColor,
         parent_id: data.parent_id || undefined,
         sort_order: data.sort_order ?? 0,
         user_id: data.user_id || currentUserId,

@@ -1,7 +1,12 @@
 import { useState, memo, useCallback, useMemo } from "react"
 import { v4 as uuidv4 } from "uuid"
 import type { RoutineCard } from "../models/routine-card.model"
-import { timeToISO, isoToTime, formatLocalDate } from "../utils/utils"
+import {
+    timeToISO,
+    isoToTime,
+    formatLocalDate,
+    resolveTagColor,
+} from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { getSortedTagsWithDepth } from "../utils/tag-utils"
 import type { RoutineCardId, TagId } from "../models/routine-time-tracker.model"
@@ -340,7 +345,8 @@ export const RoutineEditor = memo(
                                         <div
                                             className="size-2 rounded-full"
                                             style={{
-                                                backgroundColor: tag.color,
+                                                backgroundColor:
+                                                    resolveTagColor(tag.color),
                                             }}
                                         />
                                         {tag.name}

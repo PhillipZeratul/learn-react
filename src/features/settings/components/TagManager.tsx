@@ -6,6 +6,7 @@ import {
     type Tag,
 } from "@/features/routine-time-tracker/models/tag.model"
 import { Button } from "@/components/ui/Button"
+import { resolveTagColor } from "@/features/routine-time-tracker/utils/utils"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
     PlusSignIcon,
@@ -81,7 +82,7 @@ const SortableTagItem = ({
                 </button>
                 <div
                     className="size-4 shrink-0 rounded-full"
-                    style={{ backgroundColor: tag.color }}
+                    style={{ backgroundColor: resolveTagColor(tag.color) }}
                 />
                 <button
                     type="button"

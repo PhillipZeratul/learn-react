@@ -4,53 +4,27 @@ import { Button } from "@/components/ui/Button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Tick02Icon, Cancel01Icon } from "@hugeicons/core-free-icons"
 import type { TagId } from "@/features/routine-time-tracker/models/routine-time-tracker.model"
-import { hexToHsv, hsvToHex } from "@/features/routine-time-tracker/utils/utils"
+import {
+    resolveTagColor,
+    findNearestPresetAndShade,
+    getTagShades,
+    PRESET_COLORS,
+} from "@/features/routine-time-tracker/utils/utils"
 import { useBackAction } from "@/hooks/useBackAction"
 
-const PRESET_COLORS = [
-    "#ef4444", // Red
-    "#f97316", // Orange
-    "#f59e0b", // Amber
-    "#eab308", // Yellow
-    "#84cc16", // Lime
-    "#22c55e", // Green
-    "#10b981", // Emerald
-    "#14b8a6", // Teal
-    "#06b6d4", // Cyan
-    "#0ea5e9", // Sky
-    "#3b82f6", // Blue
-    "#6366f1", // Indigo
-    "#8b5cf6", // Violet
-    "#a855f7", // Purple
-    "#d946ef", // Fuchsia
-    "#ec4899", // Pink
-    "#f43f5e", // Rose
-    "#64748b", // Slate
-    "#71717a", // Zinc
-    "#78716c", // Stone
-]
-
 const ShadeSwatches = ({
-    color,
+    presetIndex,
+    shadeIndex,
     onChange,
 }: {
-    color: string
-    onChange: (newColor: string) => void
+    presetIndex: number
+    shadeIndex: number
+    onChange: (newShadeIndex: number) => void
 }) => {
-    const hsv = useMemo(() => hexToHsv(color), [color])
-
     const shades = useMemo(() => {
-        const result: string[] = []
-        for (let i = 0; i < 5; i++) {
-            const s = 10 + i * 20
-            result.push(hsvToHex({ h: hsv.h, s, v: 100 }))
-        }
-        for (let i = 0; i < 5; i++) {
-            const v = 100 - i * 15
-            result.push(hsvToHex({ h: hsv.h, s: 100, v }))
-        }
-        return result
-    }, [hsv.h])
+        const baseColor = PRESET_COLORS[presetIndex]
+        return getTagShades(baseColor)
+    }, [presetIndex])
 
     return (
         <div className="space-y-2 pt-2">
@@ -58,14 +32,14 @@ const ShadeSwatches = ({
                 Shades
             </p>
             <div className="grid grid-cols-10 gap-2">
-                {shades.map((s) => (
+                {shades.map((s, idx) => (
                     <button
                         key={s}
                         type="button"
-                        onClick={() => onChange(s)}
-                        className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${color.toLowerCase() === s.toLowerCase() ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
+                        onClick={() => onChange(idx)}
+                        className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${shadeIndex === idx ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
                         style={{ backgroundColor: s }}
-                        title={s}
+                        title={`Shade ${idx}`}
                     />
                 ))}
             </div>
@@ -92,9 +66,23 @@ export const TagEditorDialog = ({
 }: TagEditorDialogProps) => {
     useBackAction(onClose, true)
     const [name, setName] = useState(tag?.name ?? "")
-    const [color, setColor] = useState(tag?.color ?? PRESET_COLORS[0])
+    const [color, setColor] = useState(() => {
+        let initialColor = tag?.color ?? "17-5"
+        if (initialColor.startsWith("#")) {
+            initialColor = findNearestPresetAndShade(initialColor)
+        }
+        return initialColor
+    })
     const [parentId, setParentId] = useState<TagId | "">(tag?.parent_id ?? "")
     const [isSaving, setIsSaving] = useState(false)
+
+    const [presetIndex, shadeIndex] = useMemo(() => {
+        const match = color.match(/^(\d+)-(\d+)$/)
+        if (match) {
+            return [parseInt(match[1], 10), parseInt(match[2], 10)]
+        }
+        return [17, 5] // Cool Slate, 5th shade
+    }, [color])
 
     // Filter out current tag and its descendants from potential parents to prevent cycles
     const potentialParents = useMemo(() => {
@@ -157,7 +145,9 @@ export const TagEditorDialog = ({
                             </div>
                             <div
                                 className="size-10 shrink-0 rounded-md border border-input shadow-sm"
-                                style={{ backgroundColor: color }}
+                                style={{
+                                    backgroundColor: resolveTagColor(color),
+                                }}
                                 aria-hidden="true"
                             />
                         </div>
@@ -168,20 +158,26 @@ export const TagEditorDialog = ({
                                     Color Palette
                                 </p>
                                 <div className="grid grid-cols-10 gap-2">
-                                    {PRESET_COLORS.map((c) => (
+                                    {PRESET_COLORS.map((c, idx) => (
                                         <button
-                                            key={c}
+                                            key={idx}
                                             type="button"
-                                            onClick={() => setColor(c)}
-                                            className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${color === c ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
+                                            onClick={() => setColor(`${idx}-5`)}
+                                            className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${presetIndex === idx ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
                                             style={{ backgroundColor: c }}
-                                            title={c}
+                                            title={`Preset ${idx}`}
                                         />
                                     ))}
                                 </div>
                             </div>
 
-                            <ShadeSwatches color={color} onChange={setColor} />
+                            <ShadeSwatches
+                                presetIndex={presetIndex}
+                                shadeIndex={shadeIndex}
+                                onChange={(newShadeIndex) =>
+                                    setColor(`${presetIndex}-${newShadeIndex}`)
+                                }
+                            />
                         </div>
 
                         <div className="space-y-2">

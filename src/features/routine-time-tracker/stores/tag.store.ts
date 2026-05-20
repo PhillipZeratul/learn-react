@@ -65,7 +65,7 @@ export const useTagStore = create<TagState & TagActions>()(
                 const defaultTag = createTag({
                     id: DEFAULT_TAG_ID,
                     name: "Default",
-                    color: "#787878",
+                    color: "17-5",
                 })
 
                 await saveFn(defaultTag)
