@@ -109,12 +109,35 @@ export const TimeTrackerEditor = ({
             finalEndAt = null as unknown as IsoDateTime
         }
 
+        const now = new Date()
+        const nowIso = now.toISOString() as IsoDateTime
+
+        if (
+            finalEndAt !== null &&
+            new Date(finalEndAt).getTime() > now.getTime()
+        ) {
+            finalEndAt = nowIso
+        }
+
+        let finalStartAt = hideTimeFields
+            ? task.start_at
+            : timeToISO(state.startAt, state.startDate)
+
+        if (new Date(finalStartAt).getTime() > now.getTime()) {
+            finalStartAt = nowIso
+        }
+
+        if (
+            finalEndAt !== null &&
+            new Date(finalStartAt).getTime() > new Date(finalEndAt).getTime()
+        ) {
+            finalStartAt = finalEndAt
+        }
+
         await onSave({
             ...task,
             title: finalTitle,
-            start_at: hideTimeFields
-                ? task.start_at
-                : timeToISO(state.startAt, state.startDate),
+            start_at: finalStartAt,
             end_at: finalEndAt,
             tag_id: state.tagId || DEFAULT_TAG_ID,
         })

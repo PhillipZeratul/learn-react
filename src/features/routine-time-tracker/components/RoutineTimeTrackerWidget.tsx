@@ -355,10 +355,25 @@ export default function RoutineTimeTrackerWidget() {
                     dragState.initialEndMin - dragState.initialStartMin
 
                 // Absolute bounds clamping
-                newStartMin = Math.max(
-                    0,
-                    Math.min(24 * 60 - duration, newStartMin)
-                )
+                let maxStartMin = 24 * 60 - duration
+                if (dragState.type === "timeTracker" && currentDate) {
+                    const realNow = new Date()
+                    const currentDateStr = formatLocalDate(currentDate)
+                    const realNowStr = formatLocalDate(realNow)
+
+                    if (currentDateStr === realNowStr) {
+                        const nowMinutes =
+                            realNow.getHours() * 60 + realNow.getMinutes()
+                        maxStartMin = Math.min(
+                            maxStartMin,
+                            nowMinutes - duration
+                        )
+                    } else if (currentDateStr > realNowStr) {
+                        maxStartMin = 0
+                    }
+                }
+
+                newStartMin = Math.max(0, Math.min(maxStartMin, newStartMin))
 
                 const top = newStartMin * ppm + TOP_MARGIN
                 const height = duration * ppm
@@ -383,9 +398,25 @@ export default function RoutineTimeTrackerWidget() {
                         ? dragState.initialStartMin
                         : dragState.initialEndMin
                 let targetEdgeMin = initialEdgeMin + activeDeltaMin
+
+                let maxEdgeMin = absoluteMax
+                if (dragState.type === "timeTracker" && currentDate) {
+                    const realNow = new Date()
+                    const currentDateStr = formatLocalDate(currentDate)
+                    const realNowStr = formatLocalDate(realNow)
+
+                    if (currentDateStr === realNowStr) {
+                        const nowMinutes =
+                            realNow.getHours() * 60 + realNow.getMinutes()
+                        maxEdgeMin = Math.min(maxEdgeMin, nowMinutes)
+                    } else if (currentDateStr > realNowStr) {
+                        maxEdgeMin = 0
+                    }
+                }
+
                 targetEdgeMin = Math.max(
                     absoluteMin,
-                    Math.min(absoluteMax, targetEdgeMin)
+                    Math.min(maxEdgeMin, targetEdgeMin)
                 )
 
                 // Now apply targetEdgeMin to every linked card
@@ -418,7 +449,7 @@ export default function RoutineTimeTrackerWidget() {
                 })
             }
         },
-        [dragState]
+        [dragState, currentDate]
     )
 
     useEffect(() => {
