@@ -54,7 +54,7 @@ describe("drag utils", () => {
         it("should snap when close to a target within threshold", () => {
             const snapTargets = [300] // 300 minutes -> 600px + 60px = 660px
             const bypassedSnaps = new Set<number>()
-            const requestedPixels = 664 // diff is 4px (< 10px threshold)
+            const requestedPixels = 664 // diff is 4px (< 20px threshold)
 
             const result = calculateSnap(
                 requestedPixels,
@@ -69,6 +69,24 @@ describe("drag utils", () => {
             expect(result.shouldStartTimer).toBe(300)
             expect(result.shouldBypass).toBe(false)
             expect(result.snapOffsetMinutes).toBeCloseTo(-2) // requested was 302 mins, snapped is 300, offset is -2
+        })
+
+        it("should snap up to 20px threshold (new 2x limit)", () => {
+            const snapTargets = [300] // 300 minutes -> 600px + 60px = 660px
+            const bypassedSnaps = new Set<number>()
+            const requestedPixels = 678 // diff is 18px (>= 10px and < 20px)
+
+            const result = calculateSnap(
+                requestedPixels,
+                snapTargets,
+                bypassedSnaps,
+                ppm,
+                null,
+                topMargin
+            )
+
+            expect(result.snappedTargetVal).toBe(300)
+            expect(result.shouldStartTimer).toBe(300)
         })
 
         it("should not snap if bypassed", () => {

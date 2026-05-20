@@ -45,7 +45,7 @@ export interface SnapResult {
 
 /**
  * Magnetic snapping calculations.
- * Snaps to closest target within SNAP_THRESHOLD = 10px.
+ * Snaps to closest target within SNAP_THRESHOLD = 20px.
  * Pulling cursor > 30px away breaks/bypasses snapping (adds to bypassed set).
  */
 export function calculateSnap(
@@ -56,7 +56,7 @@ export function calculateSnap(
     currentSnappedTarget: number | null,
     topMargin: number
 ): SnapResult {
-    const SNAP_THRESHOLD_PX = 10
+    const SNAP_THRESHOLD_PX = 20
     const SNAP_BREAK_THRESHOLD_PX = 30
 
     // Find closest non-bypassed snap target
@@ -100,7 +100,7 @@ export function calculateSnap(
             }
         } else {
             // Not currently snapped to this target.
-            // We only enter the snap state if within the SNAP_THRESHOLD_PX (10px)
+            // We only enter the snap state if within the SNAP_THRESHOLD_PX (20px)
             if (minDiffPx < SNAP_THRESHOLD_PX) {
                 return {
                     snappedTargetVal: targetMin,

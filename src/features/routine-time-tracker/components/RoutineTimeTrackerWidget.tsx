@@ -181,7 +181,14 @@ export default function RoutineTimeTrackerWidget() {
         originalStartAt: IsoDateTime
     } | null>(null)
 
-    useBackAction(() => setConfirmDragState(null), !!confirmDragState)
+    const closeConfirmDragDialog = (shouldClearOverrides = true) => {
+        setConfirmDragState(null)
+        if (shouldClearOverrides) {
+            dragOverridesSignal.value = {}
+        }
+    }
+
+    useBackAction(() => closeConfirmDragDialog(true), !!confirmDragState)
 
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const timelineContainerRef = useRef<HTMLDivElement>(null)
@@ -879,9 +886,8 @@ export default function RoutineTimeTrackerWidget() {
         if (dragState) {
             wasDragged.current = true
 
-            // Read final overrides before clearing
+            // Read final overrides
             const finalOverrides = { ...dragOverridesSignal.value }
-            dragOverridesSignal.value = {}
 
             const formatMin = (m: number) => {
                 const h = Math.floor(m / 60)
@@ -963,6 +969,9 @@ export default function RoutineTimeTrackerWidget() {
                         )
                     }
                 }
+                setTimeout(() => {
+                    dragOverridesSignal.value = {}
+                }, 50)
             }
             setDragState(null)
         }
@@ -1243,7 +1252,10 @@ export default function RoutineTimeTrackerWidget() {
                                 )
                             }
                         }
-                        setConfirmDragState(null)
+                        closeConfirmDragDialog(false)
+                        setTimeout(() => {
+                            dragOverridesSignal.value = {}
+                        }, 50)
                     }}
                     onAllOccurrences={async () => {
                         for (const up of pendingUpdatesRef.current) {
@@ -1349,9 +1361,12 @@ export default function RoutineTimeTrackerWidget() {
                                 )
                             }
                         }
-                        setConfirmDragState(null)
+                        closeConfirmDragDialog(false)
+                        setTimeout(() => {
+                            dragOverridesSignal.value = {}
+                        }, 50)
                     }}
-                    onCancel={() => setConfirmDragState(null)}
+                    onCancel={() => closeConfirmDragDialog(true)}
                 />
             )}
         </div>
