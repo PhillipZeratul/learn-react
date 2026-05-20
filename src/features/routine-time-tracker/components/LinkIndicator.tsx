@@ -133,8 +133,8 @@ export const LinkIndicator = ({
             style={{ transform: "translate(-50%, -50%)" }}
         >
             <div className="link-chain-container linked">
-                <div className="link-chain-half top-half" />
-                <div className="link-chain-half bottom-half" />
+                <div className="link-ring-half left-half" />
+                <div className="link-ring-half right-half" />
             </div>
         </div>
     )
