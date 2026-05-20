@@ -5,6 +5,8 @@ import {
     rem,
     Renderer,
     bestContrastWith,
+    minContrastWith,
+    colorMix,
 } from "design-book"
 
 const book = new DesignBook("learn-react")
@@ -12,67 +14,118 @@ const book = new DesignBook("learn-react")
 // ---- values (atoms) ---------------------------------------------------
 const values = book.addScope("values")
 
-// Neutrals
-values.set("white", color("oklch(1 0 0)"))
-values.set("ink", color("oklch(0.147 0.004 49.3)"))
-values.set("paper", color("oklch(0.986 0.002 67.8)"))
-values.set("slate-100", color("oklch(0.967 0.001 286.375)"))
-values.set("slate-200", color("oklch(0.922 0.005 34.3)"))
-values.set("slate-300", color("oklch(0.714 0.014 41.2)"))
-values.set("slate-400", color("oklch(0.547 0.021 43.1)"))
-values.set("slate-800", color("oklch(0.214 0.009 43.1)"))
-values.set("slate-900", color("oklch(0.21 0.006 285.885)"))
+// Neutrals (Slate-like cool neutrals)
+values.set("neutral-50", color("oklch(0.98 0.005 260)"))
+values.set("neutral-100", color("oklch(0.96 0.008 260)"))
+values.set("neutral-200", color("oklch(0.90 0.012 260)"))
+values.set("neutral-300", color("oklch(0.81 0.016 260)"))
+values.set("neutral-400", color("oklch(0.68 0.020 260)"))
+values.set("neutral-500", color("oklch(0.53 0.022 260)"))
+values.set("neutral-600", color("oklch(0.40 0.020 260)"))
+values.set("neutral-700", color("oklch(0.29 0.016 260)"))
+values.set("neutral-800", color("oklch(0.20 0.012 260)"))
+values.set("neutral-900", color("oklch(0.14 0.008 260)"))
+values.set("neutral-950", color("oklch(0.08 0.005 260)"))
 
-// Brand / Primary
-values.set("blue-500", color("oklch(0.5 0.134 242.749)"))
-values.set("blue-600", color("oklch(0.443 0.11 240.79)"))
-values.set("blue-light", color("oklch(0.977 0.013 236.62)"))
-values.set("blue-sidebar", color("oklch(0.588 0.158 241.966)"))
-values.set("blue-sidebar-dark", color("oklch(0.685 0.169 237.323)"))
-values.set("blue-sidebar-fg-dark", color("oklch(0.293 0.066 243.157)"))
+// Brand (Vibrant Indigo-Violet for gamified daily life)
+values.set("brand-50", color("oklch(0.96 0.02 260)"))
+values.set("brand-100", color("oklch(0.91 0.05 260)"))
+values.set("brand-200", color("oklch(0.83 0.09 260)"))
+values.set("brand-300", color("oklch(0.73 0.14 260)"))
+values.set("brand-400", color("oklch(0.63 0.18 260)"))
+values.set("brand-500", color("oklch(0.53 0.21 260)"))
+values.set("brand-600", color("oklch(0.44 0.19 260)"))
+values.set("brand-700", color("oklch(0.36 0.15 260)"))
+values.set("brand-800", color("oklch(0.27 0.11 260)"))
+values.set("brand-900", color("oklch(0.18 0.07 260)"))
 
-// Accents / Feedback
-values.set("muted", color("oklch(0.96 0.002 17.2)"))
-values.set("muted-dark", color("oklch(0.268 0.011 36.5)"))
-values.set("red-500", color("oklch(0.577 0.245 27.325)"))
-values.set("red-600", color("oklch(0.704 0.191 22.216)"))
+// Success / Reward (Vibrant Emerald)
+values.set("success-50", color("oklch(0.97 0.02 150)"))
+values.set("success-100", color("oklch(0.93 0.04 150)"))
+values.set("success-200", color("oklch(0.86 0.08 150)"))
+values.set("success-300", color("oklch(0.77 0.12 150)"))
+values.set("success-400", color("oklch(0.67 0.15 150)"))
+values.set("success-500", color("oklch(0.57 0.17 150)"))
+values.set("success-600", color("oklch(0.47 0.14 150)"))
+values.set("success-700", color("oklch(0.38 0.11 150)"))
+values.set("success-800", color("oklch(0.29 0.08 150)"))
+values.set("success-900", color("oklch(0.20 0.05 150)"))
 
-// Charts
-values.set("chart-1", color("oklch(0.808 0.114 19.571)"))
-values.set("chart-2", color("oklch(0.637 0.237 25.331)"))
-values.set("chart-3", color("oklch(0.577 0.245 27.325)"))
-values.set("chart-4", color("oklch(0.505 0.213 27.518)"))
-values.set("chart-5", color("oklch(0.444 0.177 26.899)"))
+// Warning / Gold Coins / Streaks (Vibrant Amber)
+values.set("warning-50", color("oklch(0.98 0.02 70)"))
+values.set("warning-100", color("oklch(0.94 0.04 70)"))
+values.set("warning-200", color("oklch(0.88 0.08 70)"))
+values.set("warning-300", color("oklch(0.80 0.12 70)"))
+values.set("warning-400", color("oklch(0.71 0.16 70)"))
+values.set("warning-500", color("oklch(0.62 0.18 70)"))
+values.set("warning-600", color("oklch(0.52 0.15 70)"))
+values.set("warning-700", color("oklch(0.42 0.12 70)"))
+values.set("warning-800", color("oklch(0.32 0.09 70)"))
+values.set("warning-900", color("oklch(0.22 0.06 70)"))
+
+// Danger / Urgent / Missed (Vibrant Rose Red)
+values.set("danger-50", color("oklch(0.96 0.02 25)"))
+values.set("danger-100", color("oklch(0.91 0.05 25)"))
+values.set("danger-200", color("oklch(0.83 0.10 25)"))
+values.set("danger-300", color("oklch(0.74 0.15 25)"))
+values.set("danger-400", color("oklch(0.64 0.19 25)"))
+values.set("danger-500", color("oklch(0.54 0.22 25)"))
+values.set("danger-600", color("oklch(0.45 0.19 25)"))
+values.set("danger-700", color("oklch(0.36 0.15 25)"))
+values.set("danger-800", color("oklch(0.27 0.11 25)"))
+values.set("danger-900", color("oklch(0.18 0.07 25)"))
+
+// Charts (Perceptually balanced hues at constant L=0.65)
+values.set("chart-1", color("oklch(0.65 0.18 60)"))
+values.set("chart-2", color("oklch(0.65 0.16 140)"))
+values.set("chart-3", color("oklch(0.65 0.14 200)"))
+values.set("chart-4", color("oklch(0.65 0.17 260)"))
+values.set("chart-5", color("oklch(0.65 0.20 330)"))
 
 // ---- light (default) --------------------------------------------------
 const light = book.addScope("light")
 
-light.set("background", ref("values.white"))
-light.set("foreground", ref("values.ink"))
+light.set("background", ref("values.neutral-50"))
+light.set("foreground", ref("values.neutral-900"))
 
-light.set("card", ref("values.white"))
-light.set("card-foreground", ref("values.ink"))
+light.set("card", ref("values.neutral-50"))
+light.set("card-foreground", ref("values.neutral-900"))
 
-light.set("popover", ref("values.white"))
-light.set("popover-foreground", ref("values.ink"))
+light.set("popover", ref("values.neutral-50"))
+light.set("popover-foreground", ref("values.neutral-900"))
 
-light.set("primary", ref("values.blue-500"))
+light.set("primary", ref("values.brand-500"))
 light.set("primary-foreground", bestContrastWith(ref("light.primary"), values))
 
-light.set("secondary", ref("values.slate-100"))
-light.set("secondary-foreground", ref("values.slate-900"))
+light.set("secondary", ref("values.neutral-100"))
+light.set(
+    "secondary-foreground",
+    bestContrastWith(ref("light.secondary"), values)
+)
 
-light.set("muted", ref("values.muted"))
-light.set("muted-foreground", ref("values.slate-400"))
+light.set("muted", ref("values.neutral-100"))
+light.set("muted-foreground", ref("values.neutral-500"))
 
-light.set("accent", ref("values.muted"))
-light.set("accent-foreground", ref("values.slate-800"))
+light.set(
+    "accent",
+    colorMix(ref("light.background"), ref("light.primary"), { ratio: 0.08 })
+)
+light.set("accent-foreground", ref("values.brand-700"))
 
-light.set("destructive", ref("values.red-500"))
+light.set("destructive", ref("values.danger-500"))
 
-light.set("border", ref("values.slate-200"))
-light.set("input", ref("values.slate-200"))
-light.set("ring", ref("values.slate-300"))
+light.set(
+    "border",
+    minContrastWith(ref("light.background"), values, { ratio: 1.2 })
+)
+light.set(
+    "input",
+    minContrastWith(ref("light.background"), values, { ratio: 1.25 })
+)
+light.set(
+    "ring",
+    colorMix(ref("light.background"), ref("light.primary"), { ratio: 0.3 })
+)
 
 light.set("chart-1", ref("values.chart-1"))
 light.set("chart-2", ref("values.chart-2"))
@@ -82,53 +135,68 @@ light.set("chart-5", ref("values.chart-5"))
 
 light.set("radius", rem(0.875))
 
-light.set("sidebar", ref("values.paper"))
-light.set("sidebar-foreground", ref("values.ink"))
-light.set("sidebar-primary", ref("values.blue-sidebar"))
-light.set("sidebar-primary-foreground", ref("values.blue-light"))
-light.set("sidebar-accent", ref("values.muted"))
-light.set("sidebar-accent-foreground", ref("values.slate-800"))
-light.set("sidebar-border", ref("values.slate-200"))
-light.set("sidebar-ring", ref("values.slate-300"))
+light.set("sidebar", ref("values.neutral-50"))
+light.set("sidebar-foreground", ref("values.neutral-900"))
+light.set("sidebar-primary", ref("values.brand-500"))
+light.set(
+    "sidebar-primary-foreground",
+    bestContrastWith(ref("light.sidebar-primary"), values)
+)
+light.set(
+    "sidebar-accent",
+    colorMix(ref("light.sidebar"), ref("light.sidebar-primary"), {
+        ratio: 0.08,
+    })
+)
+light.set("sidebar-accent-foreground", ref("values.brand-700"))
+light.set("sidebar-border", ref("values.neutral-200"))
+light.set("sidebar-ring", ref("values.brand-300"))
 
 // ---- dark -------------------------------------------------------------
 const dark = book.addScope("dark", { extends: "light" })
 
-dark.set("background", ref("values.ink"))
-dark.set("foreground", ref("values.paper"))
+dark.set("background", ref("values.neutral-950"))
+dark.set("foreground", ref("values.neutral-100"))
 
-dark.set("card", ref("values.slate-800"))
-dark.set("card-foreground", ref("values.paper"))
+dark.set("card", ref("values.neutral-900"))
+dark.set("card-foreground", ref("values.neutral-100"))
 
-dark.set("popover", ref("values.slate-800"))
-dark.set("popover-foreground", ref("values.paper"))
+dark.set("popover", ref("values.neutral-900"))
+dark.set("popover-foreground", ref("values.neutral-100"))
 
-dark.set("primary", ref("values.blue-600"))
-// primary-foreground is inherited but will re-evaluate against dark primary
+dark.set("primary", ref("values.brand-600"))
 
-dark.set("secondary", color("oklch(0.274 0.006 286.033)"))
-dark.set("secondary-foreground", color("oklch(0.985 0 0)"))
+dark.set("secondary", ref("values.neutral-800"))
 
-dark.set("muted", ref("values.muted-dark"))
-dark.set("muted-foreground", ref("values.slate-300"))
+dark.set("muted", ref("values.neutral-900"))
+dark.set("muted-foreground", ref("values.neutral-400"))
 
-dark.set("accent", ref("values.muted-dark"))
-dark.set("accent-foreground", ref("values.paper"))
+dark.set(
+    "accent",
+    colorMix(ref("dark.background"), ref("dark.primary"), { ratio: 0.12 })
+)
+dark.set("accent-foreground", ref("values.brand-200"))
 
-dark.set("destructive", ref("values.red-600"))
+dark.set("destructive", ref("values.danger-600"))
 
-dark.set("border", color("oklch(1 0 0 / 10%)"))
-dark.set("input", color("oklch(1 0 0 / 15%)"))
-dark.set("ring", ref("values.slate-400"))
+dark.set("border", ref("values.neutral-800"))
+dark.set("input", ref("values.neutral-800"))
+dark.set("ring", ref("values.brand-400"))
 
-dark.set("sidebar", ref("values.slate-800"))
-dark.set("sidebar-foreground", ref("values.paper"))
-dark.set("sidebar-primary", ref("values.blue-sidebar-dark"))
-dark.set("sidebar-primary-foreground", ref("values.blue-sidebar-fg-dark"))
-dark.set("sidebar-accent", ref("values.muted-dark"))
-dark.set("sidebar-accent-foreground", ref("values.paper"))
-dark.set("sidebar-border", color("oklch(1 0 0 / 10%)"))
-dark.set("sidebar-ring", ref("values.slate-400"))
+dark.set("sidebar", ref("values.neutral-900"))
+dark.set("sidebar-foreground", ref("values.neutral-100"))
+dark.set("sidebar-primary", ref("values.brand-600"))
+dark.set(
+    "sidebar-primary-foreground",
+    bestContrastWith(ref("dark.sidebar-primary"), values)
+)
+dark.set(
+    "sidebar-accent",
+    colorMix(ref("dark.sidebar"), ref("dark.sidebar-primary"), { ratio: 0.12 })
+)
+dark.set("sidebar-accent-foreground", ref("values.brand-200"))
+dark.set("sidebar-border", ref("values.neutral-800"))
+dark.set("sidebar-ring", ref("values.brand-400"))
 
 export { book }
 
