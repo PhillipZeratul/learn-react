@@ -62,6 +62,10 @@ export function calculateLayout(
                 card.end_at,
                 currentDate
             )
+
+            let bestColIndex = -1
+            let minGap = Infinity
+
             for (let i = 0; i < clusterCols.length; i++) {
                 const col = clusterCols[i]
                 const lastCard = col[col.length - 1]
@@ -71,13 +75,28 @@ export function calculateLayout(
                         lastCard.end_at,
                         currentDate
                     )
-                if (lastStart + lastDur <= startMin) {
-                    col.push(card)
-                    layoutMap.set(card.id, { column: i })
-                    placed = true
-                    break
+                const lastEnd = lastStart + lastDur
+                const gap = startMin - lastEnd
+
+                // Strict sequential placement (no overlap allowed)
+                if (gap >= 0) {
+                    if (gap < minGap) {
+                        minGap = gap
+                        bestColIndex = i
+                        // Perfect contiguous match, select immediately
+                        if (gap === 0) {
+                            break
+                        }
+                    }
                 }
             }
+
+            if (bestColIndex !== -1) {
+                clusterCols[bestColIndex].push(card)
+                layoutMap.set(card.id, { column: bestColIndex })
+                placed = true
+            }
+
             if (!placed) {
                 clusterCols.push([card])
                 layoutMap.set(card.id, { column: clusterCols.length - 1 })
