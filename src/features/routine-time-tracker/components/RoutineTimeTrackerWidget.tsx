@@ -47,8 +47,17 @@ import { TimeTrackerActionButton } from "./TimeTrackerActionButton"
 import { TaskCard } from "./TaskCard"
 import { TimelineGrid } from "./TimelineGrid"
 import { SaveChangeDialog } from "./SaveChangeDialog"
-import { dragTopSignal, dragHeightSignal } from "../stores/drag.store"
+import {
+    dragTopSignal,
+    dragHeightSignal,
+    dragOverridesSignal,
+} from "../stores/drag.store"
 import { useBackAction } from "@/hooks/useBackAction"
+import {
+    detectShake,
+    calculateSnap,
+    calculateLinkedBounds,
+} from "../utils/drag"
 
 type EditingState =
     | { type: "routine"; card: RoutineCard; isNew?: boolean }
@@ -181,6 +190,232 @@ export default function RoutineTimeTrackerWidget() {
     const lastTouchPos = useRef<{ x: number; y: number } | null>(null)
     const wasDragged = useRef(false)
     const lastBackgroundTime = useRef<number | null>(null)
+
+    // Snapping and Linking gesture state refs
+    const shakeHistoryRef = useRef<Array<{ y: number; timestamp: number }>>([])
+    const isUnlinkedRef = useRef<boolean>(false)
+    const linkedEdgesRef = useRef<
+        Array<{
+            card: RoutineCard | TimeTrackerCard
+            edge: "start" | "end"
+            type: "routine" | "timeTracker"
+            initialStartMin: number
+            initialEndMin: number
+        }>
+    >([])
+
+    const snapTargetsRef = useRef<number[]>([])
+    const snappedTargetRef = useRef<number | null>(null)
+    const bypassedSnapsRef = useRef<Set<number>>(new Set())
+    const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Track the last clientY during drags to re-trigger updates on hold-timer snap breaks
+    const lastDragYRef = useRef<number>(0)
+    const updateDragPositionRef = useRef<(clientY: number) => void>(() => {})
+
+    // Registry for pending multi-card concurrent updates
+    const pendingUpdatesRef = useRef<
+        Array<{
+            type: "routine" | "timeTracker"
+            card: RoutineCard | TimeTrackerCard
+            originalStartAt: IsoDateTime
+        }>
+    >([])
+
+    const updateDragPosition = useCallback(
+        (clientY: number) => {
+            if (!dragState) return
+
+            const ppm = pixelsPerMinuteSignal.value
+            lastDragYRef.current = clientY
+
+            // 1. Shake Detection (only if not already unlinked and dragging an edge)
+            if (
+                !isUnlinkedRef.current &&
+                (dragState.mode === "top" || dragState.mode === "bottom")
+            ) {
+                const nowTime = Date.now()
+                shakeHistoryRef.current.push({ y: clientY, timestamp: nowTime })
+
+                if (detectShake(shakeHistoryRef.current, nowTime)) {
+                    // SHAKE DETECTED! BREAK LINKS!
+                    isUnlinkedRef.current = true
+                    shakeHistoryRef.current = []
+
+                    // Reset all secondary linked edges from overrides
+                    // (we only keep the primary card in the active overrides)
+                    const primaryId = dragState.card.id
+                    const nextOverrides: Record<
+                        string,
+                        { top: number; height: number }
+                    > = {}
+                    const currentPrimaryOverride =
+                        dragOverridesSignal.value[primaryId]
+                    if (currentPrimaryOverride) {
+                        nextOverrides[primaryId] = currentPrimaryOverride
+                    }
+                    dragOverridesSignal.value = nextOverrides
+
+                    // Filter linkedEdgesRef to only contain the primary card's edge
+                    linkedEdgesRef.current = linkedEdgesRef.current.filter(
+                        (le) => le.card.id === primaryId
+                    )
+                } else {
+                    // Keep history trimmed
+                    shakeHistoryRef.current = shakeHistoryRef.current.filter(
+                        (p) => nowTime - p.timestamp <= 400
+                    )
+                }
+            }
+
+            const deltaY = clientY - dragState.initialMouseY
+
+            // 2. Snapping Calculations (only for edge dragging)
+            let snapOffsetMinutes = 0
+
+            if (dragState.mode === "top" || dragState.mode === "bottom") {
+                const initialMinutes =
+                    dragState.mode === "top"
+                        ? dragState.initialStartMin
+                        : dragState.initialEndMin
+                const requestedMinutes = initialMinutes + deltaY / ppm
+                const requestedPixels = requestedMinutes * ppm + TOP_MARGIN
+
+                const {
+                    snappedTargetVal: snapVal,
+                    snapOffsetMinutes: snapOffset,
+                    shouldBypass,
+                    shouldStartTimer,
+                } = calculateSnap(
+                    requestedPixels,
+                    snapTargetsRef.current,
+                    bypassedSnapsRef.current,
+                    ppm,
+                    snappedTargetRef.current,
+                    TOP_MARGIN
+                )
+
+                if (shouldBypass) {
+                    if (snappedTargetRef.current !== null) {
+                        bypassedSnapsRef.current.add(snappedTargetRef.current)
+                        snappedTargetRef.current = null
+                    }
+                    if (snapTimerRef.current) {
+                        clearTimeout(snapTimerRef.current)
+                        snapTimerRef.current = null
+                    }
+                } else if (shouldStartTimer !== null) {
+                    snappedTargetRef.current = shouldStartTimer
+                    snapOffsetMinutes = snapOffset
+
+                    if (snapTimerRef.current) {
+                        clearTimeout(snapTimerRef.current)
+                    }
+                    snapTimerRef.current = setTimeout(() => {
+                        bypassedSnapsRef.current.add(shouldStartTimer)
+                        snappedTargetRef.current = null
+                        snapTimerRef.current = null
+                        updateDragPositionRef.current(lastDragYRef.current)
+                    }, 3000)
+                } else if (snapVal !== null) {
+                    snapOffsetMinutes = snapOffset
+                } else {
+                    // Not snapping, clear snapping state if it was snapping
+                    if (snappedTargetRef.current !== null) {
+                        snappedTargetRef.current = null
+                        if (snapTimerRef.current) {
+                            clearTimeout(snapTimerRef.current)
+                            snapTimerRef.current = null
+                        }
+                    }
+                }
+            }
+
+            // 3. Compute active delta minutes
+            const activeDeltaMin = deltaY / ppm + snapOffsetMinutes
+
+            // 4. Multi-card Override Coordinates calculation
+            const nextOverrides: Record<
+                string,
+                { top: number; height: number }
+            > = {}
+
+            if (dragState.mode === "center") {
+                // Translate the entire primary card
+                let newStartMin = dragState.initialStartMin + activeDeltaMin
+                const duration =
+                    dragState.initialEndMin - dragState.initialStartMin
+
+                // Absolute bounds clamping
+                newStartMin = Math.max(
+                    0,
+                    Math.min(24 * 60 - duration, newStartMin)
+                )
+
+                const top = newStartMin * ppm + TOP_MARGIN
+                const height = duration * ppm
+
+                nextOverrides[dragState.card.id] = { top, height }
+
+                batch(() => {
+                    dragTopSignal.value = top
+                    dragHeightSignal.value = height
+                    dragOverridesSignal.value = nextOverrides
+                })
+            } else {
+                // Edge Dragging (with constraints and linking)
+                // Calculate absolute safe bounds for E_eff across all linked edges using utility
+                const { absoluteMin, absoluteMax } = calculateLinkedBounds(
+                    linkedEdgesRef.current
+                )
+
+                // Calculate target minutes
+                const initialEdgeMin =
+                    dragState.mode === "top"
+                        ? dragState.initialStartMin
+                        : dragState.initialEndMin
+                let targetEdgeMin = initialEdgeMin + activeDeltaMin
+                targetEdgeMin = Math.max(
+                    absoluteMin,
+                    Math.min(absoluteMax, targetEdgeMin)
+                )
+
+                // Now apply targetEdgeMin to every linked card
+                linkedEdgesRef.current.forEach((le) => {
+                    let startMin = le.initialStartMin
+                    let endMin = le.initialEndMin
+
+                    if (le.edge === "start") {
+                        startMin = targetEdgeMin
+                    } else {
+                        endMin = targetEdgeMin
+                    }
+
+                    const top = startMin * ppm + TOP_MARGIN
+                    const height = (endMin - startMin) * ppm
+
+                    nextOverrides[le.card.id] = { top, height }
+
+                    // If this is the primary card, also update the global dragTop/dragHeight signals
+                    if (le.card.id === dragState.card.id) {
+                        batch(() => {
+                            dragTopSignal.value = top
+                            dragHeightSignal.value = height
+                        })
+                    }
+                })
+
+                batch(() => {
+                    dragOverridesSignal.value = nextOverrides
+                })
+            }
+        },
+        [dragState]
+    )
+
+    useEffect(() => {
+        updateDragPositionRef.current = updateDragPosition
+    }, [updateDragPosition])
 
     // Synchronize zoom signal with DOM elements to avoid React re-renders
     useEffect(() => {
@@ -494,10 +729,108 @@ export default function RoutineTimeTrackerWidget() {
                 currentDate
             )
 
+            // Initialize snapping and linking states
+            isUnlinkedRef.current = false
+            shakeHistoryRef.current = []
+            snappedTargetRef.current = null
+            bypassedSnapsRef.current = new Set()
+            lastDragYRef.current = clientY
+            if (snapTimerRef.current) {
+                clearTimeout(snapTimerRef.current)
+                snapTimerRef.current = null
+            }
+
+            const allDailyCards = [
+                ...currentDateTimeTrackerCards,
+                ...currentDateRoutineCards,
+            ].filter((c) => !c.is_deleted)
+
+            // Discovery of Linked Edges
+            const linked: Array<{
+                card: RoutineCard | TimeTrackerCard
+                edge: "start" | "end"
+                type: "routine" | "timeTracker"
+                initialStartMin: number
+                initialEndMin: number
+            }> = []
+            // Primary card's dragged edge is always included
+            linked.push({
+                card: task,
+                edge: mode === "top" ? ("start" as const) : ("end" as const),
+                type,
+                initialStartMin: startMin,
+                initialEndMin: startMin + duration,
+            })
+
+            if (mode === "top" || mode === "bottom") {
+                const targetTime = mode === "top" ? task.start_at : task.end_at
+                if (targetTime) {
+                    allDailyCards.forEach((c) => {
+                        if (c.id === task.id) return
+                        const { startMin: cStart, duration: cDur } =
+                            getVisualBoundsForDate(
+                                c.start_at,
+                                c.end_at,
+                                currentDate
+                            )
+
+                        if (c.start_at === targetTime) {
+                            linked.push({
+                                card: c,
+                                edge: "start" as const,
+                                type: allRoutineCards.some((r) => r.id === c.id)
+                                    ? ("routine" as const)
+                                    : ("timeTracker" as const),
+                                initialStartMin: cStart,
+                                initialEndMin: cStart + cDur,
+                            })
+                        }
+                        if (c.end_at === targetTime) {
+                            linked.push({
+                                card: c,
+                                edge: "end" as const,
+                                type: allRoutineCards.some((r) => r.id === c.id)
+                                    ? ("routine" as const)
+                                    : ("timeTracker" as const),
+                                initialStartMin: cStart,
+                                initialEndMin: cStart + cDur,
+                            })
+                        }
+                    })
+                }
+            }
+            linkedEdgesRef.current = linked
+
+            // Collection of Snapping Targets
+            const snapTargets = new Set<number>()
+            allDailyCards.forEach((c) => {
+                if (linked.some((le) => le.card.id === c.id)) return
+                const { startMin: cStart, duration: cDur } =
+                    getVisualBoundsForDate(c.start_at, c.end_at, currentDate)
+                snapTargets.add(cStart)
+                if (c.end_at) {
+                    snapTargets.add(cStart + cDur)
+                }
+            })
+            snapTargetsRef.current = Array.from(snapTargets)
+
+            // Setup initial drag overrides map
+            const initOverrides: Record<
+                string,
+                { top: number; height: number }
+            > = {}
+            const ppm = pixelsPerMinuteSignal.value
+            linked.forEach((le) => {
+                initOverrides[le.card.id] = {
+                    top: le.initialStartMin * ppm + TOP_MARGIN,
+                    height: (le.initialEndMin - le.initialStartMin) * ppm,
+                }
+            })
+
             batch(() => {
-                dragTopSignal.value =
-                    startMin * pixelsPerMinuteSignal.value + TOP_MARGIN
-                dragHeightSignal.value = duration * pixelsPerMinuteSignal.value
+                dragTopSignal.value = startMin * ppm + TOP_MARGIN
+                dragHeightSignal.value = duration * ppm
+                dragOverridesSignal.value = initOverrides
             })
 
             setDragState({
@@ -541,76 +874,98 @@ export default function RoutineTimeTrackerWidget() {
             longPressTimer.current = null
         }
 
+        if (snapTimerRef.current) {
+            clearTimeout(snapTimerRef.current)
+            snapTimerRef.current = null
+        }
+
         if (dragState) {
             wasDragged.current = true
 
-            // Calculate final snapped times
-            const finalTop = dragTopSignal.value
-            const finalHeight = dragHeightSignal.value
-            const finalStartMin =
-                Math.round(
-                    (finalTop - TOP_MARGIN) / pixelsPerMinuteSignal.value / 5
-                ) * 5
-            const finalEndMin =
-                Math.round(
-                    (finalTop + finalHeight - TOP_MARGIN) /
-                        pixelsPerMinuteSignal.value /
-                        5
-                ) * 5
+            // Read final overrides before clearing
+            const finalOverrides = { ...dragOverridesSignal.value }
+            dragOverridesSignal.value = {}
 
             const formatMin = (m: number) => {
                 const h = Math.floor(m / 60)
                 const mm = m % 60
                 return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`
             }
-
             const dateStr = formatLocalDate(currentDate)
-            const finalCard = { ...dragState.card }
 
-            if (dragState.mode === "top") {
-                finalCard.start_at = timeToISO(
-                    formatMin(finalStartMin),
-                    dateStr
-                )
-            } else if (dragState.mode === "bottom") {
-                finalCard.end_at = timeToISO(formatMin(finalEndMin), dateStr)
-            } else if (dragState.mode === "center") {
-                const durationMs =
-                    new Date(dragState.card.end_at || now).getTime() -
-                    new Date(dragState.card.start_at).getTime()
-                const newStart = timeToISO(formatMin(finalStartMin), dateStr)
-                finalCard.start_at = newStart
-                finalCard.end_at = new Date(
-                    new Date(newStart).getTime() + durationMs
-                ).toISOString() as IsoDateTime
-            }
+            // Build atomic list of concurrent updates for all modified linked/primary cards
+            const updates: Array<{
+                type: "routine" | "timeTracker"
+                card: RoutineCard | TimeTrackerCard
+                originalStartAt: IsoDateTime
+            }> = []
 
-            // If it's a recurring routine, show confirmation dialog
-            if (dragState.type === "routine") {
-                const routine = finalCard as RoutineCard
-                const isRecurring =
+            linkedEdgesRef.current.forEach((le) => {
+                const override = finalOverrides[le.card.id]
+                if (!override) return
+
+                const startMin =
+                    Math.round(
+                        (override.top - TOP_MARGIN) /
+                            pixelsPerMinuteSignal.value /
+                            5
+                    ) * 5
+                const endMin =
+                    Math.round(
+                        (override.top + override.height - TOP_MARGIN) /
+                            pixelsPerMinuteSignal.value /
+                            5
+                    ) * 5
+
+                const finalCard = { ...le.card }
+                finalCard.start_at = timeToISO(formatMin(startMin), dateStr)
+                if (le.card.end_at !== null) {
+                    finalCard.end_at = timeToISO(formatMin(endMin), dateStr)
+                }
+
+                updates.push({
+                    type: le.type,
+                    card: finalCard,
+                    originalStartAt: le.card.start_at as IsoDateTime,
+                })
+            })
+
+            // Check if any modified card is a recurring routine
+            const recurringRoutines = updates.filter((up) => {
+                if (up.type !== "routine") return false
+                const routine = up.card as RoutineCard
+                return (
                     routine._isVirtual ||
                     !!routine.rrule ||
                     !!routine.parent_routine_id
-
-                if (isRecurring) {
-                    setConfirmDragState({
-                        type: "routine",
-                        card: routine,
-                        originalStartAt: dragState.card.start_at as IsoDateTime,
-                    })
-                    setDragState(null)
-                    return
-                }
-
-                upsertRoutineCard(routine)
-                await SyncService.save(routineCardConfig, routine)
-            } else {
-                upsertTimeTrackerCard(finalCard as TimeTrackerCard)
-                await SyncService.save(
-                    timeTrackerCardConfig,
-                    finalCard as TimeTrackerCard
                 )
+            })
+
+            if (recurringRoutines.length > 0) {
+                // Keep the updates registered for confirmation callbacks
+                pendingUpdatesRef.current = updates
+                setConfirmDragState({
+                    type: "routine",
+                    card: recurringRoutines[0].card as RoutineCard,
+                    originalStartAt: recurringRoutines[0].originalStartAt,
+                })
+            } else {
+                // Immediately save all changes concurrently
+                for (const up of updates) {
+                    if (up.type === "routine") {
+                        upsertRoutineCard(up.card as RoutineCard)
+                        await SyncService.save(
+                            routineCardConfig,
+                            up.card as RoutineCard
+                        )
+                    } else {
+                        upsertTimeTrackerCard(up.card as TimeTrackerCard)
+                        await SyncService.save(
+                            timeTrackerCardConfig,
+                            up.card as TimeTrackerCard
+                        )
+                    }
+                }
             }
             setDragState(null)
         }
@@ -631,63 +986,7 @@ export default function RoutineTimeTrackerWidget() {
 
         if (dragState) {
             wasDragged.current = true
-            const deltaY = clientY - dragState.initialMouseY
-
-            let newTop =
-                dragState.initialStartMin * pixelsPerMinuteSignal.value +
-                TOP_MARGIN
-            let newHeight =
-                (dragState.initialEndMin - dragState.initialStartMin) *
-                pixelsPerMinuteSignal.value
-
-            if (dragState.mode === "top") {
-                const requestedTop =
-                    dragState.initialStartMin * pixelsPerMinuteSignal.value +
-                    TOP_MARGIN +
-                    deltaY
-                const minTop = TOP_MARGIN
-                const maxTop =
-                    (dragState.initialEndMin - 5) *
-                        pixelsPerMinuteSignal.value +
-                    TOP_MARGIN
-                newTop = Math.max(minTop, Math.min(maxTop, requestedTop))
-                newHeight =
-                    dragState.initialEndMin * pixelsPerMinuteSignal.value +
-                    TOP_MARGIN -
-                    newTop
-            } else if (dragState.mode === "bottom") {
-                const requestedHeight =
-                    (dragState.initialEndMin - dragState.initialStartMin) *
-                        pixelsPerMinuteSignal.value +
-                    deltaY
-                const minHeight = 5 * pixelsPerMinuteSignal.value
-                const maxHeight =
-                    (24 * 60 - dragState.initialStartMin) *
-                    pixelsPerMinuteSignal.value
-                newHeight = Math.max(
-                    minHeight,
-                    Math.min(maxHeight, requestedHeight)
-                )
-            } else {
-                const requestedTop =
-                    dragState.initialStartMin * pixelsPerMinuteSignal.value +
-                    TOP_MARGIN +
-                    deltaY
-                const duration =
-                    (dragState.initialEndMin - dragState.initialStartMin) *
-                    pixelsPerMinuteSignal.value
-                const minTop = TOP_MARGIN
-                const maxTop =
-                    24 * 60 * pixelsPerMinuteSignal.value +
-                    TOP_MARGIN -
-                    duration
-                newTop = Math.max(minTop, Math.min(maxTop, requestedTop))
-            }
-
-            batch(() => {
-                dragTopSignal.value = newTop
-                dragHeightSignal.value = newHeight
-            })
+            updateDragPosition(clientY)
             return
         }
 
@@ -896,97 +1195,162 @@ export default function RoutineTimeTrackerWidget() {
             {confirmDragState && (
                 <SaveChangeDialog
                     onOccurrenceOnly={async () => {
-                        const routine = confirmDragState.card as RoutineCard
-                        if (routine._isVirtual) {
-                            const masterId = routine.id.split(
-                                "_"
-                            )[0] as RoutineCardId
-                            const detachedInstance: RoutineCard = {
-                                ...routine,
-                                id: uuidv4() as RoutineCardId,
-                                parent_routine_id: masterId,
-                                original_recurrence_date:
-                                    confirmDragState.originalStartAt,
-                                _isVirtual: undefined,
-                                updated_at: now.toISOString() as IsoDateTime,
+                        for (const up of pendingUpdatesRef.current) {
+                            if (up.type === "routine") {
+                                const routine = up.card as RoutineCard
+                                const isRecurring =
+                                    routine._isVirtual ||
+                                    !!routine.rrule ||
+                                    !!routine.parent_routine_id
+                                if (isRecurring) {
+                                    if (routine._isVirtual) {
+                                        const masterId = routine.id.split(
+                                            "_"
+                                        )[0] as RoutineCardId
+                                        const detachedInstance: RoutineCard = {
+                                            ...routine,
+                                            id: uuidv4() as RoutineCardId,
+                                            parent_routine_id: masterId,
+                                            original_recurrence_date:
+                                                up.originalStartAt,
+                                            _isVirtual: undefined,
+                                            updated_at:
+                                                now.toISOString() as IsoDateTime,
+                                        }
+                                        upsertRoutineCard(detachedInstance)
+                                        await SyncService.save(
+                                            routineCardConfig,
+                                            detachedInstance
+                                        )
+                                    } else {
+                                        upsertRoutineCard(routine)
+                                        await SyncService.save(
+                                            routineCardConfig,
+                                            routine
+                                        )
+                                    }
+                                } else {
+                                    upsertRoutineCard(routine)
+                                    await SyncService.save(
+                                        routineCardConfig,
+                                        routine
+                                    )
+                                }
+                            } else {
+                                upsertTimeTrackerCard(
+                                    up.card as TimeTrackerCard
+                                )
+                                await SyncService.save(
+                                    timeTrackerCardConfig,
+                                    up.card as TimeTrackerCard
+                                )
                             }
-                            upsertRoutineCard(detachedInstance)
-                            await SyncService.save(
-                                routineCardConfig,
-                                detachedInstance
-                            )
-                        } else {
-                            upsertRoutineCard(routine)
-                            await SyncService.save(routineCardConfig, routine)
                         }
                         setConfirmDragState(null)
                     }}
                     onAllOccurrences={async () => {
-                        const routine = confirmDragState.card as RoutineCard
-                        const masterId = routine._isVirtual
-                            ? routine.id.split("_")[0]
-                            : routine.id
-                        const master = allRoutineCards.find(
-                            (c) => c.id === masterId
-                        )
+                        for (const up of pendingUpdatesRef.current) {
+                            if (up.type === "routine") {
+                                const routine = up.card as RoutineCard
+                                const isRecurring =
+                                    routine._isVirtual ||
+                                    !!routine.rrule ||
+                                    !!routine.parent_routine_id
 
-                        if (master) {
-                            const masterStartDatePart = formatLocalDate(
-                                new Date(master.start_at)
-                            )
-                            const timePartStart = isoToTime(routine.start_at)
-                            const timePartEnd = isoToTime(routine.end_at)
+                                if (isRecurring) {
+                                    const masterId = routine._isVirtual
+                                        ? routine.id.split("_")[0]
+                                        : routine.id
+                                    const master = allRoutineCards.find(
+                                        (c) => c.id === masterId
+                                    )
 
-                            // Calculate day difference in the instance to preserve multi-day span
-                            // Use local-time-safe calculation
-                            const instanceStartDatePart = formatLocalDate(
-                                new Date(routine.start_at)
-                            )
-                            const instanceEndDatePart = formatLocalDate(
-                                new Date(routine.end_at)
-                            )
+                                    if (master) {
+                                        const masterStartDatePart =
+                                            formatLocalDate(
+                                                new Date(master.start_at)
+                                            )
+                                        const timePartStart = isoToTime(
+                                            routine.start_at
+                                        )
+                                        const timePartEnd = isoToTime(
+                                            routine.end_at
+                                        )
 
-                            const [y1, m1, d1] = instanceStartDatePart
-                                .split("-")
-                                .map(Number)
-                            const [y2, m2, d2] = instanceEndDatePart
-                                .split("-")
-                                .map(Number)
+                                        const instanceStartDatePart =
+                                            formatLocalDate(
+                                                new Date(routine.start_at)
+                                            )
+                                        const instanceEndDatePart =
+                                            formatLocalDate(
+                                                new Date(routine.end_at)
+                                            )
 
-                            const dStart = new Date(y1, m1 - 1, d1)
-                            const dEnd = new Date(y2, m2 - 1, d2)
-                            const dayDiff = Math.round(
-                                (dEnd.getTime() - dStart.getTime()) /
-                                    (1000 * 60 * 60 * 24)
-                            )
+                                        const [y1, m1, d1] =
+                                            instanceStartDatePart
+                                                .split("-")
+                                                .map(Number)
+                                        const [y2, m2, d2] = instanceEndDatePart
+                                            .split("-")
+                                            .map(Number)
 
-                            const [my, mm, md] = masterStartDatePart
-                                .split("-")
-                                .map(Number)
-                            const masterEndDate = new Date(my, mm - 1, md)
-                            masterEndDate.setDate(
-                                masterEndDate.getDate() + dayDiff
-                            )
-                            const masterEndDatePart =
-                                formatLocalDate(masterEndDate)
+                                        const dStart = new Date(y1, m1 - 1, d1)
+                                        const dEnd = new Date(y2, m2 - 1, d2)
+                                        const dayDiff = Math.round(
+                                            (dEnd.getTime() -
+                                                dStart.getTime()) /
+                                                (1000 * 60 * 60 * 24)
+                                        )
 
-                            const updatedMaster = {
-                                ...master,
-                                start_at: timeToISO(
-                                    timePartStart,
-                                    masterStartDatePart
-                                ),
-                                end_at: timeToISO(
-                                    timePartEnd,
-                                    masterEndDatePart
-                                ),
-                                updated_at: now.toISOString() as IsoDateTime,
+                                        const [my, mm, md] = masterStartDatePart
+                                            .split("-")
+                                            .map(Number)
+                                        const masterEndDate = new Date(
+                                            my,
+                                            mm - 1,
+                                            md
+                                        )
+                                        masterEndDate.setDate(
+                                            masterEndDate.getDate() + dayDiff
+                                        )
+                                        const masterEndDatePart =
+                                            formatLocalDate(masterEndDate)
+
+                                        const updatedMaster = {
+                                            ...master,
+                                            start_at: timeToISO(
+                                                timePartStart,
+                                                masterStartDatePart
+                                            ),
+                                            end_at: timeToISO(
+                                                timePartEnd,
+                                                masterEndDatePart
+                                            ),
+                                            updated_at:
+                                                now.toISOString() as IsoDateTime,
+                                        }
+                                        upsertRoutineCard(updatedMaster)
+                                        await SyncService.save(
+                                            routineCardConfig,
+                                            updatedMaster
+                                        )
+                                    }
+                                } else {
+                                    upsertRoutineCard(routine)
+                                    await SyncService.save(
+                                        routineCardConfig,
+                                        routine
+                                    )
+                                }
+                            } else {
+                                upsertTimeTrackerCard(
+                                    up.card as TimeTrackerCard
+                                )
+                                await SyncService.save(
+                                    timeTrackerCardConfig,
+                                    up.card as TimeTrackerCard
+                                )
                             }
-                            upsertRoutineCard(updatedMaster)
-                            await SyncService.save(
-                                routineCardConfig,
-                                updatedMaster
-                            )
                         }
                         setConfirmDragState(null)
                     }}

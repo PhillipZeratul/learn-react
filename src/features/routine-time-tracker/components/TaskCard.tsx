@@ -9,7 +9,11 @@ import {
 } from "../utils/utils"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
-import { dragTopSignal, dragHeightSignal } from "../stores/drag.store"
+import {
+    dragTopSignal,
+    dragHeightSignal,
+    dragOverridesSignal,
+} from "../stores/drag.store"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 interface TaskCardProps {
@@ -63,19 +67,37 @@ export const TaskCard = memo(
                 const container = cardRef.current
                 if (!container) return
 
-                if (isDragging) {
-                    const dragHeight = dragHeightSignal.value
-                    const top = dragTopSignal.value
+                const override = dragOverridesSignal.value[card.id]
+                const activeDrag = isDragging || !!override
+
+                if (activeDrag) {
+                    const dragHeight = override
+                        ? override.height
+                        : dragHeightSignal.value
+                    const top = override ? override.top : dragTopSignal.value
                     const showTitle = dragHeight >= SHOW_CARD_TITLE_HEIGHT
                     const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT
                     const showDuration = dragHeight >= SHOW_CARD_DURATION_HEIGHT
 
                     Object.assign(container.style, {
-                        transform: `translateY(${top}px) scale(1.02)`,
+                        transform:
+                            override && !isDragging
+                                ? `translateY(${top}px)`
+                                : `translateY(${top}px) scale(1.02)`,
                         height: `${dragHeight}px`,
                         webkitMaskImage: "",
                         maskImage: "",
+                        zIndex: isDragging ? "50" : "40",
                     })
+
+                    if (!isDragging) {
+                        container.classList.add(
+                            "ring-1",
+                            "ring-primary/40",
+                            "shadow-lg",
+                            "border-primary/30"
+                        )
+                    }
 
                     if (solidBgRef.current) {
                         solidBgRef.current.style.height = `${dragHeight}px`
@@ -128,6 +150,13 @@ export const TaskCard = memo(
                         durationRef.current.textContent = `${getDurationString(dragHeight / ppm)}`
                     }
                 } else {
+                    container.classList.remove(
+                        "ring-1",
+                        "ring-primary/40",
+                        "shadow-lg",
+                        "border-primary/30"
+                    )
+
                     const height = duration * ppm
                     const totalHeight = isCurrentlyTracking
                         ? Math.max(height, 1) + GHOST_EXTENSION_PX

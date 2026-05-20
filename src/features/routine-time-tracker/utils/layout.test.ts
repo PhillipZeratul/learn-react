@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest"
 import { calculateLayout } from "./layout"
 import { timeToISO } from "./utils"
 import type { RoutineCard } from "../models/routine-card.model"
-import type { RoutineCardId } from "../models/routine-time-tracker.model"
+import type { RoutineCardId, TagId } from "../models/routine-time-tracker.model"
+import type { UserId } from "@/shared/models/base.model"
 
 describe("calculateLayout", () => {
     const today = new Date(2026, 4, 20) // May 20, 2026
@@ -18,8 +19,8 @@ describe("calculateLayout", () => {
             title: `Mock Card ${id}`,
             start_at: timeToISO(startStr, "2026-05-20"),
             end_at: timeToISO(endStr, "2026-05-20"),
-            tag_id: "default-tag-id",
-            user_id: "user-id",
+            tag_id: "default-tag-id" as TagId,
+            user_id: "user-id" as UserId,
             created_at: timeToISO("00:00", "2026-05-20"),
             updated_at: timeToISO("00:00", "2026-05-20"),
             is_deleted: false,
