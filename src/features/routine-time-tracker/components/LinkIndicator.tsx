@@ -129,7 +129,6 @@ export const LinkIndicator = ({
     return (
         <div ref={containerRef} className="pointer-events-none absolute">
             <div className="link-chain-container linked">
-                <div className="link-ring-half left-half" />
                 <div className="link-ring-half right-half" />
             </div>
         </div>
