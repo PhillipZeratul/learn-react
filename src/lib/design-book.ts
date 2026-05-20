@@ -234,7 +234,7 @@ dark.set(
     bestContrastWith(ref("dark.secondary"), values)
 )
 
-dark.set("muted", ref("values.neutral-900"))
+dark.set("muted", ref("values.neutral-800"))
 dark.set("muted-foreground", ref("values.neutral-400"))
 
 dark.set(
