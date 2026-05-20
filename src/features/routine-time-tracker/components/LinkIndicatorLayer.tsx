@@ -76,7 +76,7 @@ export const LinkIndicatorLayer = ({
         if (!currentDate) return []
         const active = computeActiveBoundaries(cards, currentDate)
         return Array.from(active).map((id) => {
-            const [cardAId, , cardBId] = id.split("_to_")
+            const [cardAId, cardBId] = id.split("_to_")
             return { id, cardAId, cardBId }
         })
     })
@@ -101,7 +101,7 @@ export const LinkIndicatorLayer = ({
                 const additions = newLinkIds
                     .filter((id) => !prev.some((l) => l.id === id))
                     .map((id) => {
-                        const [cardAId, , cardBId] = id.split("_to_")
+                        const [cardAId, cardBId] = id.split("_to_")
                         return { id, cardAId, cardBId }
                     })
                 return additions.length > 0 ? [...prev, ...additions] : prev
