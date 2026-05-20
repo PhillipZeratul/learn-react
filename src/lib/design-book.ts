@@ -82,6 +82,39 @@ values.set("chart-3", color("oklch(0.65 0.14 200)"))
 values.set("chart-4", color("oklch(0.65 0.17 260)"))
 values.set("chart-5", color("oklch(0.65 0.20 330)"))
 
+// Typography - Font Families
+values.set("font-sans", "'Inter Variable', sans-serif")
+values.set("font-heading", "'Outfit Variable', sans-serif")
+values.set(
+    "font-mono",
+    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+)
+
+// Typography - Font Sizes (Dynamic Scale)
+values.set("font-size-xs", rem(0.75))
+values.set("font-size-sm", rem(0.875))
+values.set("font-size-base", rem(1.0))
+values.set("font-size-lg", rem(1.125))
+values.set("font-size-xl", rem(1.25))
+values.set("font-size-2xl", rem(1.5))
+values.set("font-size-3xl", rem(1.875))
+values.set("font-size-4xl", rem(2.25))
+values.set("font-size-5xl", rem(3.0))
+values.set("font-size-6xl", rem(3.75))
+
+// Typography - Font Weights
+values.set("font-weight-normal", "400")
+values.set("font-weight-medium", "500")
+values.set("font-weight-semibold", "600")
+values.set("font-weight-bold", "700")
+
+// Typography - Line Heights
+values.set("line-height-none", "1")
+values.set("line-height-tight", "1.25")
+values.set("line-height-snug", "1.375")
+values.set("line-height-normal", "1.5")
+values.set("line-height-relaxed", "1.625")
+
 // ---- light (default) --------------------------------------------------
 const light = book.addScope("light")
 
@@ -134,6 +167,33 @@ light.set("chart-4", ref("values.chart-4"))
 light.set("chart-5", ref("values.chart-5"))
 
 light.set("radius", rem(0.875))
+
+// Typography Mappings
+light.set("font-sans", ref("values.font-sans"))
+light.set("font-heading", ref("values.font-heading"))
+light.set("font-mono", ref("values.font-mono"))
+
+light.set("font-size-xs", ref("values.font-size-xs"))
+light.set("font-size-sm", ref("values.font-size-sm"))
+light.set("font-size-base", ref("values.font-size-base"))
+light.set("font-size-lg", ref("values.font-size-lg"))
+light.set("font-size-xl", ref("values.font-size-xl"))
+light.set("font-size-2xl", ref("values.font-size-2xl"))
+light.set("font-size-3xl", ref("values.font-size-3xl"))
+light.set("font-size-4xl", ref("values.font-size-4xl"))
+light.set("font-size-5xl", ref("values.font-size-5xl"))
+light.set("font-size-6xl", ref("values.font-size-6xl"))
+
+light.set("font-weight-normal", ref("values.font-weight-normal"))
+light.set("font-weight-medium", ref("values.font-weight-medium"))
+light.set("font-weight-semibold", ref("values.font-weight-semibold"))
+light.set("font-weight-bold", ref("values.font-weight-bold"))
+
+light.set("line-height-none", ref("values.line-height-none"))
+light.set("line-height-tight", ref("values.line-height-tight"))
+light.set("line-height-snug", ref("values.line-height-snug"))
+light.set("line-height-normal", ref("values.line-height-normal"))
+light.set("line-height-relaxed", ref("values.line-height-relaxed"))
 
 light.set("sidebar", ref("values.neutral-50"))
 light.set("sidebar-foreground", ref("values.neutral-900"))
