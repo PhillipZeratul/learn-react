@@ -1086,13 +1086,25 @@ export default function RoutineTimeTrackerWidget() {
                                     getTagColor={getTagColor}
                                     getTagName={getTagName}
                                     onPress={(e) => {
-                                        handleCardPress(e, "timeTracker", task)
+                                        const original =
+                                            allTimeTrackerCards.find(
+                                                (c) => c.id === task.id
+                                            ) || task
+                                        handleCardPress(
+                                            e,
+                                            "timeTracker",
+                                            original
+                                        )
                                     }}
                                     onClick={() => {
                                         if (!wasDragged.current) {
+                                            const original =
+                                                allTimeTrackerCards.find(
+                                                    (c) => c.id === task.id
+                                                ) || task
                                             setEditingState({
                                                 type: "timeTracker",
-                                                card: task,
+                                                card: original,
                                             })
                                         }
                                     }}

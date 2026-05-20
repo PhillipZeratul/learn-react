@@ -103,9 +103,9 @@ export const TimeTrackerEditor = ({
 
         let finalEndAt = timeToISO(state.endAt, state.endDate)
 
-        // If we are editing an active task and the time fields were hidden,
-        // keep it active (null end_at)
-        if (task.end_at === null && hideTimeFields) {
+        // If we are editing an active task, keep it active (null end_at).
+        // The user must stop it via the dashboard button, or we can just enforce it here.
+        if (task.end_at === null) {
             finalEndAt = null as unknown as IsoDateTime
         }
 
@@ -230,6 +230,7 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-end-date"
                                         type="date"
+                                        disabled={task.end_at === null}
                                         value={state.endDate}
                                         onChange={(e) =>
                                             dispatch({
@@ -251,6 +252,7 @@ export const TimeTrackerEditor = ({
                                         id="tracker-end-time"
                                         type="time"
                                         step="1"
+                                        disabled={task.end_at === null}
                                         value={state.endAt}
                                         onChange={(e) =>
                                             dispatch({
