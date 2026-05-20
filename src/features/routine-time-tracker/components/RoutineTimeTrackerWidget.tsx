@@ -740,10 +740,11 @@ export default function RoutineTimeTrackerWidget() {
                 snapTimerRef.current = null
             }
 
-            const allDailyCards = [
-                ...currentDateTimeTrackerCards,
-                ...currentDateRoutineCards,
-            ].filter((c) => !c.is_deleted)
+            const allDailyCards = (
+                type === "routine"
+                    ? currentDateRoutineCards
+                    : currentDateTimeTrackerCards
+            ).filter((c) => !c.is_deleted)
 
             // Discovery of Linked Edges
             const linked: Array<{
@@ -778,9 +779,7 @@ export default function RoutineTimeTrackerWidget() {
                             linked.push({
                                 card: c,
                                 edge: "start" as const,
-                                type: allRoutineCards.some((r) => r.id === c.id)
-                                    ? ("routine" as const)
-                                    : ("timeTracker" as const),
+                                type,
                                 initialStartMin: cStart,
                                 initialEndMin: cStart + cDur,
                             })
@@ -789,9 +788,7 @@ export default function RoutineTimeTrackerWidget() {
                             linked.push({
                                 card: c,
                                 edge: "end" as const,
-                                type: allRoutineCards.some((r) => r.id === c.id)
-                                    ? ("routine" as const)
-                                    : ("timeTracker" as const),
+                                type,
                                 initialStartMin: cStart,
                                 initialEndMin: cStart + cDur,
                             })
