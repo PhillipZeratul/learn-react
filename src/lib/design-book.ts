@@ -3,6 +3,7 @@ import {
     color,
     ref,
     rem,
+    string,
     Renderer,
     bestContrastWith,
     minContrastWith,
@@ -83,11 +84,11 @@ values.set("chart-4", color("oklch(0.65 0.17 260)"))
 values.set("chart-5", color("oklch(0.65 0.20 330)"))
 
 // Typography - Font Families
-values.set("font-sans", "'Inter Variable', sans-serif")
-values.set("font-heading", "'Outfit Variable', sans-serif")
+values.set("font-sans", string("'Inter Variable', sans-serif"))
+values.set("font-heading", string("'Outfit Variable', sans-serif"))
 values.set(
     "font-mono",
-    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+    string("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
 )
 
 // Typography - Font Sizes (Dynamic Scale)
@@ -103,17 +104,17 @@ values.set("font-size-5xl", rem(3.0))
 values.set("font-size-6xl", rem(3.75))
 
 // Typography - Font Weights
-values.set("font-weight-normal", "400")
-values.set("font-weight-medium", "500")
-values.set("font-weight-semibold", "600")
-values.set("font-weight-bold", "700")
+values.set("font-weight-normal", string("400"))
+values.set("font-weight-medium", string("500"))
+values.set("font-weight-semibold", string("600"))
+values.set("font-weight-bold", string("700"))
 
 // Typography - Line Heights
-values.set("line-height-none", "1")
-values.set("line-height-tight", "1.25")
-values.set("line-height-snug", "1.375")
-values.set("line-height-normal", "1.5")
-values.set("line-height-relaxed", "1.625")
+values.set("line-height-none", string("1"))
+values.set("line-height-tight", string("1.25"))
+values.set("line-height-snug", string("1.375"))
+values.set("line-height-normal", string("1.5"))
+values.set("line-height-relaxed", string("1.625"))
 
 // ---- light (default) --------------------------------------------------
 const light = book.addScope("light")
