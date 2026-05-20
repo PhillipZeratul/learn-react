@@ -80,10 +80,7 @@ export const TaskCard = memo(
                     const showDuration = dragHeight >= SHOW_CARD_DURATION_HEIGHT
 
                     Object.assign(container.style, {
-                        transform:
-                            override && !isDragging
-                                ? `translateY(${top}px)`
-                                : `translateY(${top}px) scale(1.02)`,
+                        transform: `translateY(${top}px)`,
                         height: `${dragHeight}px`,
                         webkitMaskImage: "",
                         maskImage: "",
@@ -257,8 +254,8 @@ export const TaskCard = memo(
         const defaultLeft = layout ? layout.left : "0.5rem"
         const defaultWidth = layout ? layout.width : "calc(100% - 1rem)"
 
-        const leftStyle = isDragging ? "0.5rem" : defaultLeft
-        const widthStyle = isDragging ? "calc(100% - 1rem)" : defaultWidth
+        const leftStyle = defaultLeft
+        const widthStyle = defaultWidth
         const zIndexStyle = isDragging ? 50 : 10
         const willChangeStyle = isDragging
             ? "transform, height, opacity"
