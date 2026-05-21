@@ -815,7 +815,22 @@ export default function RoutineTimeTrackerWidget() {
                                 currentDate
                             )
 
-                        if (c.start_at === targetTime) {
+                        const isStartLinked =
+                            c.start_at &&
+                            targetTime &&
+                            Math.abs(
+                                new Date(c.start_at).getTime() -
+                                    new Date(targetTime).getTime()
+                            ) < 1000
+                        const isEndLinked =
+                            c.end_at &&
+                            targetTime &&
+                            Math.abs(
+                                new Date(c.end_at).getTime() -
+                                    new Date(targetTime).getTime()
+                            ) < 1000
+
+                        if (isStartLinked) {
                             linked.push({
                                 card: c,
                                 edge: "start" as const,
@@ -824,7 +839,7 @@ export default function RoutineTimeTrackerWidget() {
                                 initialEndMin: cStart + cDur,
                             })
                         }
-                        if (c.end_at === targetTime) {
+                        if (isEndLinked) {
                             linked.push({
                                 card: c,
                                 edge: "end" as const,
@@ -953,6 +968,18 @@ export default function RoutineTimeTrackerWidget() {
 
                 const finalCard = { ...le.card }
 
+                // Check if the card is an active tracking task (originally running)
+                const originalCard =
+                    le.type === "timeTracker"
+                        ? allTimeTrackerCards.find((c) => c.id === le.card.id)
+                        : null
+                const isOriginallyTracking =
+                    originalCard && originalCard.end_at === null
+                const shouldStopTracking =
+                    isOriginallyTracking &&
+                    dragState.card.id === le.card.id &&
+                    dragState.mode === "bottom"
+
                 if (dragState.mode === "center") {
                     // Center drag: shift both start and end, round to 5 mins
                     const startMin =
@@ -969,14 +996,19 @@ export default function RoutineTimeTrackerWidget() {
                         ) * 5
 
                     finalCard.start_at = timeToISO(formatMin(startMin), dateStr)
-                    if (le.card.end_at !== null) {
+                    if (isOriginallyTracking && !shouldStopTracking) {
+                        finalCard.end_at = null
+                    } else if (le.card.end_at !== null) {
                         finalCard.end_at = timeToISO(formatMin(endMin), dateStr)
                     }
                 } else {
                     // Edge drag (mode === "top" or "bottom")
                     if (le.edge === "start") {
                         // Start edge is being dragged. End edge remains exactly at its original value.
-                        finalCard.end_at = le.card.end_at
+                        finalCard.end_at =
+                            isOriginallyTracking && !shouldStopTracking
+                                ? null
+                                : le.card.end_at
 
                         const snappedIso =
                             snappedTargetRef.current !== null
@@ -1005,7 +1037,9 @@ export default function RoutineTimeTrackerWidget() {
                         // End edge is being dragged. Start edge remains exactly at its original value.
                         finalCard.start_at = le.card.start_at
 
-                        if (le.card.end_at !== null) {
+                        if (isOriginallyTracking && !shouldStopTracking) {
+                            finalCard.end_at = null
+                        } else if (le.card.end_at !== null) {
                             const snappedIso =
                                 snappedTargetRef.current !== null
                                     ? snapTargetISOMapRef.current.get(
