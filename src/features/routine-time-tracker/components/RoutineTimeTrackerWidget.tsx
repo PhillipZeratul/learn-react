@@ -213,6 +213,7 @@ export default function RoutineTimeTrackerWidget() {
     >([])
 
     const snapTargetsRef = useRef<number[]>([])
+    const snapTargetISOMapRef = useRef<Map<number, string>>(new Map())
     const snappedTargetRef = useRef<number | null>(null)
     const bypassedSnapsRef = useRef<Set<number>>(new Set())
     const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -839,16 +840,27 @@ export default function RoutineTimeTrackerWidget() {
 
             // Collection of Snapping Targets
             const snapTargets = new Set<number>()
+            const timeMap = new Map<number, string>()
             allDailyCards.forEach((c) => {
                 if (linked.some((le) => le.card.id === c.id)) return
-                const { startMin: cStart, duration: cDur } =
-                    getVisualBoundsForDate(c.start_at, c.end_at, currentDate)
-                snapTargets.add(cStart)
-                if (c.end_at) {
+                const {
+                    startMin: cStart,
+                    duration: cDur,
+                    isStartClamped,
+                    isEndClamped,
+                } = getVisualBoundsForDate(c.start_at, c.end_at, currentDate)
+
+                if (!isStartClamped) {
+                    snapTargets.add(cStart)
+                    timeMap.set(cStart, c.start_at)
+                }
+                if (c.end_at && !isEndClamped) {
                     snapTargets.add(cStart + cDur)
+                    timeMap.set(cStart + cDur, c.end_at)
                 }
             })
             snapTargetsRef.current = Array.from(snapTargets)
+            snapTargetISOMapRef.current = timeMap
 
             // Setup initial drag overrides map
             const initOverrides: Record<
@@ -939,23 +951,88 @@ export default function RoutineTimeTrackerWidget() {
                 const override = finalOverrides[le.card.id]
                 if (!override) return
 
-                const startMin =
-                    Math.round(
-                        (override.top - TOP_MARGIN) /
-                            pixelsPerMinuteSignal.value /
-                            5
-                    ) * 5
-                const endMin =
-                    Math.round(
-                        (override.top + override.height - TOP_MARGIN) /
-                            pixelsPerMinuteSignal.value /
-                            5
-                    ) * 5
-
                 const finalCard = { ...le.card }
-                finalCard.start_at = timeToISO(formatMin(startMin), dateStr)
-                if (le.card.end_at !== null) {
-                    finalCard.end_at = timeToISO(formatMin(endMin), dateStr)
+
+                if (dragState.mode === "center") {
+                    // Center drag: shift both start and end, round to 5 mins
+                    const startMin =
+                        Math.round(
+                            (override.top - TOP_MARGIN) /
+                                pixelsPerMinuteSignal.value /
+                                5
+                        ) * 5
+                    const endMin =
+                        Math.round(
+                            (override.top + override.height - TOP_MARGIN) /
+                                pixelsPerMinuteSignal.value /
+                                5
+                        ) * 5
+
+                    finalCard.start_at = timeToISO(formatMin(startMin), dateStr)
+                    if (le.card.end_at !== null) {
+                        finalCard.end_at = timeToISO(formatMin(endMin), dateStr)
+                    }
+                } else {
+                    // Edge drag (mode === "top" or "bottom")
+                    if (le.edge === "start") {
+                        // Start edge is being dragged. End edge remains exactly at its original value.
+                        finalCard.end_at = le.card.end_at
+
+                        const snappedIso =
+                            snappedTargetRef.current !== null
+                                ? snapTargetISOMapRef.current.get(
+                                      snappedTargetRef.current
+                                  )
+                                : undefined
+
+                        if (snappedIso) {
+                            // Snapped! Use exact raw UTC IsoDateTime string of the target edge
+                            finalCard.start_at = snappedIso as IsoDateTime
+                        } else {
+                            // Not snapped, round to 5 mins
+                            const startMin =
+                                Math.round(
+                                    (override.top - TOP_MARGIN) /
+                                        pixelsPerMinuteSignal.value /
+                                        5
+                                ) * 5
+                            finalCard.start_at = timeToISO(
+                                formatMin(startMin),
+                                dateStr
+                            )
+                        }
+                    } else {
+                        // End edge is being dragged. Start edge remains exactly at its original value.
+                        finalCard.start_at = le.card.start_at
+
+                        if (le.card.end_at !== null) {
+                            const snappedIso =
+                                snappedTargetRef.current !== null
+                                    ? snapTargetISOMapRef.current.get(
+                                          snappedTargetRef.current
+                                      )
+                                    : undefined
+
+                            if (snappedIso) {
+                                // Snapped! Use exact raw UTC IsoDateTime string of the target edge
+                                finalCard.end_at = snappedIso as IsoDateTime
+                            } else {
+                                // Not snapped, round to 5 mins
+                                const endMin =
+                                    Math.round(
+                                        (override.top +
+                                            override.height -
+                                            TOP_MARGIN) /
+                                            pixelsPerMinuteSignal.value /
+                                            5
+                                    ) * 5
+                                finalCard.end_at = timeToISO(
+                                    formatMin(endMin),
+                                    dateStr
+                                )
+                            }
+                        }
+                    }
                 }
 
                 updates.push({
