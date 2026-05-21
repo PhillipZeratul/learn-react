@@ -1763,7 +1763,7 @@ export default function RoutineTimeTrackerWidget() {
                         </div>
 
                         {/* Center Timeline Spacer (for layout alignment) */}
-                        <div className="h-full w-[60px]" />
+                        <div className="h-full w-15" />
 
                         {/* Routine Column */}
                         <div className="relative h-full flex-1">

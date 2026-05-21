@@ -309,7 +309,7 @@ export const TaskCard = memo(
                 {isCurrentlyTracking && !isDragging && (
                     <div
                         ref={ghostBgRef}
-                        className="pointer-events-none absolute inset-x-0 h-[60px]"
+                        className="pointer-events-none absolute inset-x-0 h-15"
                         style={{ top: `${initialHeight}px` }}
                     >
                         <div
@@ -366,7 +366,7 @@ export const TaskCard = memo(
                     />
                     <div
                         ref={titleRef}
-                        className={`card-title flex-shrink-0 truncate text-sm font-medium text-foreground ${
+                        className={`card-title shrink-0 truncate text-sm font-medium text-foreground ${
                             isDragging || initialShowTitle ? "block" : "none"
                         } ${initialShowTime ? "leading-tight" : "leading-none"}`}
                     >
@@ -374,7 +374,7 @@ export const TaskCard = memo(
                     </div>
                     <div
                         ref={timeRef}
-                        className={`card-time flex-shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
+                        className={`card-time shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
                             isDragging || initialShowTime ? "block" : "none"
                         }`}
                     >
@@ -382,7 +382,7 @@ export const TaskCard = memo(
                     </div>
                     <div
                         ref={durationRef}
-                        className={`card-duration flex-shrink-0 truncate text-[10px] text-muted-foreground/80 tabular-nums ${
+                        className={`card-duration shrink-0 truncate text-[10px] text-muted-foreground/80 tabular-nums ${
                             isDragging || initialShowDuration ? "block" : "none"
                         }`}
                     >
