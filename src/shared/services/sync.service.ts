@@ -686,7 +686,6 @@ export class SyncService {
             )
 
             const latestActionsMap = new Map<string, QueueItem>()
-            const actionIds = tableActions.map((item) => item.id)
 
             for (const action of tableActions) {
                 const payload = JSON.parse(action.payload) as Partial<BaseModel>
@@ -791,7 +790,7 @@ export class SyncService {
                                 "DELETE FROM sync_queue WHERE id = ? AND created_at <= ?",
                                 [action.id, action.created_at]
                             )
-                            if (deleteResult.rowsAffected === 0) {
+                            if ((deleteResult.changes || 0) === 0) {
                                 console.log(
                                     `SyncService: [PRESERVE QUEUE] Queue item ${action.id} for ${table}:${id} was modified/merged while in-flight. Preserving for next sync.`
                                 )
