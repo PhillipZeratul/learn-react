@@ -38,10 +38,12 @@ export function Root() {
                             "Root: Initial user found, triggering hydration..."
                         )
                         SyncService.startRealtimeListener()
-                        await Promise.all([
-                            SyncService.loadAll(),
-                            SyncService.pullDeltas(),
-                        ])
+
+                        // Load local SQLite data immediately for fast UI feedback
+                        await SyncService.loadAll()
+
+                        // Pull cloud deltas in the background
+                        SyncService.pullDeltas()
                     }
                     // Listen for changes (Login/Logout/Refresh)
                     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -56,11 +58,15 @@ export function Root() {
                                 `Root: Auth event ${event}, triggering hydration...`
                             )
                             SyncService.startRealtimeListener()
-                            await Promise.all([
-                                SyncService.loadAll(),
-                                SyncService.pullDeltas(),
-                                RoutineTimeTrackerService.initialize(),
-                            ])
+
+                            // 1. Load local SQLite data immediately
+                            await SyncService.loadAll()
+
+                            // 2. Initialize routine time tracker features (default tags, etc.)
+                            await RoutineTimeTrackerService.initialize()
+
+                            // 3. Catch up sync from cloud in the background
+                            SyncService.pullDeltas()
                         }
 
                         if (event === "SIGNED_OUT") {
