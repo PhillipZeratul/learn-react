@@ -217,6 +217,7 @@ export default function RoutineTimeTrackerWidget() {
     const snappedTargetRef = useRef<number | null>(null)
     const bypassedSnapsRef = useRef<Set<number>>(new Set())
     const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const snappedEdgeRef = useRef<"top" | "bottom" | null>(null)
 
     // Track the last clientY during drags to re-trigger updates on hold-timer snap breaks
     const lastDragYRef = useRef<number>(0)
@@ -279,7 +280,7 @@ export default function RoutineTimeTrackerWidget() {
 
             const deltaY = clientY - dragState.initialMouseY
 
-            // 2. Snapping Calculations (only for edge dragging)
+            // 2. Snapping Calculations
             let snapOffsetMinutes = 0
 
             if (dragState.mode === "top" || dragState.mode === "bottom") {
@@ -338,6 +339,244 @@ export default function RoutineTimeTrackerWidget() {
                         }
                     }
                 }
+            } else if (dragState.mode === "center") {
+                const requestedMinutesTop =
+                    dragState.initialStartMin + deltaY / ppm
+                const requestedPixelsTop =
+                    requestedMinutesTop * ppm + TOP_MARGIN
+                const requestedMinutesBottom =
+                    dragState.initialEndMin + deltaY / ppm
+                const requestedPixelsBottom =
+                    requestedMinutesBottom * ppm + TOP_MARGIN
+
+                if (snappedEdgeRef.current === "top") {
+                    const {
+                        snappedTargetVal: snapVal,
+                        snapOffsetMinutes: snapOffset,
+                        shouldBypass,
+                        shouldStartTimer,
+                    } = calculateSnap(
+                        requestedPixelsTop,
+                        snapTargetsRef.current,
+                        bypassedSnapsRef.current,
+                        ppm,
+                        snappedTargetRef.current,
+                        TOP_MARGIN
+                    )
+
+                    if (shouldBypass) {
+                        if (snappedTargetRef.current !== null) {
+                            bypassedSnapsRef.current.add(
+                                snappedTargetRef.current
+                            )
+                            snappedTargetRef.current = null
+                        }
+                        snappedEdgeRef.current = null
+                        if (snapTimerRef.current) {
+                            clearTimeout(snapTimerRef.current)
+                            snapTimerRef.current = null
+                        }
+                    } else if (shouldStartTimer !== null) {
+                        snappedTargetRef.current = shouldStartTimer
+                        snapOffsetMinutes = snapOffset
+
+                        if (snapTimerRef.current) {
+                            clearTimeout(snapTimerRef.current)
+                        }
+                        snapTimerRef.current = setTimeout(() => {
+                            bypassedSnapsRef.current.add(shouldStartTimer)
+                            snappedTargetRef.current = null
+                            snappedEdgeRef.current = null
+                            snapTimerRef.current = null
+                            updateDragPositionRef.current(lastDragYRef.current)
+                        }, 3000)
+                    } else if (snapVal !== null) {
+                        snapOffsetMinutes = snapOffset
+                    } else {
+                        if (snappedTargetRef.current !== null) {
+                            snappedTargetRef.current = null
+                            snappedEdgeRef.current = null
+                            if (snapTimerRef.current) {
+                                clearTimeout(snapTimerRef.current)
+                                snapTimerRef.current = null
+                            }
+                        }
+                    }
+                } else if (snappedEdgeRef.current === "bottom") {
+                    const {
+                        snappedTargetVal: snapVal,
+                        snapOffsetMinutes: snapOffset,
+                        shouldBypass,
+                        shouldStartTimer,
+                    } = calculateSnap(
+                        requestedPixelsBottom,
+                        snapTargetsRef.current,
+                        bypassedSnapsRef.current,
+                        ppm,
+                        snappedTargetRef.current,
+                        TOP_MARGIN
+                    )
+
+                    if (shouldBypass) {
+                        if (snappedTargetRef.current !== null) {
+                            bypassedSnapsRef.current.add(
+                                snappedTargetRef.current
+                            )
+                            snappedTargetRef.current = null
+                        }
+                        snappedEdgeRef.current = null
+                        if (snapTimerRef.current) {
+                            clearTimeout(snapTimerRef.current)
+                            snapTimerRef.current = null
+                        }
+                    } else if (shouldStartTimer !== null) {
+                        snappedTargetRef.current = shouldStartTimer
+                        snapOffsetMinutes = snapOffset
+
+                        if (snapTimerRef.current) {
+                            clearTimeout(snapTimerRef.current)
+                        }
+                        snapTimerRef.current = setTimeout(() => {
+                            bypassedSnapsRef.current.add(shouldStartTimer)
+                            snappedTargetRef.current = null
+                            snappedEdgeRef.current = null
+                            snapTimerRef.current = null
+                            updateDragPositionRef.current(lastDragYRef.current)
+                        }, 3000)
+                    } else if (snapVal !== null) {
+                        snapOffsetMinutes = snapOffset
+                    } else {
+                        if (snappedTargetRef.current !== null) {
+                            snappedTargetRef.current = null
+                            snappedEdgeRef.current = null
+                            if (snapTimerRef.current) {
+                                clearTimeout(snapTimerRef.current)
+                                snapTimerRef.current = null
+                            }
+                        }
+                    }
+                } else {
+                    // Not currently snapped to either edge
+                    const snapResultTop = calculateSnap(
+                        requestedPixelsTop,
+                        snapTargetsRef.current,
+                        bypassedSnapsRef.current,
+                        ppm,
+                        null,
+                        TOP_MARGIN
+                    )
+                    const snapResultBottom = calculateSnap(
+                        requestedPixelsBottom,
+                        snapTargetsRef.current,
+                        bypassedSnapsRef.current,
+                        ppm,
+                        null,
+                        TOP_MARGIN
+                    )
+
+                    const isTopSnapping =
+                        snapResultTop.snappedTargetVal !== null
+                    const isBottomSnapping =
+                        snapResultBottom.snappedTargetVal !== null
+
+                    if (isTopSnapping && isBottomSnapping) {
+                        const targetPxTop =
+                            snapResultTop.snappedTargetVal! * ppm + TOP_MARGIN
+                        const diffTop = Math.abs(
+                            requestedPixelsTop - targetPxTop
+                        )
+
+                        const targetPxBottom =
+                            snapResultBottom.snappedTargetVal! * ppm +
+                            TOP_MARGIN
+                        const diffBottom = Math.abs(
+                            requestedPixelsBottom - targetPxBottom
+                        )
+
+                        if (diffTop <= diffBottom) {
+                            snappedEdgeRef.current = "top"
+                            snappedTargetRef.current =
+                                snapResultTop.snappedTargetVal
+                            snapOffsetMinutes = snapResultTop.snapOffsetMinutes
+                            if (snapResultTop.shouldStartTimer !== null) {
+                                if (snapTimerRef.current)
+                                    clearTimeout(snapTimerRef.current)
+                                snapTimerRef.current = setTimeout(() => {
+                                    bypassedSnapsRef.current.add(
+                                        snapResultTop.shouldStartTimer!
+                                    )
+                                    snappedTargetRef.current = null
+                                    snappedEdgeRef.current = null
+                                    snapTimerRef.current = null
+                                    updateDragPositionRef.current(
+                                        lastDragYRef.current
+                                    )
+                                }, 3000)
+                            }
+                        } else {
+                            snappedEdgeRef.current = "bottom"
+                            snappedTargetRef.current =
+                                snapResultBottom.snappedTargetVal
+                            snapOffsetMinutes =
+                                snapResultBottom.snapOffsetMinutes
+                            if (snapResultBottom.shouldStartTimer !== null) {
+                                if (snapTimerRef.current)
+                                    clearTimeout(snapTimerRef.current)
+                                snapTimerRef.current = setTimeout(() => {
+                                    bypassedSnapsRef.current.add(
+                                        snapResultBottom.shouldStartTimer!
+                                    )
+                                    snappedTargetRef.current = null
+                                    snappedEdgeRef.current = null
+                                    snapTimerRef.current = null
+                                    updateDragPositionRef.current(
+                                        lastDragYRef.current
+                                    )
+                                }, 3000)
+                            }
+                        }
+                    } else if (isTopSnapping) {
+                        snappedEdgeRef.current = "top"
+                        snappedTargetRef.current =
+                            snapResultTop.snappedTargetVal
+                        snapOffsetMinutes = snapResultTop.snapOffsetMinutes
+                        if (snapResultTop.shouldStartTimer !== null) {
+                            if (snapTimerRef.current)
+                                clearTimeout(snapTimerRef.current)
+                            snapTimerRef.current = setTimeout(() => {
+                                bypassedSnapsRef.current.add(
+                                    snapResultTop.shouldStartTimer!
+                                )
+                                snappedTargetRef.current = null
+                                snappedEdgeRef.current = null
+                                snapTimerRef.current = null
+                                updateDragPositionRef.current(
+                                    lastDragYRef.current
+                                )
+                            }, 3000)
+                        }
+                    } else if (isBottomSnapping) {
+                        snappedEdgeRef.current = "bottom"
+                        snappedTargetRef.current =
+                            snapResultBottom.snappedTargetVal
+                        snapOffsetMinutes = snapResultBottom.snapOffsetMinutes
+                        if (snapResultBottom.shouldStartTimer !== null) {
+                            if (snapTimerRef.current)
+                                clearTimeout(snapTimerRef.current)
+                            snapTimerRef.current = setTimeout(() => {
+                                bypassedSnapsRef.current.add(
+                                    snapResultBottom.shouldStartTimer!
+                                )
+                                snappedTargetRef.current = null
+                                snappedEdgeRef.current = null
+                                snapTimerRef.current = null
+                                updateDragPositionRef.current(
+                                    lastDragYRef.current
+                                )
+                            }, 3000)
+                        }
+                    }
+                }
             }
 
             // 3. Compute active delta minutes
@@ -380,6 +619,29 @@ export default function RoutineTimeTrackerWidget() {
                 const height = duration * ppm
 
                 nextOverrides[dragState.card.id] = { top, height }
+
+                // Shift linked edges for secondary cards based on actual clamped delta
+                const clampedDeltaMin = newStartMin - dragState.initialStartMin
+                linkedEdgesRef.current.forEach((le) => {
+                    if (le.card.id === dragState.card.id) return
+
+                    let startMin = le.initialStartMin
+                    let endMin = le.initialEndMin
+
+                    if (le.edge === "start") {
+                        startMin = le.initialStartMin + clampedDeltaMin
+                    } else {
+                        endMin = le.initialEndMin + clampedDeltaMin
+                    }
+
+                    const topLinked = startMin * ppm + TOP_MARGIN
+                    const heightLinked = (endMin - startMin) * ppm
+
+                    nextOverrides[le.card.id] = {
+                        top: topLinked,
+                        height: heightLinked,
+                    }
+                })
 
                 batch(() => {
                     dragTopSignal.value = top
@@ -773,6 +1035,7 @@ export default function RoutineTimeTrackerWidget() {
             isUnlinkedRef.current = false
             shakeHistoryRef.current = []
             snappedTargetRef.current = null
+            snappedEdgeRef.current = null
             bypassedSnapsRef.current = new Set()
             lastDragYRef.current = clientY
             if (snapTimerRef.current) {
@@ -797,7 +1060,12 @@ export default function RoutineTimeTrackerWidget() {
             // Primary card's dragged edge is always included
             linked.push({
                 card: task,
-                edge: mode === "top" ? ("start" as const) : ("end" as const),
+                edge:
+                    mode === "top"
+                        ? ("start" as const)
+                        : mode === "bottom"
+                          ? ("end" as const)
+                          : ("start" as const),
                 type,
                 initialStartMin: startMin,
                 initialEndMin: startMin + duration,
@@ -870,6 +1138,97 @@ export default function RoutineTimeTrackerWidget() {
                         }
                     })
                 }
+            } else if (mode === "center") {
+                const targetStartTime = task.start_at
+                const targetEndTime = task.end_at
+
+                allDailyCards.forEach((c) => {
+                    if (c.id === task.id) return
+                    const { startMin: cStart, duration: cDur } =
+                        getVisualBoundsForDate(
+                            c.start_at,
+                            c.end_at,
+                            currentDate
+                        )
+
+                    const originalC =
+                        type === "timeTracker"
+                            ? allTimeTrackerCards.find((otc) => otc.id === c.id)
+                            : null
+                    const isCTracking = originalC && originalC.end_at === null
+
+                    // 1. Check if linked to task.start_at
+                    if (targetStartTime) {
+                        const isStartLinkedToStart =
+                            c.start_at &&
+                            Math.abs(
+                                new Date(c.start_at).getTime() -
+                                    new Date(targetStartTime).getTime()
+                            ) < 1000
+                        const isEndLinkedToStart =
+                            !isCTracking &&
+                            c.end_at &&
+                            Math.abs(
+                                new Date(c.end_at).getTime() -
+                                    new Date(targetStartTime).getTime()
+                            ) < 1000
+
+                        if (isStartLinkedToStart) {
+                            linked.push({
+                                card: c,
+                                edge: "start" as const,
+                                type,
+                                initialStartMin: cStart,
+                                initialEndMin: cStart + cDur,
+                            })
+                        }
+                        if (isEndLinkedToStart) {
+                            linked.push({
+                                card: c,
+                                edge: "end" as const,
+                                type,
+                                initialStartMin: cStart,
+                                initialEndMin: cStart + cDur,
+                            })
+                        }
+                    }
+
+                    // 2. Check if linked to task.end_at
+                    if (targetEndTime) {
+                        const isStartLinkedToEnd =
+                            c.start_at &&
+                            Math.abs(
+                                new Date(c.start_at).getTime() -
+                                    new Date(targetEndTime).getTime()
+                            ) < 1000
+                        const isEndLinkedToEnd =
+                            !isCTracking &&
+                            c.end_at &&
+                            Math.abs(
+                                new Date(c.end_at).getTime() -
+                                    new Date(targetEndTime).getTime()
+                            ) < 1000
+
+                        if (isStartLinkedToEnd) {
+                            linked.push({
+                                card: c,
+                                edge: "start" as const,
+                                type,
+                                initialStartMin: cStart,
+                                initialEndMin: cStart + cDur,
+                            })
+                        }
+                        if (isEndLinkedToEnd) {
+                            linked.push({
+                                card: c,
+                                edge: "end" as const,
+                                type,
+                                initialStartMin: cStart,
+                                initialEndMin: cStart + cDur,
+                            })
+                        }
+                    }
+                })
             }
             linkedEdgesRef.current = linked
 
@@ -1007,25 +1366,102 @@ export default function RoutineTimeTrackerWidget() {
                     dragState.mode === "bottom"
 
                 if (dragState.mode === "center") {
-                    // Center drag: shift both start and end, round to 5 mins
-                    const startMin =
-                        Math.round(
-                            (override.top - TOP_MARGIN) /
-                                pixelsPerMinuteSignal.value /
-                                5
-                        ) * 5
-                    const endMin =
-                        Math.round(
-                            (override.top + override.height - TOP_MARGIN) /
-                                pixelsPerMinuteSignal.value /
-                                5
-                        ) * 5
+                    const snappedIso =
+                        snappedTargetRef.current !== null
+                            ? snapTargetISOMapRef.current.get(
+                                  snappedTargetRef.current
+                              )
+                            : undefined
 
-                    finalCard.start_at = timeToISO(formatMin(startMin), dateStr)
-                    if (isOriginallyTracking && !shouldStopTracking) {
-                        finalCard.end_at = null
-                    } else if (le.card.end_at !== null) {
-                        finalCard.end_at = timeToISO(formatMin(endMin), dateStr)
+                    if (snappedIso && snappedEdgeRef.current === "top") {
+                        const shiftMs =
+                            new Date(snappedIso).getTime() -
+                            new Date(dragState.card.start_at).getTime()
+                        if (le.card.id === dragState.card.id) {
+                            finalCard.start_at = snappedIso as IsoDateTime
+                            finalCard.end_at = isOriginallyTracking
+                                ? null
+                                : (new Date(
+                                      new Date(le.card.end_at!).getTime() +
+                                          shiftMs
+                                  ).toISOString() as IsoDateTime)
+                        } else {
+                            if (le.edge === "start") {
+                                finalCard.start_at = snappedIso as IsoDateTime
+                                finalCard.end_at = le.card.end_at
+                            } else {
+                                finalCard.start_at = le.card.start_at
+                                finalCard.end_at = snappedIso as IsoDateTime
+                            }
+                        }
+                    } else if (
+                        snappedIso &&
+                        snappedEdgeRef.current === "bottom"
+                    ) {
+                        const shiftMs =
+                            new Date(snappedIso).getTime() -
+                            new Date(dragState.card.end_at!).getTime()
+                        if (le.card.id === dragState.card.id) {
+                            finalCard.start_at = new Date(
+                                new Date(le.card.start_at).getTime() + shiftMs
+                            ).toISOString() as IsoDateTime
+                            finalCard.end_at = snappedIso as IsoDateTime
+                        } else {
+                            if (le.edge === "start") {
+                                finalCard.start_at = snappedIso as IsoDateTime
+                                finalCard.end_at = le.card.end_at
+                            } else {
+                                finalCard.start_at = le.card.start_at
+                                finalCard.end_at = snappedIso as IsoDateTime
+                            }
+                        }
+                    } else {
+                        // Not snapped, apply rounded 5-minute shift
+                        const primaryOverride =
+                            finalOverrides[dragState.card.id]
+                        if (primaryOverride) {
+                            const primaryStartMin =
+                                Math.round(
+                                    (primaryOverride.top - TOP_MARGIN) /
+                                        pixelsPerMinuteSignal.value /
+                                        5
+                                ) * 5
+                            const deltaMin =
+                                primaryStartMin - dragState.initialStartMin
+
+                            if (le.card.id === dragState.card.id) {
+                                finalCard.start_at = timeToISO(
+                                    formatMin(primaryStartMin),
+                                    dateStr
+                                )
+                                finalCard.end_at = isOriginallyTracking
+                                    ? null
+                                    : timeToISO(
+                                          formatMin(
+                                              primaryStartMin +
+                                                  (dragState.initialEndMin -
+                                                      dragState.initialStartMin)
+                                          ),
+                                          dateStr
+                                      )
+                            } else {
+                                if (le.edge === "start") {
+                                    finalCard.start_at = timeToISO(
+                                        formatMin(
+                                            le.initialStartMin + deltaMin
+                                        ),
+                                        dateStr
+                                    )
+                                    finalCard.end_at = le.card.end_at
+                                } else {
+                                    finalCard.start_at = le.card.start_at
+                                    finalCard.end_at = timeToISO(
+                                        formatMin(le.initialEndMin + deltaMin),
+                                        dateStr
+                                    )
+                                }
+                            }
+                        }
                     }
                 } else {
                     // Edge drag (mode === "top" or "bottom")
@@ -1151,6 +1587,7 @@ export default function RoutineTimeTrackerWidget() {
                     dragOverridesSignal.value = {}
                 }, 50)
             }
+            snappedEdgeRef.current = null
             setDragState(null)
         }
     }
