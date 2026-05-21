@@ -803,7 +803,17 @@ export default function RoutineTimeTrackerWidget() {
                 initialEndMin: startMin + duration,
             })
 
-            if (mode === "top" || mode === "bottom") {
+            const originalPrimaryCard =
+                type === "timeTracker"
+                    ? allTimeTrackerCards.find((otc) => otc.id === task.id)
+                    : null
+            const isPrimaryTrackingTask =
+                originalPrimaryCard && originalPrimaryCard.end_at === null
+
+            if (
+                (mode === "top" || mode === "bottom") &&
+                !(isPrimaryTrackingTask && mode === "bottom")
+            ) {
                 const targetTime = mode === "top" ? task.start_at : task.end_at
                 if (targetTime) {
                     allDailyCards.forEach((c) => {
@@ -815,6 +825,15 @@ export default function RoutineTimeTrackerWidget() {
                                 currentDate
                             )
 
+                        const originalC =
+                            type === "timeTracker"
+                                ? allTimeTrackerCards.find(
+                                      (otc) => otc.id === c.id
+                                  )
+                                : null
+                        const isCTracking =
+                            originalC && originalC.end_at === null
+
                         const isStartLinked =
                             c.start_at &&
                             targetTime &&
@@ -823,6 +842,7 @@ export default function RoutineTimeTrackerWidget() {
                                     new Date(targetTime).getTime()
                             ) < 1000
                         const isEndLinked =
+                            !isCTracking &&
                             c.end_at &&
                             targetTime &&
                             Math.abs(
@@ -865,11 +885,17 @@ export default function RoutineTimeTrackerWidget() {
                     isEndClamped,
                 } = getVisualBoundsForDate(c.start_at, c.end_at, currentDate)
 
+                const originalC =
+                    type === "timeTracker"
+                        ? allTimeTrackerCards.find((otc) => otc.id === c.id)
+                        : null
+                const isCTracking = originalC && originalC.end_at === null
+
                 if (!isStartClamped) {
                     snapTargets.add(cStart)
                     timeMap.set(cStart, c.start_at)
                 }
-                if (c.end_at && !isEndClamped) {
+                if (c.end_at && !isEndClamped && !isCTracking) {
                     snapTargets.add(cStart + cDur)
                     timeMap.set(cStart + cDur, c.end_at)
                 }
@@ -1096,22 +1122,31 @@ export default function RoutineTimeTrackerWidget() {
                     originalStartAt: recurringRoutines[0].originalStartAt,
                 })
             } else {
-                // Immediately save all changes concurrently
+                // Immediately update all stores synchronously to trigger a single layout render pass
                 for (const up of updates) {
                     if (up.type === "routine") {
                         upsertRoutineCard(up.card as RoutineCard)
-                        await SyncService.save(
+                    } else {
+                        upsertTimeTrackerCard(up.card as TimeTrackerCard)
+                    }
+                }
+
+                // Immediately trigger all sync saves concurrently in the background
+                const savePromises = updates.map((up) => {
+                    if (up.type === "routine") {
+                        return SyncService.save(
                             routineCardConfig,
                             up.card as RoutineCard
                         )
                     } else {
-                        upsertTimeTrackerCard(up.card as TimeTrackerCard)
-                        await SyncService.save(
+                        return SyncService.save(
                             timeTrackerCardConfig,
                             up.card as TimeTrackerCard
                         )
                     }
-                }
+                })
+                await Promise.all(savePromises)
+
                 setTimeout(() => {
                     dragOverridesSignal.value = {}
                 }, 50)
@@ -1370,6 +1405,7 @@ export default function RoutineTimeTrackerWidget() {
             {confirmDragState && (
                 <SaveChangeDialog
                     onOccurrenceOnly={async () => {
+                        const saves: Array<Promise<unknown>> = []
                         for (const up of pendingUpdatesRef.current) {
                             if (up.type === "routine") {
                                 const routine = up.card as RoutineCard
@@ -1393,40 +1429,50 @@ export default function RoutineTimeTrackerWidget() {
                                                 now.toISOString() as IsoDateTime,
                                         }
                                         upsertRoutineCard(detachedInstance)
-                                        await SyncService.save(
-                                            routineCardConfig,
-                                            detachedInstance
+                                        saves.push(
+                                            SyncService.save(
+                                                routineCardConfig,
+                                                detachedInstance
+                                            )
                                         )
                                     } else {
                                         upsertRoutineCard(routine)
-                                        await SyncService.save(
-                                            routineCardConfig,
-                                            routine
+                                        saves.push(
+                                            SyncService.save(
+                                                routineCardConfig,
+                                                routine
+                                            )
                                         )
                                     }
                                 } else {
                                     upsertRoutineCard(routine)
-                                    await SyncService.save(
-                                        routineCardConfig,
-                                        routine
+                                    saves.push(
+                                        SyncService.save(
+                                            routineCardConfig,
+                                            routine
+                                        )
                                     )
                                 }
                             } else {
                                 upsertTimeTrackerCard(
                                     up.card as TimeTrackerCard
                                 )
-                                await SyncService.save(
-                                    timeTrackerCardConfig,
-                                    up.card as TimeTrackerCard
+                                saves.push(
+                                    SyncService.save(
+                                        timeTrackerCardConfig,
+                                        up.card as TimeTrackerCard
+                                    )
                                 )
                             }
                         }
+                        await Promise.all(saves)
                         closeConfirmDragDialog(false)
                         setTimeout(() => {
                             dragOverridesSignal.value = {}
                         }, 50)
                     }}
                     onAllOccurrences={async () => {
+                        const saves: Array<Promise<unknown>> = []
                         for (const up of pendingUpdatesRef.current) {
                             if (up.type === "routine") {
                                 const routine = up.card as RoutineCard
@@ -1508,28 +1554,35 @@ export default function RoutineTimeTrackerWidget() {
                                                 now.toISOString() as IsoDateTime,
                                         }
                                         upsertRoutineCard(updatedMaster)
-                                        await SyncService.save(
-                                            routineCardConfig,
-                                            updatedMaster
+                                        saves.push(
+                                            SyncService.save(
+                                                routineCardConfig,
+                                                updatedMaster
+                                            )
                                         )
                                     }
                                 } else {
                                     upsertRoutineCard(routine)
-                                    await SyncService.save(
-                                        routineCardConfig,
-                                        routine
+                                    saves.push(
+                                        SyncService.save(
+                                            routineCardConfig,
+                                            routine
+                                        )
                                     )
                                 }
                             } else {
                                 upsertTimeTrackerCard(
                                     up.card as TimeTrackerCard
                                 )
-                                await SyncService.save(
-                                    timeTrackerCardConfig,
-                                    up.card as TimeTrackerCard
+                                saves.push(
+                                    SyncService.save(
+                                        timeTrackerCardConfig,
+                                        up.card as TimeTrackerCard
+                                    )
                                 )
                             }
                         }
+                        await Promise.all(saves)
                         closeConfirmDragDialog(false)
                         setTimeout(() => {
                             dragOverridesSignal.value = {}
