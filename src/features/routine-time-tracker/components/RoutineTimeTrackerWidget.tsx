@@ -209,6 +209,7 @@ export default function RoutineTimeTrackerWidget() {
             type: "routine" | "timeTracker"
             initialStartMin: number
             initialEndMin: number
+            primaryEdge?: "start" | "end"
         }>
     >([])
 
@@ -1056,6 +1057,7 @@ export default function RoutineTimeTrackerWidget() {
                 type: "routine" | "timeTracker"
                 initialStartMin: number
                 initialEndMin: number
+                primaryEdge?: "start" | "end"
             }> = []
             // Primary card's dragged edge is always included
             linked.push({
@@ -1069,6 +1071,12 @@ export default function RoutineTimeTrackerWidget() {
                 type,
                 initialStartMin: startMin,
                 initialEndMin: startMin + duration,
+                primaryEdge:
+                    mode === "top"
+                        ? ("start" as const)
+                        : mode === "bottom"
+                          ? ("end" as const)
+                          : ("start" as const),
             })
 
             const originalPrimaryCard =
@@ -1180,6 +1188,7 @@ export default function RoutineTimeTrackerWidget() {
                                 type,
                                 initialStartMin: cStart,
                                 initialEndMin: cStart + cDur,
+                                primaryEdge: "start" as const,
                             })
                         }
                         if (isEndLinkedToStart) {
@@ -1189,6 +1198,7 @@ export default function RoutineTimeTrackerWidget() {
                                 type,
                                 initialStartMin: cStart,
                                 initialEndMin: cStart + cDur,
+                                primaryEdge: "start" as const,
                             })
                         }
                     }
@@ -1216,6 +1226,7 @@ export default function RoutineTimeTrackerWidget() {
                                 type,
                                 initialStartMin: cStart,
                                 initialEndMin: cStart + cDur,
+                                primaryEdge: "end" as const,
                             })
                         }
                         if (isEndLinkedToEnd) {
@@ -1225,6 +1236,7 @@ export default function RoutineTimeTrackerWidget() {
                                 type,
                                 initialStartMin: cStart,
                                 initialEndMin: cStart + cDur,
+                                primaryEdge: "end" as const,
                             })
                         }
                     }
@@ -1386,12 +1398,31 @@ export default function RoutineTimeTrackerWidget() {
                                           shiftMs
                                   ).toISOString() as IsoDateTime)
                         } else {
-                            if (le.edge === "start") {
-                                finalCard.start_at = snappedIso as IsoDateTime
-                                finalCard.end_at = le.card.end_at
+                            if (le.primaryEdge === "start") {
+                                // Snapped side: snaps to snappedIso
+                                if (le.edge === "start") {
+                                    finalCard.start_at =
+                                        snappedIso as IsoDateTime
+                                    finalCard.end_at = le.card.end_at
+                                } else {
+                                    finalCard.start_at = le.card.start_at
+                                    finalCard.end_at = snappedIso as IsoDateTime
+                                }
                             } else {
-                                finalCard.start_at = le.card.start_at
-                                finalCard.end_at = snappedIso as IsoDateTime
+                                // Shifting side: shifts by shiftMs
+                                if (le.edge === "start") {
+                                    finalCard.start_at = new Date(
+                                        new Date(le.card.start_at).getTime() +
+                                            shiftMs
+                                    ).toISOString() as IsoDateTime
+                                    finalCard.end_at = le.card.end_at
+                                } else {
+                                    finalCard.start_at = le.card.start_at
+                                    finalCard.end_at = new Date(
+                                        new Date(le.card.end_at!).getTime() +
+                                            shiftMs
+                                    ).toISOString() as IsoDateTime
+                                }
                             }
                         }
                     } else if (
@@ -1407,12 +1438,31 @@ export default function RoutineTimeTrackerWidget() {
                             ).toISOString() as IsoDateTime
                             finalCard.end_at = snappedIso as IsoDateTime
                         } else {
-                            if (le.edge === "start") {
-                                finalCard.start_at = snappedIso as IsoDateTime
-                                finalCard.end_at = le.card.end_at
+                            if (le.primaryEdge === "end") {
+                                // Snapped side: snaps to snappedIso
+                                if (le.edge === "start") {
+                                    finalCard.start_at =
+                                        snappedIso as IsoDateTime
+                                    finalCard.end_at = le.card.end_at
+                                } else {
+                                    finalCard.start_at = le.card.start_at
+                                    finalCard.end_at = snappedIso as IsoDateTime
+                                }
                             } else {
-                                finalCard.start_at = le.card.start_at
-                                finalCard.end_at = snappedIso as IsoDateTime
+                                // Shifting side: shifts by shiftMs
+                                if (le.edge === "start") {
+                                    finalCard.start_at = new Date(
+                                        new Date(le.card.start_at).getTime() +
+                                            shiftMs
+                                    ).toISOString() as IsoDateTime
+                                    finalCard.end_at = le.card.end_at
+                                } else {
+                                    finalCard.start_at = le.card.start_at
+                                    finalCard.end_at = new Date(
+                                        new Date(le.card.end_at!).getTime() +
+                                            shiftMs
+                                    ).toISOString() as IsoDateTime
+                                }
                             }
                         }
                     } else {
