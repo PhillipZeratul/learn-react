@@ -759,19 +759,43 @@ export class SyncService {
                             console.log(
                                 `SyncService: [PUSH SUCCESS] ${table}:${id} (${action.action})`
                             )
-                            console.log(
-                                `  Local updated_at:  ${payload.updated_at}`
-                            )
-                            console.log(
-                                `  Server updated_at: ${entity.updated_at}`
+
+                            // Freshness Check: Verify if a newer local modification occurred since push started
+                            const localRows = await db.select<{
+                                updated_at: string
+                            }>(
+                                `SELECT updated_at FROM ${table} WHERE id = ? LIMIT 1`,
+                                [id]
                             )
 
-                            // Update local DB with authoritative server state (specifically the final updated_at)
-                            await db.execute(
-                                config.saveSql,
-                                config.toSqlValues(entity)
+                            const hasNewerLocalModification =
+                                localRows.length > 0 &&
+                                localRows[0].updated_at >
+                                    (payload.updated_at || "")
+
+                            if (hasNewerLocalModification) {
+                                console.log(
+                                    `SyncService: [SKIP APPLY] Local record ${table}:${id} has newer modification (${localRows[0].updated_at} > ${payload.updated_at}). Skipping server response overwrite.`
+                                )
+                            } else {
+                                // Update local DB with authoritative server state (specifically the final updated_at)
+                                await db.execute(
+                                    config.saveSql,
+                                    config.toSqlValues(entity)
+                                )
+                                config.upsertInStore(entity)
+                            }
+
+                            // Safely delete this specific queue item only if it wasn't modified/merged in the meantime
+                            const deleteResult = await db.execute(
+                                "DELETE FROM sync_queue WHERE id = ? AND created_at <= ?",
+                                [action.id, action.created_at]
                             )
-                            config.upsertInStore(entity)
+                            if (deleteResult.rowsAffected === 0) {
+                                console.log(
+                                    `SyncService: [PRESERVE QUEUE] Queue item ${action.id} for ${table}:${id} was modified/merged while in-flight. Preserving for next sync.`
+                                )
+                            }
                         }
                     } catch (err) {
                         console.error(
@@ -784,17 +808,12 @@ export class SyncService {
             )
 
             if (!hasError) {
-                const placeholders = actionIds.map(() => "?").join(",")
-                await db.execute(
-                    `DELETE FROM sync_queue WHERE id IN (${placeholders})`,
-                    actionIds
-                )
                 console.log(
-                    `SyncService: Successfully synced ${tableActions.length} records to ${table}`
+                    `SyncService: Successfully processed push batch for ${table}`
                 )
             } else {
                 console.warn(
-                    `SyncService: Some records failed to sync for ${table}. Keeping them in queue.`
+                    `SyncService: Some records failed to sync for ${table}.`
                 )
                 break
             }
