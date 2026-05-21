@@ -291,55 +291,18 @@ export class SyncService {
                         `SyncService: Processing ${data.length} delta records for ${config.tableName}`
                     )
 
-                    // Bulk-check sync queue for all row IDs in this batch
-                    const rowIds = data.map((r) => r.id as string)
-                    const placeholders = rowIds.map(() => "?").join(",")
-                    const inQueueResults = await db.select<{
-                        row_id: string
-                        payload: string
-                    }>(
-                        `SELECT row_id, payload FROM sync_queue WHERE table_name = ? AND row_id IN (${placeholders})`,
-                        [config.tableName, ...rowIds]
-                    )
-                    const inQueueMap = new Map(
-                        inQueueResults.map((q) => [q.row_id, q])
-                    )
-
-                    // Bulk-check local DB for current versions of non-queued items
-                    const nonQueuedIds = rowIds.filter(
-                        (id) => !inQueueMap.has(id)
-                    )
-                    const localVersionsMap = new Map<string, string>()
-                    if (nonQueuedIds.length > 0) {
-                        const localPlaceholders = nonQueuedIds
-                            .map(() => "?")
-                            .join(",")
-                        const localRows = await db.select<{
-                            id: string
-                            updated_at: string
-                        }>(
-                            `SELECT id, updated_at FROM ${config.tableName} WHERE id IN (${localPlaceholders})`,
-                            nonQueuedIds
-                        )
-                        for (const r of localRows) {
-                            localVersionsMap.set(r.id, r.updated_at)
-                        }
-                    }
-
-                    return { config, data, inQueueMap, localVersionsMap }
+                    return { config, data }
                 })
             )
 
             for (const delta of tableDeltas) {
                 if (!delta) continue
-                const { config, data, inQueueMap, localVersionsMap } = delta
+                const { config, data } = delta
 
                 // Perform bulk save in a transaction
                 await db.transaction(async (tx) => {
                     for (const row of data) {
                         const entity = config.fromDb(row)
-                        const inQueue = inQueueMap.get(entity.id)
-                        let finalEntity = entity
 
                         // Update high-water mark
                         if (
@@ -349,12 +312,20 @@ export class SyncService {
                             newHighWaterMark = entity.updated_at
                         }
 
-                        if (inQueue) {
+                        // Just-in-time check sync queue for this specific row inside the transaction
+                        const queueItems = await tx.select<{ payload: string }>(
+                            "SELECT payload FROM sync_queue WHERE table_name = ? AND row_id = ? LIMIT 1",
+                            [config.tableName, entity.id]
+                        )
+
+                        let finalEntity = entity
+
+                        if (queueItems.length > 0) {
                             const pendingPatch = JSON.parse(
-                                inQueue.payload
+                                queueItems[0].payload
                             ) as Partial<BaseModel>
 
-                            // Server Reconciliation
+                            // Server Reconciliation using Last-Write-Wins
                             const cloudUpdatedAt = entity.updated_at
                             const localUpdatedAt =
                                 pendingPatch.updated_at || entity.updated_at
@@ -372,15 +343,19 @@ export class SyncService {
                                 `SyncService: [RECONCILE] ${config.tableName}:${entity.id}`
                             )
                         } else {
-                            // Use the pre-fetched local version map
-                            const localUpdatedAt = localVersionsMap.get(
-                                entity.id
+                            // Check local DB for current version inside the transaction
+                            const localRows = await tx.select<{
+                                updated_at: string
+                            }>(
+                                `SELECT updated_at FROM ${config.tableName} WHERE id = ? LIMIT 1`,
+                                [entity.id]
                             )
-                            if (
-                                localUpdatedAt &&
-                                localUpdatedAt >= entity.updated_at
-                            ) {
-                                continue
+
+                            if (localRows.length > 0) {
+                                const localUpdatedAt = localRows[0].updated_at
+                                if (localUpdatedAt >= entity.updated_at) {
+                                    continue
+                                }
                             }
                             console.log(
                                 `SyncService: [APPLY] ${config.tableName}:${entity.id} (Cloud is newer: ${entity.updated_at})`
