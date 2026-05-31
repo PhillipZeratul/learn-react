@@ -58,6 +58,12 @@ export const TaskCard = memo(
         const { startMin, duration, isStartClamped, isEndClamped } =
             getVisualBoundsForDate(card.start_at, card.end_at, currentDate)
 
+        const realStart = new Date(card.start_at).getTime()
+        const realEnd = card.end_at
+            ? new Date(card.end_at).getTime()
+            : new Date().getTime()
+        const realDurationMinutes = Math.max(0, (realEnd - realStart) / 60000)
+
         const GHOST_EXTENSION_PX = 60
         const isCurrentlyTracking = isActive || !card.end_at
 
@@ -144,7 +150,9 @@ export const TaskCard = memo(
                         durationRef.current.style.display = showDuration
                             ? "block"
                             : "none"
-                        durationRef.current.textContent = `${getDurationString(dragHeight / ppm)}`
+                        const activeRealDurationMinutes =
+                            realDurationMinutes + (dragHeight / ppm - duration)
+                        durationRef.current.textContent = `${getDurationString(activeRealDurationMinutes)}`
                     }
                 } else {
                     container.classList.remove(
@@ -212,13 +220,20 @@ export const TaskCard = memo(
                         durationRef.current.style.display = showDuration
                             ? "block"
                             : "none"
-                        durationRef.current.textContent = `${getDurationString(duration)}`
+                        durationRef.current.textContent = `${getDurationString(realDurationMinutes)}`
                     }
                 }
             })
 
             return () => dispose()
-        }, [isDragging, card, startMin, duration, isCurrentlyTracking])
+        }, [
+            isDragging,
+            card,
+            startMin,
+            duration,
+            isCurrentlyTracking,
+            realDurationMinutes,
+        ])
 
         const handleKeyDown = (e: React.KeyboardEvent) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -386,7 +401,7 @@ export const TaskCard = memo(
                             isDragging || initialShowDuration ? "block" : "none"
                         }`}
                     >
-                        {`${getDurationString(duration)}`}
+                        {`${getDurationString(realDurationMinutes)}`}
                     </div>
                 </div>
             </div>
