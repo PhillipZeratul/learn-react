@@ -30,6 +30,7 @@ type EditorState = {
     endDate: string
     endAt: string
     tagId: TagId
+    isTracking: boolean
 }
 
 type EditorAction =
@@ -39,6 +40,7 @@ type EditorAction =
     | { type: "SET_END_DATE"; value: string }
     | { type: "SET_END_AT"; value: string }
     | { type: "SET_TAG_ID"; value: TagId }
+    | { type: "SET_IS_TRACKING"; value: boolean }
 
 const editorReducer = (
     state: EditorState,
@@ -57,6 +59,8 @@ const editorReducer = (
             return { ...state, endAt: action.value }
         case "SET_TAG_ID":
             return { ...state, tagId: action.value }
+        case "SET_IS_TRACKING":
+            return { ...state, isTracking: action.value }
         default:
             return state
     }
@@ -85,6 +89,7 @@ export const TimeTrackerEditor = ({
             ),
             endAt: isoToTime(initialTask.end_at || getNowISO(), true),
             tagId: initialTask.tag_id,
+            isTracking: initialTask.end_at === null,
         })
     )
 
@@ -103,9 +108,7 @@ export const TimeTrackerEditor = ({
 
         let finalEndAt = timeToISO(state.endAt, state.endDate)
 
-        // If we are editing an active task, keep it active (null end_at).
-        // The user must stop it via the dashboard button, or we can just enforce it here.
-        if (task.end_at === null) {
+        if (state.isTracking) {
             finalEndAt = null as unknown as IsoDateTime
         }
 
@@ -230,7 +233,7 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-end-date"
                                         type="date"
-                                        disabled={task.end_at === null}
+                                        disabled={state.isTracking}
                                         value={state.endDate}
                                         onChange={(e) =>
                                             dispatch({
@@ -242,17 +245,63 @@ export const TimeTrackerEditor = ({
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label
-                                        htmlFor="tracker-end-time"
-                                        className="mb-1 block text-xs text-muted-foreground"
-                                    >
-                                        End Time
-                                    </label>
+                                    <div className="mb-1 flex items-center justify-between">
+                                        <label
+                                            htmlFor="tracker-end-time"
+                                            className="block text-xs text-muted-foreground"
+                                        >
+                                            End Time
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (state.isTracking) {
+                                                    dispatch({
+                                                        type: "SET_IS_TRACKING",
+                                                        value: false,
+                                                    })
+                                                    dispatch({
+                                                        type: "SET_END_DATE",
+                                                        value: formatLocalDate(
+                                                            new Date()
+                                                        ),
+                                                    })
+                                                    dispatch({
+                                                        type: "SET_END_AT",
+                                                        value: isoToTime(
+                                                            getNowISO(),
+                                                            true
+                                                        ),
+                                                    })
+                                                } else {
+                                                    dispatch({
+                                                        type: "SET_IS_TRACKING",
+                                                        value: true,
+                                                    })
+                                                }
+                                            }}
+                                            className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase transition-all select-none ${
+                                                state.isTracking
+                                                    ? "border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                                                    : "border-border bg-muted text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
+                                            }`}
+                                        >
+                                            {state.isTracking && (
+                                                <span className="relative flex h-1.5 w-1.5">
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                                                </span>
+                                            )}
+                                            {state.isTracking
+                                                ? "Tracking"
+                                                : "Track"}
+                                        </button>
+                                    </div>
                                     <input
                                         id="tracker-end-time"
                                         type="time"
                                         step="1"
-                                        disabled={task.end_at === null}
+                                        disabled={state.isTracking}
                                         value={state.endAt}
                                         onChange={(e) =>
                                             dispatch({
