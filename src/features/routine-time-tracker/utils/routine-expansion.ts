@@ -1,8 +1,50 @@
 import { RRule } from "rrule"
+import { v4 as uuidv4 } from "uuid"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { RoutineCardId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 import { isCardOverlappingDate } from "./utils"
+
+export const splitRoutineSeries = (
+    master: RoutineCard,
+    splitIsoDate: IsoDateTime,
+    newMasterProps: Partial<RoutineCard>
+): [RoutineCard, RoutineCard] => {
+    const splitTime = new Date(splitIsoDate)
+    const untilDate = new Date(splitTime)
+    untilDate.setDate(untilDate.getDate() - 1)
+    untilDate.setHours(23, 59, 59, 999)
+
+    let newOriginalRRule = master.rrule
+    if (master.rrule) {
+        try {
+            const options = RRule.parseString(master.rrule)
+            options.until = untilDate
+            const rule = new RRule(options)
+            newOriginalRRule = rule.toString().replace(/^RRULE:/, "")
+        } catch (e) {
+            console.error("Failed to parse master rrule", e)
+        }
+    }
+
+    const updatedMaster: RoutineCard = {
+        ...master,
+        rrule: newOriginalRRule,
+        updated_at: new Date().toISOString() as IsoDateTime,
+    }
+
+    const newMaster: RoutineCard = {
+        ...master,
+        ...newMasterProps,
+        id: uuidv4() as RoutineCardId,
+        parent_routine_id: undefined,
+        original_recurrence_date: undefined,
+        _isVirtual: undefined,
+        updated_at: new Date().toISOString() as IsoDateTime,
+    }
+
+    return [updatedMaster, newMaster]
+}
 
 /**
  * Calculates the end_at time based on the original duration and a new start time.

@@ -18,7 +18,6 @@ import { SyncService } from "@/shared/services/sync.service"
 import { pixelsPerMinuteSignal, zoomLevelSignal } from "../stores/zoom.store"
 import {
     timeToISO,
-    isoToTime,
     isTouchEvent,
     formatLocalDate,
     isCardOverlappingDate,
@@ -31,7 +30,10 @@ import {
 import { RoutineTimeTrackerService } from "../services/routine-time-tracker.service"
 import { RoutineEditor } from "./RoutineEditor"
 import { TimeTrackerEditor } from "./TimeTrackerEditor"
-import { getRoutineInstancesForDate } from "../utils/routine-expansion"
+import {
+    getRoutineInstancesForDate,
+    splitRoutineSeries,
+} from "../utils/routine-expansion"
 import type { IsoDateTime } from "@/shared/models/base.model"
 import type {
     RoutineCardId,
@@ -1847,8 +1849,17 @@ export default function RoutineTimeTrackerWidget() {
                         return undefined
                     })()}
                     onSave={async (updated) => {
-                        upsertRoutineCard(updated)
-                        await SyncService.save(routineCardConfig, updated)
+                        if (Array.isArray(updated)) {
+                            updated.forEach((u) => upsertRoutineCard(u))
+                            await Promise.all(
+                                updated.map((u) =>
+                                    SyncService.save(routineCardConfig, u)
+                                )
+                            )
+                        } else {
+                            upsertRoutineCard(updated)
+                            await SyncService.save(routineCardConfig, updated)
+                        }
                         setEditingState(null)
                     }}
                     onDelete={async (id) => {
@@ -1977,76 +1988,53 @@ export default function RoutineTimeTrackerWidget() {
                                     )
 
                                     if (master) {
-                                        const masterStartDatePart =
-                                            formatLocalDate(
-                                                new Date(master.start_at)
+                                        const newMasterProps: Partial<RoutineCard> =
+                                            {
+                                                start_at: routine.start_at,
+                                                end_at: routine.end_at,
+                                            }
+
+                                        const splitDate = routine._isVirtual
+                                            ? routine.original_recurrence_date ||
+                                              routine.start_at
+                                            : routine.start_at
+
+                                        if (master.id === routine.id) {
+                                            const updatedMaster = {
+                                                ...master,
+                                                ...newMasterProps,
+                                                updated_at:
+                                                    now.toISOString() as IsoDateTime,
+                                            }
+                                            upsertRoutineCard(updatedMaster)
+                                            saves.push(
+                                                SyncService.save(
+                                                    routineCardConfig,
+                                                    updatedMaster
+                                                )
                                             )
-                                        const timePartStart = isoToTime(
-                                            routine.start_at
-                                        )
-                                        const timePartEnd = isoToTime(
-                                            routine.end_at
-                                        )
-
-                                        const instanceStartDatePart =
-                                            formatLocalDate(
-                                                new Date(routine.start_at)
+                                        } else {
+                                            const [updatedMaster, newMaster] =
+                                                splitRoutineSeries(
+                                                    master,
+                                                    splitDate,
+                                                    newMasterProps
+                                                )
+                                            upsertRoutineCard(updatedMaster)
+                                            upsertRoutineCard(newMaster)
+                                            saves.push(
+                                                SyncService.save(
+                                                    routineCardConfig,
+                                                    updatedMaster
+                                                )
                                             )
-                                        const instanceEndDatePart =
-                                            formatLocalDate(
-                                                new Date(routine.end_at)
+                                            saves.push(
+                                                SyncService.save(
+                                                    routineCardConfig,
+                                                    newMaster
+                                                )
                                             )
-
-                                        const [y1, m1, d1] =
-                                            instanceStartDatePart
-                                                .split("-")
-                                                .map(Number)
-                                        const [y2, m2, d2] = instanceEndDatePart
-                                            .split("-")
-                                            .map(Number)
-
-                                        const dStart = new Date(y1, m1 - 1, d1)
-                                        const dEnd = new Date(y2, m2 - 1, d2)
-                                        const dayDiff = Math.round(
-                                            (dEnd.getTime() -
-                                                dStart.getTime()) /
-                                                (1000 * 60 * 60 * 24)
-                                        )
-
-                                        const [my, mm, md] = masterStartDatePart
-                                            .split("-")
-                                            .map(Number)
-                                        const masterEndDate = new Date(
-                                            my,
-                                            mm - 1,
-                                            md
-                                        )
-                                        masterEndDate.setDate(
-                                            masterEndDate.getDate() + dayDiff
-                                        )
-                                        const masterEndDatePart =
-                                            formatLocalDate(masterEndDate)
-
-                                        const updatedMaster = {
-                                            ...master,
-                                            start_at: timeToISO(
-                                                timePartStart,
-                                                masterStartDatePart
-                                            ),
-                                            end_at: timeToISO(
-                                                timePartEnd,
-                                                masterEndDatePart
-                                            ),
-                                            updated_at:
-                                                now.toISOString() as IsoDateTime,
                                         }
-                                        upsertRoutineCard(updatedMaster)
-                                        saves.push(
-                                            SyncService.save(
-                                                routineCardConfig,
-                                                updatedMaster
-                                            )
-                                        )
                                     }
                                 } else {
                                     upsertRoutineCard(routine)

@@ -9,6 +9,7 @@ import {
 } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
 import { getSortedTagsWithDepth } from "../utils/tag-utils"
+import { splitRoutineSeries } from "../utils/routine-expansion"
 import type { RoutineCardId, TagId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 import { Button } from "@/components/ui/Button"
@@ -17,7 +18,7 @@ import { useBackAction } from "@/hooks/useBackAction"
 interface RoutineEditorProps {
     task: RoutineCard
     masterTask?: RoutineCard
-    onSave: (task: RoutineCard) => Promise<void>
+    onSave: (task: RoutineCard | RoutineCard[]) => Promise<void>
     onDelete: (id: string) => Promise<void>
     onCancel: () => void
     isNew?: boolean
@@ -86,34 +87,34 @@ export const RoutineEditor = memo(
             const finalTitle = title.trim()
 
             if (scope === "all" && masterTask) {
-                // Apply changes to the master record while preserving its original start date
-                const masterStartDatePart = formatLocalDate(
-                    new Date(masterTask.start_at)
-                )
+                const newStartAt = timeToISO(startAt, startDate)
+                const newEndAt = timeToISO(endAt, endDate)
 
-                // Calculate day difference in the editor's current state to preserve multi-day span
-                const [y1, m1, d1] = startDate.split("-").map(Number)
-                const [y2, m2, d2] = endDate.split("-").map(Number)
-                const dStart = new Date(y1, m1 - 1, d1)
-                const dEnd = new Date(y2, m2 - 1, d2)
-                const dayDiff = Math.round(
-                    (dEnd.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24)
-                )
-
-                const [my, mm, md] = masterStartDatePart.split("-").map(Number)
-                const masterEndDate = new Date(my, mm - 1, md)
-                masterEndDate.setDate(masterEndDate.getDate() + dayDiff)
-                const masterEndDatePart = formatLocalDate(masterEndDate)
-
-                await onSave({
-                    ...masterTask,
+                const newMasterProps: Partial<RoutineCard> = {
                     title: finalTitle,
-                    start_at: timeToISO(startAt, masterStartDatePart),
-                    end_at: timeToISO(endAt, masterEndDatePart),
+                    start_at: newStartAt,
+                    end_at: newEndAt,
                     tag_id: tagId as TagId,
                     rrule: rrule || undefined,
-                    updated_at: new Date().toISOString() as IsoDateTime,
-                })
+                }
+
+                if (masterTask.id === task.id) {
+                    await onSave({
+                        ...masterTask,
+                        ...newMasterProps,
+                        updated_at: new Date().toISOString() as IsoDateTime,
+                    })
+                } else {
+                    const splitDate = task._isVirtual
+                        ? task.original_recurrence_date || task.start_at
+                        : task.start_at
+                    const [updatedMaster, newMaster] = splitRoutineSeries(
+                        masterTask,
+                        splitDate,
+                        newMasterProps
+                    )
+                    await onSave([updatedMaster, newMaster])
+                }
                 return
             }
 
@@ -190,7 +191,7 @@ export const RoutineEditor = memo(
         }
 
         return (
-            <div className="fixed inset-0 z-[100] flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in">
+            <div className="fixed inset-0 z-100 flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in">
                 <div
                     className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                     style={{
@@ -382,9 +383,9 @@ export const RoutineEditor = memo(
                 </div>
 
                 {confirmAction && (
-                    <div className="fixed inset-0 z-[110] flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-[4px] duration-200 fade-in">
+                    <div className="fixed inset-0 z-110 flex animate-in items-center justify-center bg-background/20 p-4 backdrop-blur-xs duration-200 fade-in">
                         <div
-                            className="w-full max-w-[280px] animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
+                            className="w-full max-w-70 animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                             style={{
                                 transform: "translateZ(0)",
                             }}
@@ -396,7 +397,7 @@ export const RoutineEditor = memo(
                             </h4>
                             <p className="mb-6 text-sm text-muted-foreground">
                                 Do you want to apply this to only this
-                                occurrence or the entire series?
+                                occurrence or all future events?
                             </p>
                             <div className="space-y-2">
                                 <Button
@@ -420,7 +421,7 @@ export const RoutineEditor = memo(
                                         setConfirmAction(null)
                                     }}
                                 >
-                                    All occurrences
+                                    All future events
                                 </Button>
                                 <Button
                                     variant="ghost"
