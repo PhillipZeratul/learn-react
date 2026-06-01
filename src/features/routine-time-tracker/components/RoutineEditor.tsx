@@ -8,6 +8,9 @@ import {
     resolveTagColor,
 } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
+import { useRoutineCardStore } from "../stores/routine-card.store"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import { getSortedTagsWithDepth } from "../utils/tag-utils"
 import { splitRoutineSeries } from "../utils/routine-expansion"
 import type { RoutineCardId, TagId } from "../models/routine-time-tracker.model"
@@ -55,6 +58,92 @@ export const RoutineEditor = memo(
         const [rrule, setRrule] = useState(
             task.rrule || masterTask?.rrule || ""
         )
+
+        const { items: allRoutineCards } = useRoutineCardStore()
+
+        const handleSnapStart = () => {
+            const currentStart = new Date(
+                timeToISO(startAt, startDate)
+            ).getTime()
+            const otherTasks = allRoutineCards.filter(
+                (c) =>
+                    !c.is_deleted &&
+                    c.id !== task.id &&
+                    formatLocalDate(new Date(c.start_at)) === startDate
+            )
+
+            let closestEnd = -1
+            let closestEndStr = ""
+            for (const c of otherTasks) {
+                const endIso = c.end_at
+                const endTime = new Date(endIso).getTime()
+                if (endTime <= currentStart && endTime > closestEnd) {
+                    closestEnd = endTime
+                    closestEndStr = isoToTime(endIso)
+                }
+            }
+
+            if (closestEndStr && closestEndStr === startAt) {
+                let secondClosest = -1
+                let secondClosestStr = ""
+                for (const c of otherTasks) {
+                    const endIso = c.end_at
+                    const endTime = new Date(endIso).getTime()
+                    if (endTime < closestEnd && endTime > secondClosest) {
+                        secondClosest = endTime
+                        secondClosestStr = isoToTime(endIso)
+                    }
+                }
+                if (secondClosestStr) {
+                    setStartAt(secondClosestStr)
+                    return
+                }
+            }
+
+            if (closestEndStr) {
+                setStartAt(closestEndStr)
+            }
+        }
+
+        const handleSnapEnd = () => {
+            const currentEnd = new Date(timeToISO(endAt, endDate)).getTime()
+            const otherTasks = allRoutineCards.filter(
+                (c) =>
+                    !c.is_deleted &&
+                    c.id !== task.id &&
+                    formatLocalDate(new Date(c.start_at)) === endDate
+            )
+
+            let closestStart = Infinity
+            let closestStartStr = ""
+            for (const c of otherTasks) {
+                const startTime = new Date(c.start_at).getTime()
+                if (startTime >= currentEnd && startTime < closestStart) {
+                    closestStart = startTime
+                    closestStartStr = isoToTime(c.start_at)
+                }
+            }
+
+            if (closestStartStr && closestStartStr === endAt) {
+                let secondClosest = Infinity
+                let secondClosestStr = ""
+                for (const c of otherTasks) {
+                    const startTime = new Date(c.start_at).getTime()
+                    if (startTime > closestStart && startTime < secondClosest) {
+                        secondClosest = startTime
+                        secondClosestStr = isoToTime(c.start_at)
+                    }
+                }
+                if (secondClosestStr) {
+                    setEndAt(secondClosestStr)
+                    return
+                }
+            }
+
+            if (closestStartStr) {
+                setEndAt(closestStartStr)
+            }
+        }
 
         // Fix endAt setter name if needed (the original code had endAt and setEndAt)
         // Wait, looking at the code:
@@ -193,7 +282,7 @@ export const RoutineEditor = memo(
         return (
             <div className="fixed inset-0 z-100 flex animate-in items-center justify-center bg-background/60 p-4 backdrop-blur-[6px] duration-200 fade-in">
                 <div
-                    className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
+                    className="w-full max-w-md animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95"
                     style={{
                         transform: "translateZ(0)",
                     }}
@@ -251,15 +340,28 @@ export const RoutineEditor = memo(
                                     >
                                         Start Time
                                     </label>
-                                    <input
-                                        id="routine-start-time"
-                                        type="time"
-                                        value={startAt}
-                                        onChange={(e) =>
-                                            setStartAt(e.target.value)
-                                        }
-                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            id="routine-start-time"
+                                            type="time"
+                                            value={startAt}
+                                            onChange={(e) =>
+                                                setStartAt(e.target.value)
+                                            }
+                                            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSnapStart}
+                                            className="flex items-center justify-center rounded-lg border border-border bg-muted px-2.5 text-muted-foreground transition-colors hover:bg-muted-foreground/10 hover:text-foreground"
+                                            title="Snap to previous task"
+                                        >
+                                            <HugeiconsIcon
+                                                icon={ArrowUp01Icon}
+                                                size={16}
+                                            />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex gap-4">
@@ -287,15 +389,28 @@ export const RoutineEditor = memo(
                                     >
                                         End Time
                                     </label>
-                                    <input
-                                        id="routine-end-time"
-                                        type="time"
-                                        value={endAt}
-                                        onChange={(e) =>
-                                            setEndAt(e.target.value)
-                                        }
-                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            id="routine-end-time"
+                                            type="time"
+                                            value={endAt}
+                                            onChange={(e) =>
+                                                setEndAt(e.target.value)
+                                            }
+                                            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSnapEnd}
+                                            className="flex items-center justify-center rounded-lg border border-border bg-muted px-2.5 text-muted-foreground transition-colors hover:bg-muted-foreground/10 hover:text-foreground"
+                                            title="Snap to next task"
+                                        >
+                                            <HugeiconsIcon
+                                                icon={ArrowDown01Icon}
+                                                size={16}
+                                            />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

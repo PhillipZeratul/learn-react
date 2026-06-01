@@ -8,9 +8,12 @@ import {
     resolveTagColor,
 } from "../utils/utils"
 import { useTagStore } from "../stores/tag.store"
+import { useTimeTrackerCardStore } from "../stores/time-tracker-card.store"
 import { DEFAULT_TAG_ID } from "../models/tag.model"
 import { useBackAction } from "@/hooks/useBackAction"
 import { getSortedTagsWithDepth } from "../utils/tag-utils"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUp01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import type { TagId } from "../models/routine-time-tracker.model"
 import type { IsoDateTime } from "@/shared/models/base.model"
 
@@ -76,6 +79,7 @@ export const TimeTrackerEditor = ({
 }: TimeTrackerEditorProps) => {
     useBackAction(onCancel, true)
     const { items: tags } = useTagStore()
+    const { items: allTimeTrackerCards } = useTimeTrackerCardStore()
 
     const [state, dispatch] = useReducer(
         editorReducer,
@@ -98,6 +102,93 @@ export const TimeTrackerEditor = ({
         () => getSortedTagsWithDepth(activeTags),
         [activeTags]
     )
+
+    const handleSnapStart = () => {
+        const currentStart = new Date(
+            timeToISO(state.startAt, state.startDate)
+        ).getTime()
+        const otherTasks = allTimeTrackerCards.filter(
+            (c) =>
+                !c.is_deleted &&
+                c.id !== task.id &&
+                formatLocalDate(new Date(c.start_at)) === state.startDate
+        )
+
+        let closestEnd = -1
+        let closestEndStr = ""
+        for (const c of otherTasks) {
+            const endIso = c.end_at || getNowISO()
+            const endTime = new Date(endIso).getTime()
+            if (endTime <= currentStart && endTime > closestEnd) {
+                closestEnd = endTime
+                closestEndStr = isoToTime(endIso, true)
+            }
+        }
+
+        if (closestEndStr && closestEndStr === state.startAt) {
+            let secondClosest = -1
+            let secondClosestStr = ""
+            for (const c of otherTasks) {
+                const endIso = c.end_at || getNowISO()
+                const endTime = new Date(endIso).getTime()
+                if (endTime < closestEnd && endTime > secondClosest) {
+                    secondClosest = endTime
+                    secondClosestStr = isoToTime(endIso, true)
+                }
+            }
+            if (secondClosestStr) {
+                dispatch({ type: "SET_START_AT", value: secondClosestStr })
+                return
+            }
+        }
+
+        if (closestEndStr) {
+            dispatch({ type: "SET_START_AT", value: closestEndStr })
+        }
+    }
+
+    const handleSnapEnd = () => {
+        if (state.isTracking) return
+        const currentEnd = new Date(
+            timeToISO(state.endAt, state.endDate)
+        ).getTime()
+        const otherTasks = allTimeTrackerCards.filter(
+            (c) =>
+                !c.is_deleted &&
+                c.id !== task.id &&
+                formatLocalDate(new Date(c.start_at)) === state.endDate
+        )
+
+        let closestStart = Infinity
+        let closestStartStr = ""
+        for (const c of otherTasks) {
+            const startTime = new Date(c.start_at).getTime()
+            if (startTime >= currentEnd && startTime < closestStart) {
+                closestStart = startTime
+                closestStartStr = isoToTime(c.start_at, true)
+            }
+        }
+
+        if (closestStartStr && closestStartStr === state.endAt) {
+            let secondClosest = Infinity
+            let secondClosestStr = ""
+            for (const c of otherTasks) {
+                const startTime = new Date(c.start_at).getTime()
+                if (startTime > closestStart && startTime < secondClosest) {
+                    secondClosest = startTime
+                    secondClosestStr = isoToTime(c.start_at, true)
+                }
+            }
+            if (secondClosestStr) {
+                dispatch({ type: "SET_END_AT", value: secondClosestStr })
+                return
+            }
+        }
+
+        if (closestStartStr) {
+            dispatch({ type: "SET_END_AT", value: closestStartStr })
+        }
+    }
 
     const handleSave = async () => {
         const finalTitle = state.title.trim()
@@ -148,7 +239,7 @@ export const TimeTrackerEditor = ({
 
     return (
         <div className="fixed inset-0 z-[100] flex animate-in items-center justify-center bg-background/80 p-4 backdrop-blur-sm duration-200 fade-in">
-            <div className="w-full max-w-sm animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95">
+            <div className="w-full max-w-md animate-in rounded-2xl border border-border bg-card p-6 shadow-2xl duration-200 zoom-in-95">
                 <h3 className="mb-4 text-lg font-semibold text-foreground">
                     {isNew ? "New Tracking Task" : "Time Tracker"}
                 </h3>
@@ -207,19 +298,32 @@ export const TimeTrackerEditor = ({
                                     >
                                         Start Time
                                     </label>
-                                    <input
-                                        id="tracker-start-time"
-                                        type="time"
-                                        step="1"
-                                        value={state.startAt}
-                                        onChange={(e) =>
-                                            dispatch({
-                                                type: "SET_START_AT",
-                                                value: e.target.value,
-                                            })
-                                        }
-                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            id="tracker-start-time"
+                                            type="time"
+                                            step="1"
+                                            value={state.startAt}
+                                            onChange={(e) =>
+                                                dispatch({
+                                                    type: "SET_START_AT",
+                                                    value: e.target.value,
+                                                })
+                                            }
+                                            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSnapStart}
+                                            className="flex items-center justify-center rounded-lg border border-border bg-muted px-2.5 text-muted-foreground transition-colors hover:bg-muted-foreground/10 hover:text-foreground"
+                                            title="Snap to previous task"
+                                        >
+                                            <HugeiconsIcon
+                                                icon={ArrowUp01Icon}
+                                                size={16}
+                                            />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex gap-4">
@@ -297,20 +401,34 @@ export const TimeTrackerEditor = ({
                                                 : "Track"}
                                         </button>
                                     </div>
-                                    <input
-                                        id="tracker-end-time"
-                                        type="time"
-                                        step="1"
-                                        disabled={state.isTracking}
-                                        value={state.endAt}
-                                        onChange={(e) =>
-                                            dispatch({
-                                                type: "SET_END_AT",
-                                                value: e.target.value,
-                                            })
-                                        }
-                                        className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            id="tracker-end-time"
+                                            type="time"
+                                            step="1"
+                                            disabled={state.isTracking}
+                                            value={state.endAt}
+                                            onChange={(e) =>
+                                                dispatch({
+                                                    type: "SET_END_AT",
+                                                    value: e.target.value,
+                                                })
+                                            }
+                                            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            disabled={state.isTracking}
+                                            onClick={handleSnapEnd}
+                                            className={`flex items-center justify-center rounded-lg border border-border bg-muted px-2.5 text-muted-foreground transition-colors ${state.isTracking ? "cursor-not-allowed opacity-50" : "hover:bg-muted-foreground/10 hover:text-foreground"}`}
+                                            title="Snap to next task"
+                                        >
+                                            <HugeiconsIcon
+                                                icon={ArrowDown01Icon}
+                                                size={16}
+                                            />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
