@@ -79,12 +79,13 @@ export function calculateLayout(
                 const gap = startMin - lastEnd
 
                 // Strict sequential placement (no overlap allowed)
-                if (gap >= 0) {
+                // Use a tiny epsilon (-0.01) to handle floating-point precision errors
+                if (gap >= -0.01) {
                     if (gap < minGap) {
                         minGap = gap
                         bestColIndex = i
-                        // Perfect contiguous match, select immediately
-                        if (gap === 0) {
+                        // Perfect contiguous match (within epsilon), select immediately
+                        if (Math.abs(gap) < 0.01) {
                             break
                         }
                     }
