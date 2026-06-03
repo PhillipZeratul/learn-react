@@ -35,6 +35,16 @@ const RRULE_OPTIONS = [
     { label: "Monthly", value: "FREQ=MONTHLY;INTERVAL=1" },
 ]
 
+type EditorState = {
+    title: string
+    startDate: string
+    startAt: string
+    endDate: string
+    endAt: string
+    tagId: TagId
+    rrule: string
+}
+
 export const RoutineEditor = memo(
     ({
         task,
@@ -45,19 +55,33 @@ export const RoutineEditor = memo(
         isNew = false,
     }: RoutineEditorProps) => {
         const { items: tags } = useTagStore()
-        const [title, setTitle] = useState(task.title)
-        const [startDate, setStartDate] = useState(() =>
-            formatLocalDate(new Date(task.start_at))
+
+        const initialValues = useMemo(
+            () => ({
+                title: task.title,
+                startDate: formatLocalDate(new Date(task.start_at)),
+                startAt: isoToTime(task.start_at),
+                endDate: formatLocalDate(new Date(task.end_at)),
+                endAt: isoToTime(task.end_at),
+                tagId: task.tag_id,
+                rrule: task.rrule || masterTask?.rrule || "",
+            }),
+            [task, masterTask]
         )
-        const [startAt, setStartAt] = useState(() => isoToTime(task.start_at))
-        const [endDate, setEndDate] = useState(() =>
-            formatLocalDate(new Date(task.end_at))
-        )
-        const [endAt, setEndAt] = useState(() => isoToTime(task.end_at))
-        const [tagId, setTagId] = useState(task.tag_id)
-        const [rrule, setRrule] = useState(
-            task.rrule || masterTask?.rrule || ""
-        )
+
+        const [updates, setUpdates] = useState<Partial<EditorState>>({})
+
+        const title = updates.title ?? initialValues.title
+        const startDate = updates.startDate ?? initialValues.startDate
+        const startAt = updates.startAt ?? initialValues.startAt
+        const endDate = updates.endDate ?? initialValues.endDate
+        const endAt = updates.endAt ?? initialValues.endAt
+        const tagId = (updates.tagId ?? initialValues.tagId) as TagId
+        const rrule = updates.rrule ?? initialValues.rrule
+
+        const handleUpdate = useCallback((patch: Partial<EditorState>) => {
+            setUpdates((prev) => ({ ...prev, ...patch }))
+        }, [])
 
         const { items: allRoutineCards } = useRoutineCardStore()
 
@@ -95,13 +119,13 @@ export const RoutineEditor = memo(
                     }
                 }
                 if (secondClosestStr) {
-                    setStartAt(secondClosestStr)
+                    handleUpdate({ startAt: secondClosestStr })
                     return
                 }
             }
 
             if (closestEndStr) {
-                setStartAt(closestEndStr)
+                handleUpdate({ startAt: closestEndStr })
             }
         }
 
@@ -135,13 +159,13 @@ export const RoutineEditor = memo(
                     }
                 }
                 if (secondClosestStr) {
-                    setEndAt(secondClosestStr)
+                    handleUpdate({ endAt: secondClosestStr })
                     return
                 }
             }
 
             if (closestStartStr) {
-                setEndAt(closestStartStr)
+                handleUpdate({ endAt: closestStartStr })
             }
         }
 
@@ -175,10 +199,17 @@ export const RoutineEditor = memo(
         const handleSave = async (scope: "one" | "all" = "one") => {
             const finalTitle = title.trim()
 
-            if (scope === "all" && masterTask) {
-                const newStartAt = timeToISO(startAt, startDate)
-                const newEndAt = timeToISO(endAt, endDate)
+            const newStartAt =
+                updates.startAt !== undefined || updates.startDate !== undefined
+                    ? timeToISO(startAt, startDate)
+                    : task.start_at
 
+            const newEndAt =
+                updates.endAt !== undefined || updates.endDate !== undefined
+                    ? timeToISO(endAt, endDate)
+                    : task.end_at
+
+            if (scope === "all" && masterTask) {
                 const newMasterProps: Partial<RoutineCard> = {
                     title: finalTitle,
                     start_at: newStartAt,
@@ -208,9 +239,6 @@ export const RoutineEditor = memo(
             }
 
             // Default: Scope 'one' (Exception logic)
-            const newStartAt = timeToISO(startAt, startDate)
-            const newEndAt = timeToISO(endAt, endDate)
-
             if (task._isVirtual) {
                 const masterId = task.id.split("_")[0] as RoutineCardId
                 const detachedInstance: RoutineCard = {
@@ -306,7 +334,9 @@ export const RoutineEditor = memo(
                                 id="routine-title"
                                 type="text"
                                 value={title}
-                                onChange={(e) => setTitle(e.target.value)}
+                                onChange={(e) =>
+                                    handleUpdate({ title: e.target.value })
+                                }
                                 className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                 placeholder={
                                     tags.find((t) => t.id === tagId)?.name ||
@@ -328,7 +358,9 @@ export const RoutineEditor = memo(
                                         type="date"
                                         value={startDate}
                                         onChange={(e) =>
-                                            setStartDate(e.target.value)
+                                            handleUpdate({
+                                                startDate: e.target.value,
+                                            })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                     />
@@ -346,7 +378,9 @@ export const RoutineEditor = memo(
                                             type="time"
                                             value={startAt}
                                             onChange={(e) =>
-                                                setStartAt(e.target.value)
+                                                handleUpdate({
+                                                    startAt: e.target.value,
+                                                })
                                             }
                                             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                         />
@@ -377,7 +411,9 @@ export const RoutineEditor = memo(
                                         type="date"
                                         value={endDate}
                                         onChange={(e) =>
-                                            setEndDate(e.target.value)
+                                            handleUpdate({
+                                                endDate: e.target.value,
+                                            })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                     />
@@ -395,7 +431,9 @@ export const RoutineEditor = memo(
                                             type="time"
                                             value={endAt}
                                             onChange={(e) =>
-                                                setEndAt(e.target.value)
+                                                handleUpdate({
+                                                    endAt: e.target.value,
+                                                })
                                             }
                                             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                         />
@@ -428,7 +466,9 @@ export const RoutineEditor = memo(
                                 <select
                                     id="routine-rrule"
                                     value={rrule}
-                                    onChange={(e) => setRrule(e.target.value)}
+                                    onChange={(e) =>
+                                        handleUpdate({ rrule: e.target.value })
+                                    }
                                     className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                 >
                                     {RRULE_OPTIONS.map((opt) => (
@@ -451,7 +491,9 @@ export const RoutineEditor = memo(
                                 {sortedTags.map((tag) => (
                                     <button
                                         key={tag.id}
-                                        onClick={() => setTagId(tag.id)}
+                                        onClick={() =>
+                                            handleUpdate({ tagId: tag.id })
+                                        }
                                         className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-all ${
                                             tagId === tag.id
                                                 ? "border-primary bg-primary/10"

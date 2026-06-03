@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { type Tag } from "@/features/routine-time-tracker/models/tag.model"
 import { Button } from "@/components/ui/Button"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -58,6 +58,12 @@ interface TagEditorDialogProps {
     onClose: () => void
 }
 
+type EditorState = {
+    name: string
+    color: string
+    parentId: TagId | ""
+}
+
 export const TagEditorDialog = ({
     tag,
     activeTags,
@@ -65,16 +71,34 @@ export const TagEditorDialog = ({
     onClose,
 }: TagEditorDialogProps) => {
     useBackAction(onClose, true)
-    const [name, setName] = useState(tag?.name ?? "")
-    const [color, setColor] = useState(() => {
-        let initialColor = tag?.color ?? "17-5"
-        if (initialColor.startsWith("#")) {
-            initialColor = findNearestPresetAndShade(initialColor)
+
+    const initialColor = useMemo(() => {
+        let color = tag?.color ?? "17-5"
+        if (color.startsWith("#")) {
+            color = findNearestPresetAndShade(color)
         }
-        return initialColor
-    })
-    const [parentId, setParentId] = useState<TagId | "">(tag?.parent_id ?? "")
+        return color
+    }, [tag?.color])
+
+    const initialValues = useMemo(
+        () => ({
+            name: tag?.name ?? "",
+            color: initialColor,
+            parentId: tag?.parent_id ?? "",
+        }),
+        [tag, initialColor]
+    )
+
+    const [updates, setUpdates] = useState<Partial<EditorState>>({})
+
+    const name = updates.name ?? initialValues.name
+    const color = updates.color ?? initialValues.color
+    const parentId = updates.parentId ?? initialValues.parentId
     const [isSaving, setIsSaving] = useState(false)
+
+    const handleUpdate = useCallback((patch: Partial<EditorState>) => {
+        setUpdates((prev: Partial<EditorState>) => ({ ...prev, ...patch }))
+    }, [])
 
     const [presetIndex, shadeIndex] = useMemo(() => {
         const match = color.match(/^(\d+)-(\d+)$/)
@@ -111,7 +135,7 @@ export const TagEditorDialog = ({
             await onSave({
                 name: name.trim(),
                 color,
-                parentId: parentId || undefined,
+                parentId: (parentId as TagId) || undefined,
             })
             onClose()
         } catch (error) {
@@ -138,7 +162,9 @@ export const TagEditorDialog = ({
                                     id="tag-name"
                                     type="text"
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) =>
+                                        handleUpdate({ name: e.target.value })
+                                    }
                                     placeholder="Tag name..."
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                                 />
@@ -162,7 +188,11 @@ export const TagEditorDialog = ({
                                         <button
                                             key={idx}
                                             type="button"
-                                            onClick={() => setColor(`${idx}-5`)}
+                                            onClick={() =>
+                                                handleUpdate({
+                                                    color: `${idx}-5`,
+                                                })
+                                            }
                                             className={`aspect-square w-full rounded-full border-2 transition-all hover:scale-110 ${presetIndex === idx ? "scale-110 border-primary shadow-sm" : "border-transparent"}`}
                                             style={{ backgroundColor: c }}
                                             title={`Preset ${idx}`}
@@ -175,7 +205,9 @@ export const TagEditorDialog = ({
                                 presetIndex={presetIndex}
                                 shadeIndex={shadeIndex}
                                 onChange={(newShadeIndex) =>
-                                    setColor(`${presetIndex}-${newShadeIndex}`)
+                                    handleUpdate({
+                                        color: `${presetIndex}-${newShadeIndex}`,
+                                    })
                                 }
                             />
                         </div>
@@ -191,7 +223,9 @@ export const TagEditorDialog = ({
                                 id="parent-tag"
                                 value={parentId}
                                 onChange={(e) =>
-                                    setParentId(e.target.value as TagId)
+                                    handleUpdate({
+                                        parentId: e.target.value as TagId,
+                                    })
                                 }
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                             >

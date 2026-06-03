@@ -1,4 +1,4 @@
-import { useMemo, useReducer } from "react"
+import { useMemo, useState } from "react"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 import {
     timeToISO,
@@ -36,39 +36,6 @@ type EditorState = {
     isTracking: boolean
 }
 
-type EditorAction =
-    | { type: "SET_TITLE"; value: string }
-    | { type: "SET_START_DATE"; value: string }
-    | { type: "SET_START_AT"; value: string }
-    | { type: "SET_END_DATE"; value: string }
-    | { type: "SET_END_AT"; value: string }
-    | { type: "SET_TAG_ID"; value: TagId }
-    | { type: "SET_IS_TRACKING"; value: boolean }
-
-const editorReducer = (
-    state: EditorState,
-    action: EditorAction
-): EditorState => {
-    switch (action.type) {
-        case "SET_TITLE":
-            return { ...state, title: action.value }
-        case "SET_START_DATE":
-            return { ...state, startDate: action.value }
-        case "SET_START_AT":
-            return { ...state, startAt: action.value }
-        case "SET_END_DATE":
-            return { ...state, endDate: action.value }
-        case "SET_END_AT":
-            return { ...state, endAt: action.value }
-        case "SET_TAG_ID":
-            return { ...state, tagId: action.value }
-        case "SET_IS_TRACKING":
-            return { ...state, isTracking: action.value }
-        default:
-            return state
-    }
-}
-
 export const TimeTrackerEditor = ({
     task,
     onSave,
@@ -81,21 +48,32 @@ export const TimeTrackerEditor = ({
     const { items: tags } = useTagStore()
     const { items: allTimeTrackerCards } = useTimeTrackerCardStore()
 
-    const [state, dispatch] = useReducer(
-        editorReducer,
-        task,
-        (initialTask) => ({
-            title: initialTask.title,
-            startDate: formatLocalDate(new Date(initialTask.start_at)),
-            startAt: isoToTime(initialTask.start_at, true),
-            endDate: formatLocalDate(
-                new Date(initialTask.end_at || getNowISO())
-            ),
-            endAt: isoToTime(initialTask.end_at || getNowISO(), true),
-            tagId: initialTask.tag_id,
-            isTracking: initialTask.end_at === null,
-        })
+    const initialValues = useMemo(
+        () => ({
+            title: task.title,
+            startDate: formatLocalDate(new Date(task.start_at)),
+            startAt: isoToTime(task.start_at, true),
+            endDate: formatLocalDate(new Date(task.end_at || getNowISO())),
+            endAt: isoToTime(task.end_at || getNowISO(), true),
+            tagId: task.tag_id,
+            isTracking: task.end_at === null,
+        }),
+        [task]
     )
+
+    const [updates, setUpdates] = useState<Partial<EditorState>>({})
+
+    const title = updates.title ?? initialValues.title
+    const startDate = updates.startDate ?? initialValues.startDate
+    const startAt = updates.startAt ?? initialValues.startAt
+    const endDate = updates.endDate ?? initialValues.endDate
+    const endAt = updates.endAt ?? initialValues.endAt
+    const tagId = updates.tagId ?? initialValues.tagId
+    const isTracking = updates.isTracking ?? initialValues.isTracking
+
+    const handleUpdate = (patch: Partial<EditorState>) => {
+        setUpdates((prev: Partial<EditorState>) => ({ ...prev, ...patch }))
+    }
 
     const activeTags = tags.filter((tag) => !tag.is_deleted)
     const sortedTags = useMemo(
@@ -104,14 +82,12 @@ export const TimeTrackerEditor = ({
     )
 
     const handleSnapStart = () => {
-        const currentStart = new Date(
-            timeToISO(state.startAt, state.startDate)
-        ).getTime()
+        const currentStart = new Date(timeToISO(startAt, startDate)).getTime()
         const otherTasks = allTimeTrackerCards.filter(
             (c) =>
                 !c.is_deleted &&
                 c.id !== task.id &&
-                formatLocalDate(new Date(c.start_at)) === state.startDate
+                formatLocalDate(new Date(c.start_at)) === startDate
         )
 
         let closestEnd = -1
@@ -125,7 +101,7 @@ export const TimeTrackerEditor = ({
             }
         }
 
-        if (closestEndStr && closestEndStr === state.startAt) {
+        if (closestEndStr && closestEndStr === startAt) {
             let secondClosest = -1
             let secondClosestStr = ""
             for (const c of otherTasks) {
@@ -137,26 +113,24 @@ export const TimeTrackerEditor = ({
                 }
             }
             if (secondClosestStr) {
-                dispatch({ type: "SET_START_AT", value: secondClosestStr })
+                handleUpdate({ startAt: secondClosestStr })
                 return
             }
         }
 
         if (closestEndStr) {
-            dispatch({ type: "SET_START_AT", value: closestEndStr })
+            handleUpdate({ startAt: closestEndStr })
         }
     }
 
     const handleSnapEnd = () => {
-        if (state.isTracking) return
-        const currentEnd = new Date(
-            timeToISO(state.endAt, state.endDate)
-        ).getTime()
+        if (isTracking) return
+        const currentEnd = new Date(timeToISO(endAt, endDate)).getTime()
         const otherTasks = allTimeTrackerCards.filter(
             (c) =>
                 !c.is_deleted &&
                 c.id !== task.id &&
-                formatLocalDate(new Date(c.start_at)) === state.endDate
+                formatLocalDate(new Date(c.start_at)) === endDate
         )
 
         let closestStart = Infinity
@@ -169,7 +143,7 @@ export const TimeTrackerEditor = ({
             }
         }
 
-        if (closestStartStr && closestStartStr === state.endAt) {
+        if (closestStartStr && closestStartStr === endAt) {
             let secondClosest = Infinity
             let secondClosestStr = ""
             for (const c of otherTasks) {
@@ -180,36 +154,27 @@ export const TimeTrackerEditor = ({
                 }
             }
             if (secondClosestStr) {
-                dispatch({ type: "SET_END_AT", value: secondClosestStr })
+                handleUpdate({ endAt: secondClosestStr })
                 return
             }
         }
 
         if (closestStartStr) {
-            dispatch({ type: "SET_END_AT", value: closestStartStr })
+            handleUpdate({ endAt: closestStartStr })
         }
     }
 
     const handleSave = async () => {
-        const finalTitle = state.title.trim()
+        const finalTitle = title.trim()
 
         let finalEndAt: IsoDateTime | null = null
-        if (!state.isTracking) {
-            if (task.end_at) {
-                const originalEndAtStr = isoToTime(task.end_at, true)
-                const originalEndDateStr = formatLocalDate(
-                    new Date(task.end_at)
-                )
-                if (
-                    state.endAt === originalEndAtStr &&
-                    state.endDate === originalEndDateStr
-                ) {
-                    finalEndAt = task.end_at
-                } else {
-                    finalEndAt = timeToISO(state.endAt, state.endDate)
-                }
+        if (!isTracking) {
+            if (updates.endAt !== undefined || updates.endDate !== undefined) {
+                finalEndAt = timeToISO(endAt, endDate)
+            } else if (task.end_at) {
+                finalEndAt = task.end_at
             } else {
-                finalEndAt = timeToISO(state.endAt, state.endDate)
+                finalEndAt = timeToISO(endAt, endDate)
             }
         }
 
@@ -226,19 +191,13 @@ export const TimeTrackerEditor = ({
         let finalStartAt: IsoDateTime
         if (hideTimeFields) {
             finalStartAt = task.start_at
+        } else if (
+            updates.startAt !== undefined ||
+            updates.startDate !== undefined
+        ) {
+            finalStartAt = timeToISO(startAt, startDate)
         } else {
-            const originalStartAtStr = isoToTime(task.start_at, true)
-            const originalStartDateStr = formatLocalDate(
-                new Date(task.start_at)
-            )
-            if (
-                state.startAt === originalStartAtStr &&
-                state.startDate === originalStartDateStr
-            ) {
-                finalStartAt = task.start_at
-            } else {
-                finalStartAt = timeToISO(state.startAt, state.startDate)
-            }
+            finalStartAt = task.start_at
         }
 
         if (new Date(finalStartAt).getTime() > now.getTime()) {
@@ -257,7 +216,7 @@ export const TimeTrackerEditor = ({
             title: finalTitle,
             start_at: finalStartAt,
             end_at: finalEndAt,
-            tag_id: state.tagId || DEFAULT_TAG_ID,
+            tag_id: tagId || DEFAULT_TAG_ID,
         })
     }
 
@@ -278,16 +237,13 @@ export const TimeTrackerEditor = ({
                         <input
                             id="tracker-title"
                             type="text"
-                            value={state.title}
+                            value={title}
                             onChange={(e) =>
-                                dispatch({
-                                    type: "SET_TITLE",
-                                    value: e.target.value,
-                                })
+                                handleUpdate({ title: e.target.value })
                             }
                             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             placeholder={
-                                tags.find((t) => t.id === state.tagId)?.name ||
+                                tags.find((t) => t.id === tagId)?.name ||
                                 "Time Tracker"
                             }
                         />
@@ -305,11 +261,10 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-start-date"
                                         type="date"
-                                        value={state.startDate}
+                                        value={startDate}
                                         onChange={(e) =>
-                                            dispatch({
-                                                type: "SET_START_DATE",
-                                                value: e.target.value,
+                                            handleUpdate({
+                                                startDate: e.target.value,
                                             })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -327,11 +282,10 @@ export const TimeTrackerEditor = ({
                                             id="tracker-start-time"
                                             type="time"
                                             step="1"
-                                            value={state.startAt}
+                                            value={startAt}
                                             onChange={(e) =>
-                                                dispatch({
-                                                    type: "SET_START_AT",
-                                                    value: e.target.value,
+                                                handleUpdate({
+                                                    startAt: e.target.value,
                                                 })
                                             }
                                             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -361,12 +315,11 @@ export const TimeTrackerEditor = ({
                                     <input
                                         id="tracker-end-date"
                                         type="date"
-                                        disabled={state.isTracking}
-                                        value={state.endDate}
+                                        disabled={isTracking}
+                                        value={endDate}
                                         onChange={(e) =>
-                                            dispatch({
-                                                type: "SET_END_DATE",
-                                                value: e.target.value,
+                                            handleUpdate({
+                                                endDate: e.target.value,
                                             })
                                         }
                                         className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
@@ -383,46 +336,37 @@ export const TimeTrackerEditor = ({
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                if (state.isTracking) {
-                                                    dispatch({
-                                                        type: "SET_IS_TRACKING",
-                                                        value: false,
-                                                    })
-                                                    dispatch({
-                                                        type: "SET_END_DATE",
-                                                        value: formatLocalDate(
-                                                            new Date()
-                                                        ),
-                                                    })
-                                                    dispatch({
-                                                        type: "SET_END_AT",
-                                                        value: isoToTime(
+                                                if (isTracking) {
+                                                    handleUpdate({
+                                                        isTracking: false,
+                                                        endDate:
+                                                            formatLocalDate(
+                                                                new Date()
+                                                            ),
+                                                        endAt: isoToTime(
                                                             getNowISO(),
                                                             true
                                                         ),
                                                     })
                                                 } else {
-                                                    dispatch({
-                                                        type: "SET_IS_TRACKING",
-                                                        value: true,
+                                                    handleUpdate({
+                                                        isTracking: true,
                                                     })
                                                 }
                                             }}
                                             className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase transition-all select-none ${
-                                                state.isTracking
+                                                isTracking
                                                     ? "border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20"
                                                     : "border-border bg-muted text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
                                             }`}
                                         >
-                                            {state.isTracking && (
+                                            {isTracking && (
                                                 <span className="relative flex h-1.5 w-1.5">
                                                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
                                                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500"></span>
                                                 </span>
                                             )}
-                                            {state.isTracking
-                                                ? "Tracking"
-                                                : "Track"}
+                                            {isTracking ? "Tracking" : "Track"}
                                         </button>
                                     </div>
                                     <div className="flex gap-2">
@@ -430,21 +374,20 @@ export const TimeTrackerEditor = ({
                                             id="tracker-end-time"
                                             type="time"
                                             step="1"
-                                            disabled={state.isTracking}
-                                            value={state.endAt}
+                                            disabled={isTracking}
+                                            value={endAt}
                                             onChange={(e) =>
-                                                dispatch({
-                                                    type: "SET_END_AT",
-                                                    value: e.target.value,
+                                                handleUpdate({
+                                                    endAt: e.target.value,
                                                 })
                                             }
                                             className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                         />
                                         <button
                                             type="button"
-                                            disabled={state.isTracking}
+                                            disabled={isTracking}
                                             onClick={handleSnapEnd}
-                                            className={`flex items-center justify-center rounded-lg border border-border bg-muted px-2.5 text-muted-foreground transition-colors ${state.isTracking ? "cursor-not-allowed opacity-50" : "hover:bg-muted-foreground/10 hover:text-foreground"}`}
+                                            className={`flex items-center justify-center rounded-lg border border-border bg-muted px-2.5 text-muted-foreground transition-colors ${isTracking ? "cursor-not-allowed opacity-50" : "hover:bg-muted-foreground/10 hover:text-foreground"}`}
                                             title="Snap to next task"
                                         >
                                             <HugeiconsIcon
@@ -466,13 +409,10 @@ export const TimeTrackerEditor = ({
                                 <button
                                     key={tag.id}
                                     onClick={() =>
-                                        dispatch({
-                                            type: "SET_TAG_ID",
-                                            value: tag.id,
-                                        })
+                                        handleUpdate({ tagId: tag.id })
                                     }
                                     className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-all ${
-                                        state.tagId === tag.id
+                                        tagId === tag.id
                                             ? "border-primary bg-primary/10"
                                             : "border-transparent bg-muted hover:border-muted-foreground/30"
                                     }`}

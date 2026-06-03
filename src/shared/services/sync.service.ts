@@ -425,7 +425,8 @@ export class SyncService {
                 if (key.startsWith("_")) continue
 
                 if (entity[key as keyof T] !== oldEntity[key as keyof T]) {
-                    patch[key] = entity[key as keyof T]
+                    const val = entity[key as keyof T]
+                    patch[key] = val === undefined ? null : val
                     hasChanges = true
                 }
             }
@@ -444,7 +445,10 @@ export class SyncService {
         } else {
             // It's an insert, patch is the full entity
             finalEntity.updated_at = now
-            Object.assign(patch, finalEntity)
+            for (const key in finalEntity) {
+                const val = finalEntity[key as keyof typeof finalEntity]
+                patch[key] = val === undefined ? null : val
+            }
         }
 
         await db.execute(config.saveSql, config.toSqlValues(finalEntity))
