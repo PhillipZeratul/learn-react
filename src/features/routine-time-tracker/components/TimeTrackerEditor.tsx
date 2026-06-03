@@ -248,9 +248,39 @@ export const TimeTrackerEditor = ({
                             }
                         />
                     </div>
+                    <div>
+                        <p className="mb-1 block text-xs text-muted-foreground">
+                            Tag
+                        </p>
+                        <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
+                            {sortedTags.map((tag) => (
+                                <button
+                                    key={tag.id}
+                                    onClick={() =>
+                                        handleUpdate({ tagId: tag.id })
+                                    }
+                                    className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-all ${
+                                        tagId === tag.id
+                                            ? "border-primary bg-primary/10"
+                                            : "border-transparent bg-muted hover:border-muted-foreground/30"
+                                    }`}
+                                >
+                                    <div
+                                        className="size-2 rounded-full"
+                                        style={{
+                                            backgroundColor: resolveTagColor(
+                                                tag.color
+                                            ),
+                                        }}
+                                    />
+                                    {tag.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                     {!hideTimeFields && (
                         <div className="space-y-4">
-                            <div className="flex gap-4">
+                            <div className="flex flex-col gap-4 sm:flex-row">
                                 <div className="flex-1">
                                     <label
                                         htmlFor="tracker-start-date"
@@ -304,7 +334,7 @@ export const TimeTrackerEditor = ({
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex gap-4">
+                            <div className="flex flex-col gap-4 sm:flex-row">
                                 <div className="flex-1">
                                     <label
                                         htmlFor="tracker-end-date"
@@ -400,36 +430,6 @@ export const TimeTrackerEditor = ({
                             </div>
                         </div>
                     )}
-                    <div>
-                        <p className="mb-1 block text-xs text-muted-foreground">
-                            Tag
-                        </p>
-                        <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
-                            {sortedTags.map((tag) => (
-                                <button
-                                    key={tag.id}
-                                    onClick={() =>
-                                        handleUpdate({ tagId: tag.id })
-                                    }
-                                    className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-all ${
-                                        tagId === tag.id
-                                            ? "border-primary bg-primary/10"
-                                            : "border-transparent bg-muted hover:border-muted-foreground/30"
-                                    }`}
-                                >
-                                    <div
-                                        className="size-2 rounded-full"
-                                        style={{
-                                            backgroundColor: resolveTagColor(
-                                                tag.color
-                                            ),
-                                        }}
-                                    />
-                                    {tag.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                 </div>
                 <div className="mt-8 flex flex-col gap-2">
                     <button
