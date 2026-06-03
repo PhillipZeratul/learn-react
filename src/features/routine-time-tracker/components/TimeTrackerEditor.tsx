@@ -193,14 +193,24 @@ export const TimeTrackerEditor = ({
     const handleSave = async () => {
         const finalTitle = state.title.trim()
 
-        // If the task was active (end_at is null), we should only set end_at if it's explicitly edited.
-        // However, for newly created tasks via BEGIN button, hideTimeFields is true.
-        // We'll trust the editor state unless it's a null transition.
-
-        let finalEndAt = timeToISO(state.endAt, state.endDate)
-
-        if (state.isTracking) {
-            finalEndAt = null as unknown as IsoDateTime
+        let finalEndAt: IsoDateTime | null = null
+        if (!state.isTracking) {
+            if (task.end_at) {
+                const originalEndAtStr = isoToTime(task.end_at, true)
+                const originalEndDateStr = formatLocalDate(
+                    new Date(task.end_at)
+                )
+                if (
+                    state.endAt === originalEndAtStr &&
+                    state.endDate === originalEndDateStr
+                ) {
+                    finalEndAt = task.end_at
+                } else {
+                    finalEndAt = timeToISO(state.endAt, state.endDate)
+                }
+            } else {
+                finalEndAt = timeToISO(state.endAt, state.endDate)
+            }
         }
 
         const now = new Date()
@@ -213,9 +223,23 @@ export const TimeTrackerEditor = ({
             finalEndAt = nowIso
         }
 
-        let finalStartAt = hideTimeFields
-            ? task.start_at
-            : timeToISO(state.startAt, state.startDate)
+        let finalStartAt: IsoDateTime
+        if (hideTimeFields) {
+            finalStartAt = task.start_at
+        } else {
+            const originalStartAtStr = isoToTime(task.start_at, true)
+            const originalStartDateStr = formatLocalDate(
+                new Date(task.start_at)
+            )
+            if (
+                state.startAt === originalStartAtStr &&
+                state.startDate === originalStartDateStr
+            ) {
+                finalStartAt = task.start_at
+            } else {
+                finalStartAt = timeToISO(state.startAt, state.startDate)
+            }
+        }
 
         if (new Date(finalStartAt).getTime() > now.getTime()) {
             finalStartAt = nowIso

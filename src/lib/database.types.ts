@@ -97,33 +97,7 @@ export type Database = {
                     },
                 ]
             }
-            routine_time_tracker_states: {
-                Row: {
-                    active_time_tracker_id: string | null
-                    created_at: string
-                    id: string
-                    is_deleted: boolean
-                    updated_at: string
-                    user_id: string
-                }
-                Insert: {
-                    active_time_tracker_id?: string | null
-                    created_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    updated_at?: string
-                    user_id?: string
-                }
-                Update: {
-                    active_time_tracker_id?: string | null
-                    created_at?: string
-                    id?: string
-                    is_deleted?: boolean
-                    updated_at?: string
-                    user_id?: string
-                }
-                Relationships: []
-            }
+
             routine_time_tracker_tags: {
                 Row: {
                     color: string

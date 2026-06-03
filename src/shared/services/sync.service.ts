@@ -262,18 +262,7 @@ export class SyncService {
                 })
             )
 
-            // Prioritize routine_time_tracker_states so that the "active ID" is updated
-            // before we process card deltas. This ensures card conflict resolution
-            // uses the freshest authoritative state.
-            const sortedResults = results.sort((a, b) => {
-                const isAState =
-                    a.config.tableName === "routine_time_tracker_states"
-                const isBState =
-                    b.config.tableName === "routine_time_tracker_states"
-                if (isAState && !isBState) return -1
-                if (!isAState && isBState) return 1
-                return 0
-            })
+            const sortedResults = results
 
             const tableDeltas = await Promise.all(
                 sortedResults.map(async ({ config, data, error }) => {
@@ -668,7 +657,6 @@ export class SyncService {
             routine_time_tracker_tags: 1,
             routine_cards: 2,
             time_tracker_cards: 2,
-            routine_time_tracker_states: 3,
         }
 
         const sortedTables = (tables as string[]).sort((a, b) => {
