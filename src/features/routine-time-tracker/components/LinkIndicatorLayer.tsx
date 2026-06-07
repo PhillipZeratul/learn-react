@@ -38,7 +38,8 @@ function computeActiveBoundaries(
         const ov = overrides[c.id]
         const top = ov ? ov.top : startMin * ppm + TOP_MARGIN
         const height = ov ? ov.height : duration * ppm
-        return { id: c.id, top, bottom: top + height }
+        const isActive = (c as TimeTrackerCard)._isActive || false
+        return { id: c.id, top, bottom: top + height, isActive }
     })
 
     const active = new Set<string>()
@@ -46,6 +47,7 @@ function computeActiveBoundaries(
         for (let j = 0; j < bounds.length; j++) {
             if (i === j) continue
             if (Math.abs(bounds[i].bottom - bounds[j].top) < 1.5) {
+                if (bounds[i].isActive) continue
                 active.add(`${bounds[i].id}_to_${bounds[j].id}`)
             }
         }

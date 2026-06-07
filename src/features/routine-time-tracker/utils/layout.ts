@@ -78,9 +78,14 @@ export function calculateLayout(
                 const lastEnd = lastStart + lastDur
                 const gap = startMin - lastEnd
 
+                const bothActive =
+                    (card as TimeTrackerCard)._isActive &&
+                    (lastCard as TimeTrackerCard)._isActive
+
                 // Strict sequential placement (no overlap allowed)
                 // Use a tiny epsilon (-0.01) to handle floating-point precision errors
-                if (gap >= -0.01) {
+                // Parallel active tasks should never be sequential
+                if (gap >= -0.01 && !bothActive) {
                     if (gap < minGap) {
                         minGap = gap
                         bestColIndex = i

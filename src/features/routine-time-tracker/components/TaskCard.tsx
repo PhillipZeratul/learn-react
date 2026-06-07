@@ -13,6 +13,7 @@ import {
     dragTopSignal,
     dragHeightSignal,
     dragOverridesSignal,
+    dragLeftSignal,
 } from "../stores/drag.store"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
@@ -85,8 +86,10 @@ export const TaskCard = memo(
                     const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT
                     const showDuration = dragHeight >= SHOW_CARD_DURATION_HEIGHT
 
+                    const leftOffset = isDragging ? dragLeftSignal.value : 0
+
                     Object.assign(container.style, {
-                        transform: `translateY(${top}px)`,
+                        transform: `translate(${leftOffset}px, ${top}px)`,
                         height: `${dragHeight}px`,
                         webkitMaskImage: "",
                         maskImage: "",

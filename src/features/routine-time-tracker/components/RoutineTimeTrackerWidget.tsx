@@ -54,6 +54,8 @@ import {
     dragTopSignal,
     dragHeightSignal,
     dragOverridesSignal,
+    dragLeftSignal,
+    isHoveringTrackerColumnSignal,
 } from "../stores/drag.store"
 import { useBackAction } from "@/hooks/useBackAction"
 import {
@@ -80,7 +82,35 @@ interface DragState {
     initialStartMin: number
     initialEndMin: number
     initialMouseY: number
+    initialMouseX: number
     mode: DragMode
+}
+
+const TrackerDropZoneHighlight = () => {
+    const highlightRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const dispose = effect(() => {
+            const isHovering = isHoveringTrackerColumnSignal.value
+            if (highlightRef.current) {
+                if (isHovering) {
+                    highlightRef.current.className =
+                        "pointer-events-none absolute inset-0 z-0 rounded-xl border-2 transition-all duration-200 border-primary bg-primary/5 opacity-100"
+                } else {
+                    highlightRef.current.className =
+                        "pointer-events-none absolute inset-0 z-0 rounded-xl border-2 transition-all duration-200 border-transparent opacity-0"
+                }
+            }
+        })
+        return () => dispose()
+    }, [])
+
+    return (
+        <div
+            ref={highlightRef}
+            className="pointer-events-none absolute inset-0 z-0 rounded-xl border-2 border-transparent opacity-0 transition-all duration-200"
+        />
+    )
 }
 
 export default function RoutineTimeTrackerWidget() {
@@ -146,6 +176,7 @@ export default function RoutineTimeTrackerWidget() {
                     acc.push({
                         ...c,
                         end_at: now.toISOString() as IsoDateTime,
+                        _isActive: true,
                     })
                 } else {
                     acc.push(c)
@@ -224,7 +255,10 @@ export default function RoutineTimeTrackerWidget() {
 
     // Track the last clientY during drags to re-trigger updates on hold-timer snap breaks
     const lastDragYRef = useRef<number>(0)
-    const updateDragPositionRef = useRef<(clientY: number) => void>(() => {})
+    const lastDragXRef = useRef<number>(0)
+    const updateDragPositionRef = useRef<
+        (clientY: number, clientX?: number) => void
+    >(() => {})
 
     // Registry for pending multi-card concurrent updates
     const pendingUpdatesRef = useRef<
@@ -236,11 +270,33 @@ export default function RoutineTimeTrackerWidget() {
     >([])
 
     const updateDragPosition = useCallback(
-        (clientY: number) => {
+        (clientY: number, clientX?: number) => {
             if (!dragState) return
 
             const ppm = pixelsPerMinuteSignal.value
             lastDragYRef.current = clientY
+            if (clientX !== undefined) lastDragXRef.current = clientX
+
+            // Handle horizontal drag
+            if (clientX !== undefined && dragState.type === "routine") {
+                const deltaX = clientX - dragState.initialMouseX
+                if (deltaX < -20) {
+                    dragLeftSignal.value = deltaX
+
+                    if (scrollContainerRef.current) {
+                        const rect =
+                            scrollContainerRef.current.getBoundingClientRect()
+                        const relativeX = clientX - rect.left
+                        const contentWidth =
+                            scrollContainerRef.current.clientWidth
+                        const isTimeTrackerBlock = relativeX < contentWidth / 2
+                        isHoveringTrackerColumnSignal.value = isTimeTrackerBlock
+                    }
+                } else {
+                    dragLeftSignal.value = 0
+                    isHoveringTrackerColumnSignal.value = false
+                }
+            }
 
             // 1. Shake Detection (only if not already unlinked and dragging an edge)
             if (
@@ -1301,6 +1357,7 @@ export default function RoutineTimeTrackerWidget() {
                 initialStartMin: startMin,
                 initialEndMin: startMin + duration,
                 initialMouseY: clientY,
+                initialMouseX: clientX,
                 mode,
             })
             longPressTimer.current = null
@@ -1343,6 +1400,34 @@ export default function RoutineTimeTrackerWidget() {
 
         if (dragState) {
             wasDragged.current = true
+
+            if (
+                dragState.type === "routine" &&
+                isHoveringTrackerColumnSignal.value
+            ) {
+                const routine = dragState.card as RoutineCard
+                const newTrackerCard = createTimeTrackerCard({
+                    title: routine.title,
+                    tag_id: routine.tag_id,
+                    start_at: getNowISO(),
+                    end_at: null,
+                })
+
+                upsertTimeTrackerCard(newTrackerCard)
+                SyncService.save(timeTrackerCardConfig, newTrackerCard)
+
+                // eslint-disable-next-line react-hooks/immutability
+                dragLeftSignal.value = 0
+                // eslint-disable-next-line react-hooks/immutability
+                isHoveringTrackerColumnSignal.value = false
+                snappedEdgeRef.current = null
+                setDragState(null)
+
+                setTimeout(() => {
+                    dragOverridesSignal.value = {}
+                }, 50)
+                return
+            }
 
             // Read final overrides
             const finalOverrides = { ...dragOverridesSignal.value }
@@ -1639,6 +1724,10 @@ export default function RoutineTimeTrackerWidget() {
                     dragOverridesSignal.value = {}
                 }, 50)
             }
+            // eslint-disable-next-line react-hooks/immutability
+            dragLeftSignal.value = 0
+            // eslint-disable-next-line react-hooks/immutability
+            isHoveringTrackerColumnSignal.value = false
             snappedEdgeRef.current = null
             setDragState(null)
         }
@@ -1659,7 +1748,7 @@ export default function RoutineTimeTrackerWidget() {
 
         if (dragState) {
             wasDragged.current = true
-            updateDragPosition(clientY)
+            updateDragPosition(clientY, clientX)
             return
         }
 
@@ -1707,6 +1796,7 @@ export default function RoutineTimeTrackerWidget() {
                     <div className="absolute inset-0 flex">
                         {/* Time Tracker Column */}
                         <div className="relative h-full flex-1">
+                            <TrackerDropZoneHighlight />
                             {currentDateTimeTrackerCards.map((task) => (
                                 <TaskCard
                                     key={task.id}

@@ -18,6 +18,7 @@ export interface TimeTrackerCard extends BaseModel {
     start_at: IsoDateTime
     end_at: IsoDateTime | null
     tag_id: TagId
+    _isActive?: boolean
 }
 
 export const createTimeTrackerCard = (
