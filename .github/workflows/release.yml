@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "dist/*"
-          target: "/var/www/life_rpg"
+          target: "/var/www/liferpg"
           strip_components: 1
 
   build-android:
