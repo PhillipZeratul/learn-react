@@ -1,15 +1,7 @@
-$rootFolder = "D:\WORK\Web\Learning React\learn-react" 
+$rootFolder = "D:\WORK\Web\Learning React\learn-react"
 
 code $rootFolder
 
-$paneId = (wezterm cli spawn --cwd $rootFolder -- pwsh -NoExit -Command "gemini").Trim()
-wezterm cli set-tab-title --pane-id $paneId "Gemini"
+Start-Process "warp://tab_config/life_rpg_tab_config"
 
-$paneId = (wezterm cli spawn --cwd $rootFolder -- pwsh -NoExit -Command "npm run dev").Trim()
-wezterm cli set-tab-title --pane-id $paneId "Vite"
-
-$paneId = (wezterm cli spawn --cwd $rootFolder -- pwsh -NoExit -Command "npm run storybook").Trim()
-wezterm cli set-tab-title --pane-id $paneId "Storybook"
-
-$paneId = (wezterm cli spawn --cwd $rootFolder -- pwsh -NoExit -Command "./.meta/start-local-supabase.ps1").Trim()
-wezterm cli set-tab-title --pane-id $paneId "Supabase"
+Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = "$env:LOCALAPPDATA\Programs\antigravity\Antigravity.exe" }
