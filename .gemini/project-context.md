@@ -35,6 +35,11 @@ bun run tsc -p tsconfig.app.json --noEmit && bun run tsc -p tsconfig.node.json -
 - Separation of Macro and Micro States: Business logic utilizes a unidirectional data flow, while high-frequency 3D rendering uses pointer-level direct connections (to bypass React virtual DOM performance bottlenecks).
 - Design: The project is organized into separate modules according to the "Feature-Sliced / Domain-Driven Design" methodology.
 
+## Project Feature
+
+- A game like feel with a 3D scene with a character on the background and a "Liquid Glass and Water" like UI layer that supports true SDF fusion on top.
+    - To achieve the "Liquid Glass and Water" true SDF fusion while integrating perfectly with the standard HTML UI (buttons, text, navbars), we will use a DOM-to-WebGL Synchronization architecture powered by Preact Signals.
+
 ## Tech Stack Matrix
 
 - Base Environment: Node.js + Vite + TypeScript (strong type checking).
