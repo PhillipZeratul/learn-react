@@ -1,3 +1,11 @@
+# Main
+
+Project goal: Develop a multi-platform app to gamify daily life to help people achieve their goals.
+
+@.agents/coding-guideline.md
+@.agents/project-context.md
+@.agents/graphify.md
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
