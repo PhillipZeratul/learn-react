@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect } from "vite-plus/test"
 import { getRoutineInstancesForDate } from "./routine-expansion"
 import { createRoutineCard } from "../models/routine-card.model"
 import { timeToISO } from "./utils"

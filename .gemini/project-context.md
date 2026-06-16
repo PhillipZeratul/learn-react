@@ -2,22 +2,22 @@
 
 ## General Instructions
 
-- **Always use 'bun', not 'npm'.**
+- **Always use 'vp' (Vite+), not 'npm' or 'bun'.**
 - Respond and code in English.
 
 1. Make changes.
 
 2. Typecheck (fast)
-bun run typecheck
+vp run typecheck
 
 3. Run tests
-bun run test -- -t "test name"  # Single suite
+vp test -- -t "test name"  # Single suite
 
 4. Lint
-bun run lint                    # All files
+vp lint                    # All files
 
 5. Dry run build
-bun run tsc -p tsconfig.app.json --noEmit && bun run tsc -p tsconfig.node.json --noEmit && bun run tsc -p tsconfig.test.json --noEmit
+vp run tsc -p tsconfig.app.json --noEmit && vp run tsc -p tsconfig.node.json --noEmit && vp run tsc -p tsconfig.test.json --noEmit
 
 ## TypeScript & Typing Strictness
 

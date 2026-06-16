@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest"
+import { describe, it, expect, vi, beforeEach, type Mock } from "vite-plus/test"
 import { SyncService } from "./sync.service"
 import { getDatabase } from "@/lib/db/sqlite"
 import { useAuthStore } from "@/features/auth/stores/auth.store"
