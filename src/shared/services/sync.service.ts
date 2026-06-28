@@ -9,6 +9,7 @@ import type {
 import { useAuthStore } from "@/features/auth/stores/auth.store"
 import { DatabaseMaintenanceService } from "./database-maintenance.service"
 import type { Database } from "@/lib/database.types"
+import { toast } from "sonner"
 
 type TableName = keyof Database["public"]["Tables"]
 
@@ -49,16 +50,14 @@ export class SyncService {
         return this.configs
     }
 
-    private static debugAlert(msg: string, err?: unknown) {
-        if (import.meta.env.DEV) {
-            const errStr =
-                err instanceof Error
-                    ? err.message
-                    : typeof err === "object"
-                      ? JSON.stringify(err)
-                      : String(err)
-            window.alert(`${msg}\n\n${errStr}`)
-        }
+    private static notifyError(msg: string, err?: unknown) {
+        const errStr =
+            err instanceof Error
+                ? err.message
+                : typeof err === "object"
+                  ? JSON.stringify(err)
+                  : String(err)
+        toast.error(msg, { description: errStr })
     }
 
     /**
@@ -119,7 +118,7 @@ export class SyncService {
                         `SyncService: Schema migration failed for ${config.tableName}:`,
                         err
                     )
-                    SyncService.debugAlert(
+                    SyncService.notifyError(
                         `Schema migration failed for ${config.tableName}`,
                         err
                     )
@@ -391,7 +390,7 @@ export class SyncService {
             console.log("SyncService: Delta sync complete.")
         } catch (err) {
             console.error("SyncService: Delta sync failed:", err)
-            SyncService.debugAlert("SyncService: Delta sync failed", err)
+            SyncService.notifyError("SyncService: Delta sync failed", err)
         }
     }
 
@@ -552,7 +551,7 @@ export class SyncService {
                 "SyncService: Failed to hydrate stores from local DB:",
                 error
             )
-            SyncService.debugAlert(
+            SyncService.notifyError(
                 "SyncService: Failed to hydrate stores from local DB",
                 error
             )
@@ -639,7 +638,7 @@ export class SyncService {
             await this.internalSync()
         } catch (err) {
             console.error("SyncService: Sync process failed:", err)
-            SyncService.debugAlert("SyncService: Sync process failed", err)
+            SyncService.notifyError("SyncService: Sync process failed", err)
         } finally {
             const elapsed = Date.now() - syncStartTime
             const remaining = Math.max(0, 1000 - elapsed)
@@ -815,7 +814,7 @@ export class SyncService {
                             `SyncService: Sync exception for ${table}:${id}:`,
                             err
                         )
-                        SyncService.debugAlert(
+                        SyncService.notifyError(
                             `SyncService: Sync exception for ${table}:${id}`,
                             err
                         )

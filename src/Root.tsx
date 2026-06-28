@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from "react"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/ThemeProvider.tsx"
+import { Toaster } from "sonner"
 import { RoutineTimeTrackerService } from "@/features/routine-time-tracker/services/routine-time-tracker.service.ts"
 import { SyncService } from "@/shared/services/sync.service.ts"
 import { DatabaseMaintenanceService } from "@/shared/services/database-maintenance.service.ts"
@@ -124,6 +125,7 @@ export function Root() {
         <StrictMode>
             <ThemeProvider>
                 <App />
+                <Toaster />
             </ThemeProvider>
         </StrictMode>
     )
