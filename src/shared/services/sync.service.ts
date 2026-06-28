@@ -49,6 +49,18 @@ export class SyncService {
         return this.configs
     }
 
+    private static debugAlert(msg: string, err?: unknown) {
+        if (import.meta.env.DEV) {
+            const errStr =
+                err instanceof Error
+                    ? err.message
+                    : typeof err === "object"
+                      ? JSON.stringify(err)
+                      : String(err)
+            window.alert(`${msg}\n\n${errStr}`)
+        }
+    }
+
     /**
      * Generic table initialization for all registered models.
      * Ensures feature-specific tables exist and have the correct schema.
@@ -105,6 +117,10 @@ export class SyncService {
                 } catch (err) {
                     console.error(
                         `SyncService: Schema migration failed for ${config.tableName}:`,
+                        err
+                    )
+                    SyncService.debugAlert(
+                        `Schema migration failed for ${config.tableName}`,
                         err
                     )
                 }
@@ -375,6 +391,7 @@ export class SyncService {
             console.log("SyncService: Delta sync complete.")
         } catch (err) {
             console.error("SyncService: Delta sync failed:", err)
+            SyncService.debugAlert("SyncService: Delta sync failed", err)
         }
     }
 
@@ -535,6 +552,10 @@ export class SyncService {
                 "SyncService: Failed to hydrate stores from local DB:",
                 error
             )
+            SyncService.debugAlert(
+                "SyncService: Failed to hydrate stores from local DB",
+                error
+            )
         }
     }
 
@@ -618,6 +639,7 @@ export class SyncService {
             await this.internalSync()
         } catch (err) {
             console.error("SyncService: Sync process failed:", err)
+            SyncService.debugAlert("SyncService: Sync process failed", err)
         } finally {
             const elapsed = Date.now() - syncStartTime
             const remaining = Math.max(0, 1000 - elapsed)
@@ -791,6 +813,10 @@ export class SyncService {
                     } catch (err) {
                         console.error(
                             `SyncService: Sync exception for ${table}:${id}:`,
+                            err
+                        )
+                        SyncService.debugAlert(
+                            `SyncService: Sync exception for ${table}:${id}`,
                             err
                         )
                         hasError = true

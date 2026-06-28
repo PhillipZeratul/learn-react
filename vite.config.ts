@@ -14,7 +14,9 @@ const dirname =
         : path.dirname(fileURLToPath(import.meta.url))
 
 const isTauri =
-    process.env.TAURI_ENV === "true" || process.env.VITE_PLATFORM === "tauri"
+    process.env.TAURI_ENV === "true" ||
+    process.env.VITE_PLATFORM === "tauri" ||
+    !!process.env.TAURI_ENV_PLATFORM
 const isCapacitor =
     process.env.CAPACITOR_ENV === "true" ||
     process.env.VITE_PLATFORM === "capacitor"

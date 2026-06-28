@@ -3,12 +3,17 @@ pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_sql::Builder::default().build())
     .setup(|app| {
-      if cfg!(debug_assertions) {
+      #[cfg(debug_assertions)]
+      {
+        use tauri::Manager;
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
             .build(),
         )?;
+        if let Some(window) = app.get_webview_window("main") {
+          window.open_devtools();
+        }
       }
       Ok(())
     })
