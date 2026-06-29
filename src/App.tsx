@@ -11,7 +11,7 @@ export default function App() {
     const user = useAuthStore((state) => state.user)
     const isSyncing = useAuthStore((state) => state.isSyncing)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-    const [showTestPage, setShowTestPage] = useState(true)
+    const [showTestPage, setShowTestPage] = useState(false)
 
     if (!user) {
         return (
