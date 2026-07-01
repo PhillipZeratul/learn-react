@@ -54,9 +54,9 @@ export class SyncService {
         const errStr =
             err instanceof Error
                 ? err.message
-                : typeof err === "object"
+                : typeof err === "object" && err !== null
                   ? JSON.stringify(err)
-                  : String(err)
+                  : String(err as string | number | boolean)
         toast.error(msg, { description: errStr })
     }
 
@@ -462,6 +462,9 @@ export class SyncService {
             // It's an insert, patch is the full entity
             finalEntity.updated_at = now
             for (const key in finalEntity) {
+                // Skip _sync_status and other local-only fields
+                if (key.startsWith("_")) continue
+
                 const val = finalEntity[key as keyof typeof finalEntity]
                 patch[key] = val === undefined ? null : val
             }
@@ -711,13 +714,21 @@ export class SyncService {
             // Process actions in parallel for this table
             await Promise.all(
                 Array.from(latestActionsMap.values()).map(async (action) => {
-                    const payload = JSON.parse(
-                        action.payload
-                    ) as Partial<BaseModel>
-                    const { _sync_status, id, ...rest } =
-                        payload as Partial<BaseModel> & {
-                            _sync_status?: string
+                    const rawPayload = JSON.parse(action.payload) as Record<
+                        string,
+                        unknown
+                    >
+
+                    // Strip all local-only properties (starting with _) from the payload
+                    const cleanPayload: Record<string, unknown> = {}
+                    for (const key in rawPayload) {
+                        if (!key.startsWith("_")) {
+                            cleanPayload[key] = rawPayload[key]
                         }
+                    }
+
+                    const payload = cleanPayload as Partial<BaseModel>
+                    const { id, ...rest } = payload
 
                     try {
                         let error
@@ -725,8 +736,10 @@ export class SyncService {
 
                         if (action.action === "INSERT") {
                             // For INSERT, we have the full payload, so upsert is safe.
-                            const { _sync_status: _, ...upsertPayload } =
-                                payload as Record<string, unknown>
+                            const upsertPayload = payload as Record<
+                                string,
+                                unknown
+                            >
                             const { data, error: err } = await supabase!
                                 .from(table as TableName)
                                 .upsert(
@@ -752,7 +765,7 @@ export class SyncService {
                             // triggers that might be relying on LWW at the SQL level.
                             const { data, error: err } = await supabase!
                                 .from(table as TableName)
-                                .update(rest)
+                                .update(rest as never)
                                 .eq("id", id as string)
                                 .select()
                                 .single()
@@ -763,6 +776,10 @@ export class SyncService {
                         if (error) {
                             console.error(
                                 `SyncService: Sync error for ${table}:${id} (${action.action}):`,
+                                error
+                            )
+                            SyncService.notifyError(
+                                `SyncService: Sync error for ${table}:${id}`,
                                 error
                             )
                             hasError = true

@@ -38,13 +38,14 @@ vp run tsc -p tsconfig.app.json --noEmit && vp run tsc -p tsconfig.node.json --n
 ## Project Feature
 
 - A game like feel with a 3D scene with a character on the background and a "Liquid Glass and Water" like UI layer that supports true SDF fusion on top.
-    - To achieve the "Liquid Glass and Water" true SDF fusion while integrating perfectly with the standard HTML UI (buttons, text, navbars), we will use a DOM-to-WebGL Synchronization architecture powered by Preact Signals.
+    - To achieve the "Liquid Glass and Water" true SDF fusion while integrating perfectly with the standard HTML UI (buttons, text, navbars), we will use a DOM-to-WebGPU Synchronization architecture powered by Preact Signals.
 
 ## Tech Stack Matrix
 
 - Base Environment: Node.js + Vite + TypeScript (strong type checking).
 - UI View Layer: React + Tailwind CSS + shadcn/ui.
 - 3D and Visual Engine: Three.js + React Three Fiber (R3F) (used for underlying SDF metaball animations and 3D character display).
+- Use WebGPU instead of WebGL.
 - Global State Management (Macro): Zustand for macro business data (RPG logic, quests, levels).
 - Global State Management (Micro): Preact Signals (`@preact/signals-react`) for micro high-frequency rendering (UI tracking, mouse movement, 3D coordinates).
 - Animation (UI Physics): Framer Motion for physical rebound in UI interactions.
@@ -60,7 +61,7 @@ vp run tsc -p tsconfig.app.json --noEmit && vp run tsc -p tsconfig.node.json --n
 
 ## Architectural Rules
 
-- Never Pollute the 3D Render Domain: UI components (HTML/DOM) and 3D scenes (WebGL/Canvas) must be absolutely layered via `z-index`. Data communication must go through Zustand or Signals. Writing complex business logic inside 3D components is strictly prohibited.
+- Never Pollute the 3D Render Domain: UI components (HTML/DOM) and 3D scenes (WebGPU/Canvas) must be absolutely layered via `z-index`. Data communication must go through Zustand or Signals. Writing complex business logic inside 3D components is strictly prohibited.
 - Adaptive UI: Writing two sets of project code is strictly prohibited. Presentational Components must be dynamically switched in memory using Tailwind media queries (micro) and the `useIsMobile` Hook (macro).
 - Disaster-Proof Sync: Clients are strictly prohibited from executing physical deletions (DELETE). Soft Deletes must be used via `is_deleted` or `deleted_at` flags. Synchronization relies on incremental event replay rather than mindless overwriting.
 - Dumb Components (UI Puppetization): shadcn/ui components must remain pure and completely free of business state. All data must be injected into them by the outer Container components.

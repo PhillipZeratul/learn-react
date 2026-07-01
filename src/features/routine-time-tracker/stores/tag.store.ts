@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { immer } from "zustand/middleware/immer"
-import { type Tag } from "../models/tag.model"
+import { type Tag, createTag, DEFAULT_TAG_ID } from "../models/tag.model"
 
 interface TagState {
     items: Tag[]
@@ -60,8 +60,6 @@ export const useTagStore = create<TagState & TagActions>()(
             )
 
             if (!hasDefault) {
-                const { createTag, DEFAULT_TAG_ID } =
-                    await import("../models/tag.model")
                 const defaultTag = createTag({
                     id: DEFAULT_TAG_ID,
                     name: "Default",

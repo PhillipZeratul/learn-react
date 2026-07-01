@@ -226,6 +226,9 @@ export default defineConfig({
     optimizeDeps: {
         exclude: ["@sqlite.org/sqlite-wasm", "react-grab"],
     },
+    build: {
+        chunkSizeWarningLimit: 2000,
+    },
     server: {
         headers: {
             // Required for WebSQLite OPFS high-performance sandboxing

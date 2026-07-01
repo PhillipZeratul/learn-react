@@ -1,10 +1,13 @@
-import { useEffect, useId, useState } from "react"
+import { useEffect, useId, useState, useMemo } from "react"
 import { useGlass } from "./GlassContext"
+import { generateSquirclePolygon } from "./Squircle"
 
 export interface GlassNodeProps {
     lensW: number
     lensH: number
-    lensBorderRadius?: number
+    n?: number
+    bevelWidth?: number
+    distortionIntensity?: number
     x: number
     y: number
 }
@@ -12,7 +15,9 @@ export interface GlassNodeProps {
 export function GlassNode({
     lensW,
     lensH,
-    lensBorderRadius = 0,
+    n = 4,
+    bevelWidth = 0.3,
+    distortionIntensity = 1.0,
     x,
     y,
 }: GlassNodeProps) {
@@ -38,15 +43,59 @@ export function GlassNode({
         const rX = lensW / 2
         const rY = lensH / 2
 
+        const smoothstep = (edge0: number, edge1: number, x: number) => {
+            const t = Math.max(
+                0.0,
+                Math.min(1.0, (x - edge0) / (edge1 - edge0))
+            )
+            return t * t * (3.0 - 2.0 * t)
+        }
+
         for (let py = 0; py < lensH; py++) {
             for (let px = 0; px < lensW; px++) {
                 const dx = (px - cx) / rX
                 const dy = (py - cy) / rY
-                const dist2 = dx * dx + dy * dy
 
-                if (dist2 <= 1) {
-                    const r = Math.round((dx + 1) * 127.5)
-                    const g = Math.round((dy + 1) * 127.5)
+                // sdSquircle distance logic
+                const sum =
+                    Math.pow(Math.abs(dx), n) + Math.pow(Math.abs(dy), n)
+                const dist = Math.pow(sum, 1.0 / n)
+
+                if (dist <= 1.0) {
+                    let gradX = 0
+                    let gradY = 0
+
+                    if (sum > 0) {
+                        const sumPow = Math.pow(sum, 1.0 / n - 1.0)
+                        gradX =
+                            Math.sign(dx) *
+                            Math.pow(Math.abs(dx), n - 1.0) *
+                            sumPow
+                        gradY =
+                            Math.sign(dy) *
+                            Math.pow(Math.abs(dy), n - 1.0) *
+                            sumPow
+                    }
+
+                    // Compute Bevel
+                    // SDF is negative inside, 0 at edge.
+                    const sdf = dist - 1.0
+                    // bevelAmount: 0 in the flat center, ramps to 1 at the edge.
+                    const bevelAmount = smoothstep(-bevelWidth, 0.0, sdf)
+
+                    const nx = gradX * bevelAmount
+                    const ny = gradY * bevelAmount
+                    const nz = 1.0 - bevelAmount * 0.5
+
+                    // Normalize the 3D normal vector
+                    const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
+                    // Invert normal direction for convex magnifying effect,
+                    // and scale by distortionIntensity for linear control.
+                    const normX = -(nx / len) * distortionIntensity
+                    const normY = -(ny / len) * distortionIntensity
+
+                    const r = Math.round((normX + 1) * 127.5)
+                    const g = Math.round((normY + 1) * 127.5)
 
                     const idx = (py * lensW + px) * 4
                     data[idx] = r
@@ -58,7 +107,7 @@ export function GlassNode({
         }
         ctx.putImageData(imgData, 0, 0)
         setMapUrl(canvas.toDataURL("image/png"))
-    }, [lensW, lensH])
+    }, [lensW, lensH, n, bevelWidth, distortionIntensity])
 
     // Register with provider when map changes
     useEffect(() => {
@@ -85,6 +134,8 @@ export function GlassNode({
         }
     }, [x, y, id])
 
+    const clipPath = useMemo(() => generateSquirclePolygon(n, 64), [n])
+
     // Render nothing if map isn't ready
     if (!mapUrl) return null
 
@@ -96,10 +147,7 @@ export function GlassNode({
                 left: x,
                 width: lensW,
                 height: lensH,
-                borderRadius: lensBorderRadius || lensW / 2,
-                border: "1px solid rgba(255, 255, 255, 0.4)",
-                boxShadow:
-                    "inset 0 4px 10px rgba(255,255,255,0.4), 0 4px 12px rgba(0,0,0,0.1)",
+                clipPath,
                 pointerEvents: "none",
                 background:
                     "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%)",

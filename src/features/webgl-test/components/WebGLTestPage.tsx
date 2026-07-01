@@ -5,6 +5,7 @@ import { signal } from "@preact/signals-react"
 import { Button } from "@/components/ui/Button"
 import { GlassProvider } from "@/components/ui/GlassProvider"
 import { GlassNode } from "@/components/ui/GlassNode"
+import { Squircle } from "@/components/ui/Squircle"
 import { Float } from "@react-three/drei"
 import * as THREE from "three"
 
@@ -28,11 +29,12 @@ const BackgroundGradientMaterial = {
 
 function ThreeDBackground() {
     const bgMaterialRef = useRef<THREE.ShaderMaterial>(null)
+    const timeRef = useRef(0)
 
-    useFrame((state) => {
+    useFrame((_state, delta) => {
         if (bgMaterialRef.current) {
-            bgMaterialRef.current.uniforms.u_time.value =
-                state.clock.elapsedTime
+            timeRef.current += delta
+            bgMaterialRef.current.uniforms.u_time.value = timeRef.current
         }
     })
 
@@ -90,11 +92,21 @@ export function WebGLTestPage({ onExit }: { onExit: () => void }) {
     const updateSignals = () => {
         if (staticBtnRef.current) {
             const rect = staticBtnRef.current.getBoundingClientRect()
-            exitBtnPos.value = { x: rect.x, y: rect.y }
+            if (
+                exitBtnPos.value.x !== rect.x ||
+                exitBtnPos.value.y !== rect.y
+            ) {
+                exitBtnPos.value = { x: rect.x, y: rect.y }
+            }
         }
         if (dragBtnRef.current) {
             const rect = dragBtnRef.current.getBoundingClientRect()
-            dragBtnPos.value = { x: rect.x, y: rect.y }
+            if (
+                dragBtnPos.value.x !== rect.x ||
+                dragBtnPos.value.y !== rect.y
+            ) {
+                dragBtnPos.value = { x: rect.x, y: rect.y }
+            }
         }
     }
 
@@ -104,14 +116,15 @@ export function WebGLTestPage({ onExit }: { onExit: () => void }) {
             updateSignals()
         }
         window.addEventListener("resize", handleResize)
-        // Initial setup
-        updateSignals()
-        return () => window.removeEventListener("resize", handleResize)
-    }, [])
 
-    useEffect(() => {
-        updateSignals()
-    })
+        // Use a short delay for initial setup to ensure layout is complete
+        const timeoutId = setTimeout(updateSignals, 100)
+
+        return () => {
+            window.removeEventListener("resize", handleResize)
+            clearTimeout(timeoutId)
+        }
+    }, [])
 
     const bindDrag = useDrag(({ offset: [ox, oy] }) => {
         setDragPos({ x: ox, y: oy })
@@ -139,33 +152,34 @@ export function WebGLTestPage({ onExit }: { onExit: () => void }) {
 
                     <div className="pointer-events-auto relative flex h-64 w-full max-w-md items-center justify-center gap-16">
                         {/* Static Exit Button */}
-                        <div>
+                        <Squircle n={4} className="size-24">
                             <Button
                                 ref={staticBtnRef}
                                 variant="outline"
                                 onClick={onExit}
-                                className="size-24 cursor-pointer rounded-full border-2 border-dashed border-white/50 bg-white/5 font-bold text-white shadow-lg transition-transform hover:scale-110"
+                                className="size-full cursor-pointer rounded-none border-0 bg-white/5 font-bold text-white shadow-lg transition-transform hover:scale-110"
                             >
                                 Exit
                             </Button>
-                        </div>
+                        </Squircle>
 
                         {/* Draggable Glass Handle */}
-                        <div
+                        <Squircle
+                            n={4}
                             {...bindDrag()}
                             style={{
                                 transform: `translate3d(${dragPos.x}px, ${dragPos.y}px, 0)`,
                             }}
-                            className="cursor-grab active:cursor-grabbing"
+                            className="size-24 cursor-grab touch-none active:cursor-grabbing"
                         >
                             <Button
                                 ref={dragBtnRef}
                                 variant="outline"
-                                className="size-24 rounded-full border-2 border-dashed border-white/50 bg-white/5 text-white shadow-sm"
+                                className="size-full rounded-none border-0 bg-white/5 text-white shadow-sm"
                             >
                                 Drag Me
                             </Button>
-                        </div>
+                        </Squircle>
                     </div>
                 </div>
 
@@ -173,7 +187,8 @@ export function WebGLTestPage({ onExit }: { onExit: () => void }) {
                 <GlassNode
                     lensW={96}
                     lensH={96}
-                    lensBorderRadius={48}
+                    n={4}
+                    distortionIntensity={0.5}
                     x={exitBtnPos.value.x}
                     y={exitBtnPos.value.y}
                 />
@@ -181,7 +196,8 @@ export function WebGLTestPage({ onExit }: { onExit: () => void }) {
                 <GlassNode
                     lensW={96}
                     lensH={96}
-                    lensBorderRadius={48}
+                    n={4}
+                    distortionIntensity={0.5}
                     x={dragBtnPos.value.x}
                     y={dragBtnPos.value.y}
                 />

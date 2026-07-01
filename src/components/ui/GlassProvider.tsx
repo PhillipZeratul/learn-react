@@ -1,4 +1,4 @@
-import React, { useState, useId } from "react"
+import React, { useState, useId, useCallback, useMemo } from "react"
 import { GlassContext, type GlassNodeData } from "./GlassContext"
 
 export interface GlassProviderProps {
@@ -15,22 +15,27 @@ export function GlassProvider({
     const filterId = useId().replace(/:/g, "-")
     const [nodes, setNodes] = useState<Record<string, GlassNodeData>>({})
 
-    const registerNode = (node: GlassNodeData) => {
+    const registerNode = useCallback((node: GlassNodeData) => {
         setNodes((prev) => ({ ...prev, [node.id]: node }))
-    }
+    }, [])
 
-    const unregisterNode = (id: string) => {
+    const unregisterNode = useCallback((id: string) => {
         setNodes((prev) => {
             const next = { ...prev }
             delete next[id]
             return next
         })
-    }
+    }, [])
+
+    const contextValue = useMemo(
+        () => ({ registerNode, unregisterNode }),
+        [registerNode, unregisterNode]
+    )
 
     const nodeList = Object.values(nodes)
 
     return (
-        <GlassContext.Provider value={{ registerNode, unregisterNode }}>
+        <GlassContext.Provider value={contextValue}>
             <div style={{ position: "relative" }} className={className}>
                 <svg
                     style={{
