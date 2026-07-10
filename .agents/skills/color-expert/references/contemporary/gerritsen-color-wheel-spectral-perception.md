@@ -27,9 +27,9 @@ And I think this is such a beautiful and perfect and simple explanation of how c
 
 - **Three cone sensitivities** represented as blue, green, red dots
 - **Subtractive color as spectral absorption:**
-  - Yellow pigment → absorbs short wavelengths (blue cone region)
-  - Magenta pigment → absorbs middle wavelengths (green cone region)
-  - Cyan pigment → absorbs long wavelengths (red cone region)
+    - Yellow pigment → absorbs short wavelengths (blue cone region)
+    - Magenta pigment → absorbs middle wavelengths (green cone region)
+    - Cyan pigment → absorbs long wavelengths (red cone region)
 - **Acetate overlay system:** each transparent sheet subtracts one region of the spectrum; overlaying them builds up the full hue circle through progressive absorption
 - **Yellow + Magenta = Red** (short + mid wavelengths absorbed → only long wavelengths reach the eye)
 - **All hues = different spectral imbalances** reaching our three cone types

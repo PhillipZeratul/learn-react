@@ -32,9 +32,9 @@ Beyond that, there's also a certain class of people — they're all female as it
 - **RGB monitors mimic cone architecture:** pixels have R, G, B subpixels; additive mixing from distance
 - **Yellow on screen = red + green subpixels** — no yellow light emitted
 - **Other animals:**
-  - Dogs: 2 cone types (yellow + blue) — dichromatic
-  - Mantis shrimp: 12 cone types — purpose still unknown
-  - Human tetrachromats: 4 cone types (all female) — enhanced color discrimination
+    - Dogs: 2 cone types (yellow + blue) — dichromatic
+    - Mantis shrimp: 12 cone types — purpose still unknown
+    - Human tetrachromats: 4 cone types (all female) — enhanced color discrimination
 
 ## Full Pixar Color Science Series (Khan Academy)
 
@@ -141,8 +141,8 @@ Another great example is from Toy Story 3 — Lotso the bear has been the only r
 - **Checker shadow illusion** — squares A and B are the same gray but look different due to surrounding brightness context
 - **Contrast = difference in color or illumination** — brains are hardwired to notice it (survival mechanism)
 - **Pixar uses contrast for storytelling:**
-  - _Inside Out:_ darken surroundings to make Anger's flames contrast extremely
-  - _Toy Story 3:_ make Lotso less pink than replacement bear to shift emotional focus
+    - _Inside Out:_ darken surroundings to make Anger's flames contrast extremely
+    - _Toy Story 3:_ make Lotso less pink than replacement bear to shift emotional focus
 - **Director of Photography (DP)** makes all color/lighting decisions in Pixar films
 
 ---

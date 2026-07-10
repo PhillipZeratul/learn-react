@@ -16,47 +16,53 @@ To apply your brand color to form controls:
 
 ```css
 :root {
-  --brand-color: #6200ee;
+    --brand-color: #6200ee;
 }
 
 /* Apply accent-color to the body or a specific container */
 body {
-  accent-color: var(--brand-color);
+    accent-color: var(--brand-color);
 }
 
 /* Optional: Adjust for dark mode if needed */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --brand-color: #bb86fc; /* A lighter shade for dark mode */
-  }
+    :root {
+        --brand-color: #bb86fc; /* A lighter shade for dark mode */
+    }
 }
 ```
 
 ```html
 <form>
-  <!-- Checkbox -->
-  <label for="subscribe">
-    <input type="checkbox" id="subscribe" checked>
-    Subscribe to newsletter
-  </label>
+    <!-- Checkbox -->
+    <label for="subscribe">
+        <input type="checkbox" id="subscribe" checked />
+        Subscribe to newsletter
+    </label>
 
-  <!-- Radio Buttons -->
-  <label for="plan-monthly">
-    <input type="radio" id="plan-monthly" name="plan" value="monthly">
-    Monthly
-  </label>
-  <label for="plan-yearly">
-    <input type="radio" id="plan-yearly" name="plan" value="yearly" checked>
-    Yearly
-  </label>
+    <!-- Radio Buttons -->
+    <label for="plan-monthly">
+        <input type="radio" id="plan-monthly" name="plan" value="monthly" />
+        Monthly
+    </label>
+    <label for="plan-yearly">
+        <input
+            type="radio"
+            id="plan-yearly"
+            name="plan"
+            value="yearly"
+            checked
+        />
+        Yearly
+    </label>
 
-  <!-- Range Slider -->
-  <label for="volume">Volume:</label>
-  <input type="range" id="volume" min="0" max="100" value="70">
+    <!-- Range Slider -->
+    <label for="volume">Volume:</label>
+    <input type="range" id="volume" min="0" max="100" value="70" />
 
-  <!-- Progress Bar -->
-  <label for="file">Upload Progress:</label>
-  <progress id="file" max="100" value="70">70%</progress>
+    <!-- Progress Bar -->
+    <label for="file">Upload Progress:</label>
+    <progress id="file" max="100" value="70">70%</progress>
 </form>
 ```
 
@@ -81,156 +87,169 @@ For browsers that do not support `accent-color`, the form controls fall back to 
 You MUST use the `@supports not` rule to apply custom fallback styles only when `accent-color` is not supported. This ensures you leverage the simplicity of `accent-color` for modern browsers while guaranteeing a consistent branded experience for older ones.
 
 #### 1. HTML Structure
+
 Ensure your labels wrap the text in a `<span>` to allow for sibling selectors in CSS:
+
 ```html
 <label for="subscribe-fallback">
-  <input type="checkbox" id="subscribe-fallback" class="visually-hidden" checked>
-  <span>Subscribe to newsletter</span>
+    <input
+        type="checkbox"
+        id="subscribe-fallback"
+        class="visually-hidden"
+        checked
+    />
+    <span>Subscribe to newsletter</span>
 </label>
 ```
 
 #### 2. CSS Fallback
+
 Apply custom styles within a `@supports not` block:
+
 ```css
 /* Fallback for older browsers without accent-color */
 @supports not (accent-color: var(--brand-color)) {
-  /* Visually hide the native input using the canonical accessible recipe */
-  form input[type="checkbox"].visually-hidden {
-    position: absolute !important;
-    clip-path: inset(50%) !important;
-    overflow: hidden !important;
-    width: 1px !important;
-    height: 1px !important;
-    margin: -1px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    white-space: nowrap !important;
-  }
+    /* Visually hide the native input using the canonical accessible recipe */
+    form input[type="checkbox"].visually-hidden {
+        position: absolute !important;
+        clip-path: inset(50%) !important;
+        overflow: hidden !important;
+        width: 1px !important;
+        height: 1px !important;
+        margin: -1px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        white-space: nowrap !important;
+    }
 
-  /* Style the wrapper label */
-  label {
-    position: relative;
-    padding-left: 2rem;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-  }
+    /* Style the wrapper label */
+    label {
+        position: relative;
+        padding-left: 2rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+    }
 
-  /* Custom box for checkbox */
-  input[type="checkbox"] + span::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1.2rem;
-    height: 1.2rem;
-    border: 2px solid #ccc;
-    background: white;
-    border-radius: 4px;
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-  }
+    /* Custom box for checkbox */
+    input[type="checkbox"] + span::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1.2rem;
+        height: 1.2rem;
+        border: 2px solid #ccc;
+        background: white;
+        border-radius: 4px;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
 
-  /* Ensure custom checkbox shows focus for keyboard users */
-  input[type="checkbox"]:focus-visible + span::before {
-    outline: 2px solid #000;
-    outline-offset: 2px;
-  }
+    /* Ensure custom checkbox shows focus for keyboard users */
+    input[type="checkbox"]:focus-visible + span::before {
+        outline: 2px solid #000;
+        outline-offset: 2px;
+    }
 
-  /* Checked State */
-  input[type="checkbox"]:checked + span::before {
-    background-color: var(--brand-color, #6200ee);
-    border-color: var(--brand-color, #6200ee);
-  }
+    /* Checked State */
+    input[type="checkbox"]:checked + span::before {
+        background-color: var(--brand-color, #6200ee);
+        border-color: var(--brand-color, #6200ee);
+    }
 
-  /* Checkmark (Unicode) */
-  input[type="checkbox"]:checked + span::after {
-    content: "✓";
-    position: absolute;
-    left: 0.25rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: white;
-    font-weight: bold;
-    font-size: 0.9rem;
-  }
+    /* Checkmark (Unicode) */
+    input[type="checkbox"]:checked + span::after {
+        content: "✓";
+        position: absolute;
+        left: 0.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: white;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
 
-  /* Fallback for Range Slider */
-  input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-  }
+    /* Fallback for Range Slider */
+    input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+    }
 
-  /* Webkit (Chrome, Safari, Edge) */
-  input[type="range"]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 8px;
-    /* Use gradient to show progress for a static value (e.g., 70%) or update with JS */
-    background: linear-gradient(to right, var(--brand-color, #6200ee) 70%, #ccc 70%);
-    border-radius: 4px;
-  }
+    /* Webkit (Chrome, Safari, Edge) */
+    input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        /* Use gradient to show progress for a static value (e.g., 70%) or update with JS */
+        background: linear-gradient(
+            to right,
+            var(--brand-color, #6200ee) 70%,
+            #ccc 70%
+        );
+        border-radius: 4px;
+    }
 
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: var(--brand-color, #6200ee);
-    cursor: pointer;
-    margin-top: -4px; /* Center vertically */
-  }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: var(--brand-color, #6200ee);
+        cursor: pointer;
+        margin-top: -4px; /* Center vertically */
+    }
 
-  /* Firefox */
-  input[type="range"]::-moz-range-track {
-    width: 100%;
-    height: 8px;
-    background: #ccc;
-    border-radius: 4px;
-  }
+    /* Firefox */
+    input[type="range"]::-moz-range-track {
+        width: 100%;
+        height: 8px;
+        background: #ccc;
+        border-radius: 4px;
+    }
 
-  input[type="range"]::-moz-range-thumb {
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: var(--brand-color, #6200ee);
-    cursor: pointer;
-  }
+    input[type="range"]::-moz-range-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: var(--brand-color, #6200ee);
+        cursor: pointer;
+    }
 
-  /* Firefox specific progress bar */
-  input[type="range"]::-moz-range-progress {
-    background-color: var(--brand-color, #6200ee);
-    height: 8px;
-    border-radius: 4px;
-  }
+    /* Firefox specific progress bar */
+    input[type="range"]::-moz-range-progress {
+        background-color: var(--brand-color, #6200ee);
+        height: 8px;
+        border-radius: 4px;
+    }
 
-  /* Fallback for Progress Bar */
-  progress {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    border: none;
-    background: #ccc;
-    height: 8px;
-    border-radius: 4px;
-  }
+    /* Fallback for Progress Bar */
+    progress {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border: none;
+        background: #ccc;
+        height: 8px;
+        border-radius: 4px;
+    }
 
-  progress::-webkit-progress-bar {
-    background-color: #ccc;
-    border-radius: 4px;
-  }
+    progress::-webkit-progress-bar {
+        background-color: #ccc;
+        border-radius: 4px;
+    }
 
-  progress::-webkit-progress-value {
-    background-color: var(--brand-color, #6200ee);
-    border-radius: 4px;
-  }
+    progress::-webkit-progress-value {
+        background-color: var(--brand-color, #6200ee);
+        border-radius: 4px;
+    }
 
-  progress::-moz-progress-bar {
-    background-color: var(--brand-color, #6200ee);
-    border-radius: 4px;
-  }
+    progress::-moz-progress-bar {
+        background-color: var(--brand-color, #6200ee);
+        border-radius: 4px;
+    }
 }
 ```
 
@@ -239,18 +258,24 @@ Apply custom styles within a `@supports not` block:
 To make the progress fill move with the thumb on a range slider in Webkit browsers (without `accent-color`), you can use a CSS variable and a small amount of JavaScript.
 
 1. **Update CSS**: Use a CSS variable for the gradient stop:
+
 ```css
 input[type="range"]::-webkit-slider-runnable-track {
-  background: linear-gradient(to right, var(--brand-color) var(--progress, 0%), #ccc var(--progress, 0%));
+    background: linear-gradient(
+        to right,
+        var(--brand-color) var(--progress, 0%),
+        #ccc var(--progress, 0%)
+    );
 }
 ```
 
 2. **Add JavaScript**: Update the variable on the `input` event:
+
 ```javascript
-if (!CSS.supports('accent-color')) {
-  const slider = document.getElementById('volume');
-  slider.addEventListener('input', (e) => {
-    e.target.style.setProperty('--progress', `${e.target.value}%`);
-  });
+if (!CSS.supports("accent-color")) {
+    const slider = document.getElementById("volume")
+    slider.addEventListener("input", (e) => {
+        e.target.style.setProperty("--progress", `${e.target.value}%`)
+    })
 }
 ```

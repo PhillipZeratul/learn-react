@@ -8,13 +8,13 @@ You can create a color spectrum across a group of siblings by calculating a uniq
 
 ```css
 .swatch {
-  /* Calculate hue by dividing the full 360deg circle by total siblings */
-  /* and multiplying by the current element's 1-based index */
-  background-color: hsl(
-    calc(360deg / sibling-count() * sibling-index()),
-    70%,
-    50%
-  );
+    /* Calculate hue by dividing the full 360deg circle by total siblings */
+    /* and multiplying by the current element's 1-based index */
+    background-color: hsl(
+        calc(360deg / sibling-count() * sibling-index()),
+        70%,
+        50%
+    );
 }
 ```
 
@@ -24,12 +24,12 @@ To create symmetrical effects (like a "fan" or centering items), use the total c
 
 ```css
 .card {
-  /* Find the center index (e.g., 3 if there are 5 siblings) */
-  --center: calc((sibling-count() + 1) / 2);
+    /* Find the center index (e.g., 3 if there are 5 siblings) */
+    --center: calc((sibling-count() + 1) / 2);
 
-  /* Rotate items away from the center: negative for left, positive for right */
-  /* center element gets 0deg rotation */
-  transform: rotate(calc(10deg * (sibling-index() - var(--center))));
+    /* Rotate items away from the center: negative for left, positive for right */
+    /* center element gets 0deg rotation */
+    transform: rotate(calc(10deg * (sibling-index() - var(--center))));
 }
 ```
 
@@ -39,20 +39,19 @@ By combining these functions with CSS trigonometry (`sin()`, `cos()`), you can p
 
 ```css
 .orb {
-  /* Calculate the angle for this item's position on a 360deg circle */
-  --angle: calc(360deg / sibling-count() * sibling-index());
-  --radius: 150px;
+    /* Calculate the angle for this item's position on a 360deg circle */
+    --angle: calc(360deg / sibling-count() * sibling-index());
+    --radius: 150px;
 
-  /* Set the pre-transformed position for all items to be centered */
-  position: absolute;
-  place-self: center;
+    /* Set the pre-transformed position for all items to be centered */
+    position: absolute;
+    place-self: center;
 
-
-  /* Position each element around the parent center */
-  transform: translate(
-    calc(cos(var(--angle)) * var(--radius)),
-    calc(sin(var(--angle)) * var(--radius))
-  );
+    /* Position each element around the parent center */
+    transform: translate(
+        calc(cos(var(--angle)) * var(--radius)),
+        calc(sin(var(--angle)) * var(--radius))
+    );
 }
 ```
 
@@ -66,13 +65,13 @@ If `sibling-index()` and `sibling-count()` are not supported, provide a fallback
 
 ```js
 /* MANDATORY: Check for native support before applying fallback */
-if (!CSS.supports('top: calc(sibling-index() * 1px)')) {
-  const items = document.querySelectorAll('.item');
-  items.forEach((item, index) => {
-    /* MANDATORY: Injected index must be 1-based to match native function */
-    item.style.setProperty('--sibling-index', index + 1);
-    item.style.setProperty('--sibling-count', items.length);
-  });
+if (!CSS.supports("top: calc(sibling-index() * 1px)")) {
+    const items = document.querySelectorAll(".item")
+    items.forEach((item, index) => {
+        /* MANDATORY: Injected index must be 1-based to match native function */
+        item.style.setProperty("--sibling-index", index + 1)
+        item.style.setProperty("--sibling-count", items.length)
+    })
 }
 ```
 
@@ -80,19 +79,19 @@ In your CSS, use these variables as a base and override them with native functio
 
 ```css
 .item {
-  /* 1. Set base values using variables (from JS fallback) */
-  --index: var(--sibling-index);
-  --count: var(--sibling-count);
+    /* 1. Set base values using variables (from JS fallback) */
+    --index: var(--sibling-index);
+    --count: var(--sibling-count);
 
-  /* 2. Use the computed variables - replace this with your implementation-specific styles */
-  background-color: hsl(calc(360deg / var(--count) * var(--index)), 70%, 50%);
+    /* 2. Use the computed variables - replace this with your implementation-specific styles */
+    background-color: hsl(calc(360deg / var(--count) * var(--index)), 70%, 50%);
 }
 
 @supports (top: calc(sibling-index() * 1px)) {
-  .item {
-    /* 3. Override with native functions ONLY if supported */
-    --index: sibling-index();
-    --count: sibling-count();
-  }
+    .item {
+        /* 3. Override with native functions ONLY if supported */
+        --index: sibling-index();
+        --count: sibling-count();
+    }
 }
 ```

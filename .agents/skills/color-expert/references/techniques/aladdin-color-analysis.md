@@ -21,9 +21,9 @@ Deep analysis of Disney's Aladdin color palette — how the film uses primary co
 ### Narrative Color — Guiding the Eye
 
 - Dominant color creates instant emphasis when a contrasting color appears
-  - Golden treasure room → blue carpet draws eye immediately
-  - Blue cavern → only red thing (gem) creates threat + draws attention
-  - Like Mad Max's centered-action technique but using color instead of framing
+    - Golden treasure room → blue carpet draws eye immediately
+    - Blue cavern → only red thing (gem) creates threat + draws attention
+    - Like Mad Max's centered-action technique but using color instead of framing
 - **Color shifts within scenes** amplify emotional turns: blue cave erupts to red as danger rises; Aladdin flies just ahead of the color shift
 
 ### Color Temperature Is NOT Emotion

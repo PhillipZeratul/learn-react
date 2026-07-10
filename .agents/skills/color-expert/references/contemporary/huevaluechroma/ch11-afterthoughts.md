@@ -458,7 +458,7 @@ Traditional colour theory readily adopted Newton's hue circle of 1704 in the for
   Traditional and Modern Colour Theory
   Part 2: Traditional colour theory strikes back!
 
-  ***
+    ***
 
 ## Page 113
 
@@ -713,7 +713,7 @@ cones both respond strongly to these wavelengths, and these responses:
   Dr R. Beau Lotto
   and made publicly available by him for use with proper accreditation.
 
-  ***
+    ***
 
 ## Page 115
 
@@ -2421,7 +2421,7 @@ to appear this or that colour. In terms of Hardin’s well-known quote – “Co
   < Index of works
   Home
 
-  ***
+    ***
 
 ## Page 1116
 

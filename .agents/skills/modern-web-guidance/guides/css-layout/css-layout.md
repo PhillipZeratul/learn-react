@@ -1,13 +1,13 @@
 # CSS Layouts and Responsive Design
 
 1. [1 Fundamentals](#1-fundamentals)
-   1. [Which layout mode to use?](#11-which-layout-mode-to-use)
-   2. [Working principles](#12-working-principles)
+    1. [Which layout mode to use?](#11-which-layout-mode-to-use)
+    2. [Working principles](#12-working-principles)
 2. [2 Flexbox](#2-flexbox)
 3. [3 Grid and subgrid](#3-grid-and-subgrid)
-   1. [Code example: grid and subgrid](#31-code-example-grid-and-subgrid)
+    1. [Code example: grid and subgrid](#31-code-example-grid-and-subgrid)
 4. [4 Container queries](#4-container-queries)
-   1. [Code example: fluid typography using container query units](#41-code-example-fluid-typography-using-container-query-units)
+    1. [Code example: fluid typography using container query units](#41-code-example-fluid-typography-using-container-query-units)
 5. [5 Native overlays, anchor positioning, and stacking contexts](#5-native-overlays-anchor-positioning-and-stacking-contexts)
 6. [6 Overflow tracking and layout stability](#6-overflow-tracking-and-layout-stability)
 7. [7 Viewport mechanics and track distribution](#7-viewport-mechanics-and-track-distribution)
@@ -39,10 +39,22 @@ Walk the decision tree top-to-bottom and stop at the first match. Note that layo
 - Use `aspect-ratio` to reserve space for media and prevent layout shift before assets load.
 
 ```css
-.sidebar       { inline-size: max-content; }    /* Size to longest unbreakable token. */
-.main-content  { inline-size: fit-content; }    /* Grow to available space, no further. */
-.media         { aspect-ratio: 16 / 9; inline-size: 100%; block-size: auto; }
-body.centered  { display: grid; place-content: center; min-block-size: 100dvb; }
+.sidebar {
+    inline-size: max-content;
+} /* Size to longest unbreakable token. */
+.main-content {
+    inline-size: fit-content;
+} /* Grow to available space, no further. */
+.media {
+    aspect-ratio: 16 / 9;
+    inline-size: 100%;
+    block-size: auto;
+}
+body.centered {
+    display: grid;
+    place-content: center;
+    min-block-size: 100dvb;
+}
 ```
 
 > For `calc-size()` and constraint-aware intrinsic sizing, see `calculate-with-intrinsic-sizes` (via `npx -y modern-web-guidance@latest retrieve "calculate-with-intrinsic-sizes"`).
@@ -73,10 +85,21 @@ One-dimensional layout — items flow along a single **main** axis with alignmen
 - Don't set both `flex-basis` and `width`/`inline-size` on the same item — `flex-basis` takes precedence in a flex context and `width` is ignored. Use `flex-basis` (or the `flex` shorthand) as the single source of truth for sizing flex items.
 
 ```css
-.card-grid        { display: flex; flex-flow: row wrap; gap: 1rem; }
-.card-item        { flex: 1 1 250px; }                  /* grow, shrink, basis */
-.card-item-action { margin-inline-start: auto; }        /* Push to main-axis end. */
-.toolbar          { display: flex; align-items: safe center; }
+.card-grid {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 1rem;
+}
+.card-item {
+    flex: 1 1 250px;
+} /* grow, shrink, basis */
+.card-item-action {
+    margin-inline-start: auto;
+} /* Push to main-axis end. */
+.toolbar {
+    display: flex;
+    align-items: safe center;
+}
 ```
 
 ## 3 Grid and subgrid
@@ -89,20 +112,20 @@ Two-dimensional layout — define rows AND columns explicitly, or let the engine
 **Choosing grid features:**
 
 - Do you know exactly how many columns you need?
-  - **Yes** — use explicit tracks (`grid-template-columns: 200px 1fr`, `repeat(3, 1fr)`, etc.)
-    - Do different columns need different sizes (sidebar + main, header spanning all)? → use `grid-template-areas` for named, readable regions
-    - Are all columns uniform or positioned purely by line number? → use `repeat(N, ...)` or named lines
-  - **No** (responsive, unknown item count) — use `repeat(auto-fit, minmax(min, 1fr))`
-    - Should items on the last row stretch to fill remaining space? → `auto-fit`
-    - Should empty last-row tracks hold their min size (preserving column ghost slots)? → `auto-fill`
+    - **Yes** — use explicit tracks (`grid-template-columns: 200px 1fr`, `repeat(3, 1fr)`, etc.)
+        - Do different columns need different sizes (sidebar + main, header spanning all)? → use `grid-template-areas` for named, readable regions
+        - Are all columns uniform or positioned purely by line number? → use `repeat(N, ...)` or named lines
+    - **No** (responsive, unknown item count) — use `repeat(auto-fit, minmax(min, 1fr))`
+        - Should items on the last row stretch to fill remaining space? → `auto-fit`
+        - Should empty last-row tracks hold their min size (preserving column ghost slots)? → `auto-fill`
 - Do you need to place an item at a specific location?
-  - **Yes** — use `grid-column: <start> / <end>` or `grid-area: <name>`
-  - **No** (just spanning multiple tracks, flow position doesn't matter) — use `grid-column: span <n>`
+    - **Yes** — use `grid-column: <start> / <end>` or `grid-area: <name>`
+    - **No** (just spanning multiple tracks, flow position doesn't matter) — use `grid-column: span <n>`
 - Do child elements need to inherit the parent grid's track sizes (ragged-edge alignment across siblings)?
-  - **Yes** — use subgrid on the affected axis
-    - Is the number of children per cell variable? → subgrid **one axis only**; use `grid-auto-rows`/`grid-auto-columns` for the other
-    - Is the child count fixed? → subgrid on both axes is fine
-  - **No** — standard grid, no subgrid needed
+    - **Yes** — use subgrid on the affected axis
+        - Is the number of children per cell variable? → subgrid **one axis only**; use `grid-auto-rows`/`grid-auto-columns` for the other
+        - Is the child count fixed? → subgrid on both axes is fine
+    - **No** — standard grid, no subgrid needed
 
 **Do:**
 
@@ -119,7 +142,7 @@ Two-dimensional layout — define rows AND columns explicitly, or let the engine
 - Don't expect `auto-fit`/`auto-fill` track size to come from item content — it comes from the `repeat()` size argument.
 - Don't use `grid-auto-flow: dense` on interactive content. It packs items efficiently but reorders them visually, breaking DOM-order keyboard tab flow.
 - Don't apply subgrid to both axes when the child count is variable. Extras land in the last track; use `grid-auto-rows`/`grid-auto-columns` for the implicit axis instead.
-- Don't confuse `justify-items`/`align-items` (aligns item content *within its track*) with `justify-content`/`align-content` (aligns the grid tracks *within the container*). Using the wrong one silently has no effect.
+- Don't confuse `justify-items`/`align-items` (aligns item content _within its track_) with `justify-content`/`align-content` (aligns the grid tracks _within the container_). Using the wrong one silently has no effect.
 - Don't use `repeat(auto-fit/auto-fill, ...)` without a definite `inline-size` on the container — inside `display: inline-grid` or an unsized flex item, the container has no width to divide, making track counts unpredictable.
 
 ### 3.1 Code example: grid and subgrid
@@ -129,33 +152,39 @@ Page shell: `<main class="page-layout">` contains `<header>`, `<aside>`, a `<sec
 ```css
 /* Align grid-template-areas in rows and columns for readability. */
 .page-layout {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-areas:
-    "header  header  header"
-    "sidebar main    main"
-    "footer  footer  footer";
-  gap: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        "header  header  header"
+        "sidebar main    main"
+        "footer  footer  footer";
+    gap: 1.5rem;
 }
 
-header  { grid-area: header; }
-aside   { grid-area: sidebar; }
-footer  { grid-area: footer; }
+header {
+    grid-area: header;
+}
+aside {
+    grid-area: sidebar;
+}
+footer {
+    grid-area: footer;
+}
 
 .card-grid {
-  grid-area: main;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  grid-template-rows: auto 1fr; /* title block, body block */
-  gap: 1rem;
+    grid-area: main;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-rows: auto 1fr; /* title block, body block */
+    gap: 1rem;
 }
 
 .card {
-  grid-row: span 2;
-  display: grid;
-  /* Same-cascade fallback: ignored when subgrid is supported. */
-  grid-template-rows: auto 1fr;
-  grid-template-rows: subgrid;
+    grid-row: span 2;
+    display: grid;
+    /* Same-cascade fallback: ignored when subgrid is supported. */
+    grid-template-rows: auto 1fr;
+    grid-template-rows: subgrid;
 }
 ```
 
@@ -183,19 +212,19 @@ Query the size (or computed style) of an ancestor container rather than the view
 
 ```css
 .card-wrapper {
-  container: inline-size / card; /* shorthand for container-type + container-name */
+    container: inline-size / card; /* shorthand for container-type + container-name */
 }
 
 @container card (inline-size > 400px) {
-  .content {
-    display: flex;
-    gap: 2rem;
-  }
+    .content {
+        display: flex;
+        gap: 2rem;
+    }
 }
 
 .title {
-  /* Fluid type bound to the container width, not the viewport. */
-  font-size: clamp(1rem, 4cqi, 2rem);
+    /* Fluid type bound to the container width, not the viewport. */
+    font-size: clamp(1rem, 4cqi, 2rem);
 }
 ```
 
@@ -239,25 +268,25 @@ Manage layout shifts, scrollbars, and clipping predictably.
 - Use `scrollbar-gutter: stable` to reserve space for scrollbars and prevent layout shifts when content grows.
 - Use `overscroll-behavior: contain` (or `none`) on scrollable containers to stop scroll chains from bubbling into the parent or document.
 - Use the `-webkit-line-clamp` + `display: -webkit-box` + `-webkit-box-orient: vertical` triad for multi-line truncation — despite the prefix, this pattern is fully specified and not deprecated. Declare the unprefixed `line-clamp` shorthand alongside it; browsers that don't yet support it ignore the property harmlessly.
-**Do not:**
+  **Do not:**
 
 - Don't use `overflow: scroll` when `auto` will do — `scroll` forces scrollbars even when there's nothing to scroll.
 - Don't reach for `overflow: hidden` when you only want to clip — `hidden` establishes a scroll container that can be programmatically scrolled.
 
 ```css
 .scrollable-list {
-  max-block-size: 400px;
-  overflow-y: auto;
-  scrollbar-gutter: stable;       /* Reserve scrollbar space. */
-  overscroll-behavior: contain;   /* No scroll chaining into the page. */
+    max-block-size: 400px;
+    overflow-y: auto;
+    scrollbar-gutter: stable; /* Reserve scrollbar space. */
+    overscroll-behavior: contain; /* No scroll chaining into the page. */
 }
 
 .snippet {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  line-clamp: 3;                  /* Ignored where unsupported. */
-  overflow: clip;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3; /* Ignored where unsupported. */
+    overflow: clip;
 }
 ```
 
@@ -290,16 +319,22 @@ The spec is in development. The currently agreed-upon name is "grid lanes" (e.g.
 - Don't ship `grid-template-rows: masonry` as a hard requirement until your Baseline target catches up.
 
 ```css
-.gallery       { columns: 3 200px; column-gap: 1rem; }
-.gallery > *   { break-inside: avoid; margin-block-end: 1rem; }
+.gallery {
+    columns: 3 200px;
+    column-gap: 1rem;
+}
+.gallery > * {
+    break-inside: avoid;
+    margin-block-end: 1rem;
+}
 
 @supports (grid-template-rows: masonry) {
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    grid-template-rows: masonry;
-    gap: 1rem;
-    columns: unset;
-  }
+    .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-rows: masonry;
+        gap: 1rem;
+        columns: unset;
+    }
 }
 ```

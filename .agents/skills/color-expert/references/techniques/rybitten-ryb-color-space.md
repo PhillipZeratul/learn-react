@@ -46,26 +46,26 @@ Each includes metadata: title, author, year, reference image.
 ## API
 
 ```javascript
-import { ryb2rgb, rybHsl2rgb } from "rybitten";
-import { cubes } from "rybitten/cubes";
+import { ryb2rgb, rybHsl2rgb } from "rybitten"
+import { cubes } from "rybitten/cubes"
 
 // Basic RYB → RGB
-const rgb = ryb2rgb([1, 0, 0.5]); // full red, no yellow, half blue
+const rgb = ryb2rgb([1, 0, 0.5]) // full red, no yellow, half blue
 
 // HSL through RYB space (most useful for palettes)
-const rgb = rybHsl2rgb([120, 1, 0.5]); // hue 120° in RYB = different from HSL 120°
+const rgb = rybHsl2rgb([120, 1, 0.5]) // hue 120° in RYB = different from HSL 120°
 
 // Use Munsell's color system instead of Itten's
-const munsellCube = cubes.get("munsell").cube;
-const rgb = rybHsl2rgb([0, 1, 0.5], { cube: munsellCube });
+const munsellCube = cubes.get("munsell").cube
+const rgb = rybHsl2rgb([0, 1, 0.5], { cube: munsellCube })
 ```
 
 ### p5.js Integration
 
 ```javascript
-colorMode(RYB); // native RYB mode!
-background(255, 0, 0); // red in RYB
-fill(0, 255, 0); // yellow in RYB (not green!)
+colorMode(RYB) // native RYB mode!
+background(255, 0, 0) // red in RYB
+fill(0, 255, 0) // yellow in RYB (not green!)
 ```
 
 ## Default Itten Cube Corners

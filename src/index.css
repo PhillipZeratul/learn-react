@@ -83,38 +83,49 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  html, body {
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  body {
-    @apply bg-background text-foreground min-h-svh;
+    html,
+    body {
+        max-width: 100vw;
+        overflow-x: hidden;
     }
-  html {
-    @apply font-sans;
+    body {
+        @apply min-h-svh bg-background text-foreground;
+    }
+    html {
+        @apply font-sans;
     }
 }
 
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .animate-scan-down {
-    animation: scan-down 2s linear infinite;
-  }
-  @keyframes scan-down {
-    0% { transform: translateY(0); opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(60px); opacity: 0; }
-  }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .animate-scan-down {
+        animation: scan-down 2s linear infinite;
+    }
+    @keyframes scan-down {
+        0% {
+            transform: translateY(0);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(60px);
+            opacity: 0;
+        }
+    }
 }
 
 /* Subtle Binder Ring classes */
@@ -154,9 +165,17 @@
 }
 
 @keyframes ring-snap-in {
-    0% { transform: scale(0.5); opacity: 0; }
-    60% { transform: scale(1.15); }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 /* Breaking animations: Binder ring opens like a jaw */
@@ -165,4 +184,3 @@
     opacity: 0;
     border-color: #ef4444;
 }
-

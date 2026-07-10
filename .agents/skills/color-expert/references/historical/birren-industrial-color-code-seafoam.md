@@ -115,21 +115,21 @@ Approximate sRGB samples for the soft wall tones (eyeballed from the Chart 13 re
 
 Brilliant safety codes (the standardized NSC colors — these are specified by ANSI Z535 today; historical Birren swatches are close but not identical):
 
-| Name         | Role                            | Approx. sRGB |
-| ------------ | ------------------------------- | ------------ |
-| Fire Red     | fire protection only            | `#b9201a`    |
-| Solar Yellow | caution / physical hazards      | `#f5c518`    |
-| Alert Orange | hazardous machinery parts       | `#e06a1c`    |
-| Safety Green | first-aid, exits, eyewash       | `#1f7a3a`    |
-| Caution Blue | non-safety info / out-of-order  | `#1a5a8a`    |
+| Name         | Role                           | Approx. sRGB |
+| ------------ | ------------------------------ | ------------ |
+| Fire Red     | fire protection only           | `#b9201a`    |
+| Solar Yellow | caution / physical hazards     | `#f5c518`    |
+| Alert Orange | hazardous machinery parts      | `#e06a1c`    |
+| Safety Green | first-aid, exits, eyewash      | `#1f7a3a`    |
+| Caution Blue | non-safety info / out-of-order | `#1a5a8a`    |
 
 ## Books & Source Documents
 
 ### Primary Source Cited in the Article
 
-| Work                                          | Author       | Year | Archive.org                                                                           | Access                                                                      | Local PDF                                                              |
-| --------------------------------------------- | ------------ | ---- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| _Color for Interiors: Historical and Modern_  | Faber Birren | 1963 | [details/colorforinterior0000birr](https://archive.org/details/colorforinterior0000birr) | borrow-only (Whitney Library of Design; IA "printdisabled" collection)      | —                                                                      |
+| Work                                         | Author       | Year | Archive.org                                                                              | Access                                                                 | Local PDF |
+| -------------------------------------------- | ------------ | ---- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------- |
+| _Color for Interiors: Historical and Modern_ | Faber Birren | 1963 | [details/colorforinterior0000birr](https://archive.org/details/colorforinterior0000birr) | borrow-only (Whitney Library of Design; IA "printdisabled" collection) | —         |
 
 Chart 13 / Chapter 16 "Industrial Plants" is the directly-reproduced source of the seafoam / light-green / safety-code system described in the article.
 
@@ -137,31 +137,31 @@ Chart 13 / Chapter 16 "Industrial Plants" is the directly-reproduced source of t
 
 The 1945 _Selling with Color_ is the only Birren title not access-restricted — it's from the wartime moment, same period as the 1944 NSC code, and a useful primary-source companion for Birren's own voice on functional color.
 
-| Work                            | Author       | Year | Archive.org                                                                              | Local PDF                                                                                                              |
-| ------------------------------- | ------------ | ---- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| _Selling with Color_            | Faber Birren | 1945 | [details/sellingwithcolor00birrrich](https://archive.org/details/sellingwithcolor00birrrich) | [pdfs/birren-selling-with-color-1945.pdf](pdfs/birren-selling-with-color-1945.pdf) (16 MB, Prelinger / not-in-copyright) |
+| Work                 | Author       | Year | Archive.org                                                                                  | Local PDF                                                                                                                |
+| -------------------- | ------------ | ---- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| _Selling with Color_ | Faber Birren | 1945 | [details/sellingwithcolor00birrrich](https://archive.org/details/sellingwithcolor00birrrich) | [pdfs/birren-selling-with-color-1945.pdf](pdfs/birren-selling-with-color-1945.pdf) (16 MB, Prelinger / not-in-copyright) |
 
 ### Additional Birren (Borrow-Only on Archive.org)
 
 These require free Internet Archive login and 1-hour borrow sessions:
 
-| Work                                                                 | Year | Archive.org                                                                              |
-| -------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------- |
-| _Color Psychology and Color Therapy_                                 | 1950 | [colorpsychologyc0000birr](https://archive.org/details/colorpsychologyc0000birr)         |
-| _Selling Color to People_                                            | 1956 | [sellingcolortope0000birr](https://archive.org/details/sellingcolortope0000birr)         |
-| _New Horizons in Color_                                              | 1960 | [newhorizonsincol0000birr](https://archive.org/details/newhorizonsincol0000birr)         |
-| _Creative Color_                                                     | 1961 | [creativecolor0000birr](https://archive.org/details/creativecolor0000birr)               |
-| _Color, Form, and Space_                                             | 1961 | [colorformspace0000birr](https://archive.org/details/colorformspace0000birr)             |
-| _Color in Your World_                                                | 1962 | [colorinyourworld00birr](https://archive.org/details/colorinyourworld00birr)             |
-| _Color: A Survey in Words and Pictures_                              | 1963 | [colorsurveyinwor0000birr](https://archive.org/details/colorsurveyinwor0000birr)         |
-| _A Grammar of Color_ (Birren ed., on Munsell)                        | 1969 | [grammarofcolor0000unse](https://archive.org/details/grammarofcolor0000unse)             |
-| _The Elements of Color_ (Birren-edited Itten reissue)                | 1970 | [elementsofcolort00itte](https://archive.org/details/elementsofcolort00itte)             |
-| _Color Perception in Art_                                            | 1976 | [colorperceptioni0000birr](https://archive.org/details/colorperceptioni0000birr)         |
-| _Color & Human Response_                                             | 1978 | [colorhumanrespon00birr](https://archive.org/details/colorhumanrespon00birr)             |
-| _The Textile Colorist_                                               | 1980 | [textilecolorist0000birr](https://archive.org/details/textilecolorist0000birr)           |
-| _Light, Color and Environment_                                       | 1982 | [lightcolorenviro0000birr](https://archive.org/details/lightcolorenviro0000birr)         |
-| _The Symbolism of Color_                                             | 1988 | [symbolismofcolor0000birr](https://archive.org/details/symbolismofcolor0000birr)         |
-| _The Power of Color_                                                 | 1997 | [powerofcolorhowi0000birr](https://archive.org/details/powerofcolorhowi0000birr)         |
+| Work                                                  | Year | Archive.org                                                                      |
+| ----------------------------------------------------- | ---- | -------------------------------------------------------------------------------- |
+| _Color Psychology and Color Therapy_                  | 1950 | [colorpsychologyc0000birr](https://archive.org/details/colorpsychologyc0000birr) |
+| _Selling Color to People_                             | 1956 | [sellingcolortope0000birr](https://archive.org/details/sellingcolortope0000birr) |
+| _New Horizons in Color_                               | 1960 | [newhorizonsincol0000birr](https://archive.org/details/newhorizonsincol0000birr) |
+| _Creative Color_                                      | 1961 | [creativecolor0000birr](https://archive.org/details/creativecolor0000birr)       |
+| _Color, Form, and Space_                              | 1961 | [colorformspace0000birr](https://archive.org/details/colorformspace0000birr)     |
+| _Color in Your World_                                 | 1962 | [colorinyourworld00birr](https://archive.org/details/colorinyourworld00birr)     |
+| _Color: A Survey in Words and Pictures_               | 1963 | [colorsurveyinwor0000birr](https://archive.org/details/colorsurveyinwor0000birr) |
+| _A Grammar of Color_ (Birren ed., on Munsell)         | 1969 | [grammarofcolor0000unse](https://archive.org/details/grammarofcolor0000unse)     |
+| _The Elements of Color_ (Birren-edited Itten reissue) | 1970 | [elementsofcolort00itte](https://archive.org/details/elementsofcolort00itte)     |
+| _Color Perception in Art_                             | 1976 | [colorperceptioni0000birr](https://archive.org/details/colorperceptioni0000birr) |
+| _Color & Human Response_                              | 1978 | [colorhumanrespon00birr](https://archive.org/details/colorhumanrespon00birr)     |
+| _The Textile Colorist_                                | 1980 | [textilecolorist0000birr](https://archive.org/details/textilecolorist0000birr)   |
+| _Light, Color and Environment_                        | 1982 | [lightcolorenviro0000birr](https://archive.org/details/lightcolorenviro0000birr) |
+| _The Symbolism of Color_                              | 1988 | [symbolismofcolor0000birr](https://archive.org/details/symbolismofcolor0000birr) |
+| _The Power of Color_                                  | 1997 | [powerofcolorhowi0000birr](https://archive.org/details/powerofcolorhowi0000birr) |
 
 ## Links
 

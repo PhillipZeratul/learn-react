@@ -31,21 +31,21 @@ Lightweight JavaScript library for **realistic color mixing based on Kubelka-Mun
 
 ```javascript
 // Create colors
-let blue = new spectral.Color("#002185");
-let yellow = new spectral.Color("#FCD200");
+let blue = new spectral.Color("#002185")
+let yellow = new spectral.Color("#FCD200")
 
 // Mix (Kubelka-Munk spectral mixing)
-let green = spectral.mix([blue, 0.5], [yellow, 0.5]);
+let green = spectral.mix([blue, 0.5], [yellow, 0.5])
 // → #3D933E (vibrant green, not muddy dark like RGB would give)
 
 // Palette generation
-let palette = spectral.palette(blue, yellow, 8);
+let palette = spectral.palette(blue, yellow, 8)
 
 // Gradient sampling
-let color = spectral.gradient(0.75, [c1, 0], [c2, 0.5], [c3, 1]);
+let color = spectral.gradient(0.75, [c1, 0], [c2, 0.5], [c3, 1])
 
 // Tinting strength
-blue.tintingStrength = 0.35; // reduce blue's dominance in mixes
+blue.tintingStrength = 0.35 // reduce blue's dominance in mixes
 ```
 
 ## Key Features

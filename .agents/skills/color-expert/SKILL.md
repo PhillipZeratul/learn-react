@@ -16,11 +16,11 @@ Match the response to the user's explicit request and clearly implied constraint
 **Design system, ramps, or theme tokens** — "build me a 9-step accent scale", "palette for light + dark mode", "Tailwind/Radix-style ramps", "what's the right gray ramp for our brand?" Prioritize in this order:
 
 - Use OKLCH to build perceptually uniform scales (consistent lightness across hues, no muddy mid-tones).
-- Build a token graph: reference tokens (palette) → semantic tokens (surface, on-surface, accent, success, warning, danger) → component usage; see *Implementation Guidance* below.
+- Build a token graph: reference tokens (palette) → semantic tokens (surface, on-surface, accent, success, warning, danger) → component usage; see _Implementation Guidance_ below.
 - Verify every text/background pair against APCA or WCAG in both light and dark.
 - Suggest tools only as needed: Huetone (LCH/OKLCH builder), Components.ai Color Scale (parametric), dittoTones (extract perceptual DNA from Tailwind/Radix), Color Buddy (lint).
 
-**Generative art / creative coding** — "color for my fxhash piece", "palette for thousands of generated strokes", "paint-like mixing in p5.js / WebGL." Different from building a palette generator: the code *is* the artwork, and the user wants to understand the *techniques*, not copy a named artist's style. Help them compose their own system. Useful techniques to teach and combine:
+**Generative art / creative coding** — "color for my fxhash piece", "palette for thousands of generated strokes", "paint-like mixing in p5.js / WebGL." Different from building a palette generator: the code _is_ the artwork, and the user wants to understand the _techniques_, not copy a named artist's style. Help them compose their own system. Useful techniques to teach and combine:
 
 - **Tight constraint, then variation** — pick 3–7 hues in a narrow lightness or chroma band; variety comes from density and interaction, not palette size.
 - **Weighted / probability-based hue selection** — assign each color a weight so some appear often, others rarely; this is what makes a generative output feel curated instead of random.

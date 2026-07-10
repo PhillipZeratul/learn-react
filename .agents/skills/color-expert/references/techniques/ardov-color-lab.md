@@ -17,9 +17,9 @@ A novel gamut mapping algorithm that avoids runtime binary search entirely.
 2. **Curvature fitting** — For each hue slice, fits a **circular arc** to the bright side of the gamut boundary (cusp → white). Key insight: the gamut boundary's bright side is well-approximated by an arc, not a straight line.
 
 3. **Runtime lookup** — Given (L, H) in OKLCH:
-   - Interpolates the LUT for cusp position and curvature at that hue
-   - **Dark side** (L ≤ cusp L): linear relationship `C = (L / cusp_L) * cusp_C`
-   - **Bright side** (L > cusp L): circle-line intersection using the pre-computed arc
+    - Interpolates the LUT for cusp position and curvature at that hue
+    - **Dark side** (L ≤ cusp L): linear relationship `C = (L / cusp_L) * cusp_C`
+    - **Bright side** (L > cusp L): circle-line intersection using the pre-computed arc
 
 4. **Gamut-agnostic** — Works for sRGB and Display P3 by swapping the RGB-to-OKLCH converter.
 
@@ -118,12 +118,12 @@ A concrete implementation of the "encode color decisions" principle — theme co
 
 The 3D viewer supports:
 
-| Family | Spaces |
-| --- | --- |
-| **RGB** | sRGB, HSL, HSV, Display P3 |
+| Family    | Spaces                              |
+| --------- | ----------------------------------- |
+| **RGB**   | sRGB, HSL, HSV, Display P3          |
 | **OKLAB** | OKLAB, OKLrAB, OKLrCH, OKHSL, OKHSV |
-| **CIE** | CIELAB, CIELCH, CIELuv, CIE xyY |
-| **Other** | DIN99 Lab, Jab (Jzazbz), YIQ |
+| **CIE**   | CIELAB, CIELCH, CIELuv, CIE xyY     |
+| **Other** | DIN99 Lab, Jab (Jzazbz), YIQ        |
 
 ---
 

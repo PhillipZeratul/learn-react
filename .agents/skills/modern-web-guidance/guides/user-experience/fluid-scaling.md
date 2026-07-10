@@ -12,12 +12,12 @@ To use container query units, you must first define a containment context on a p
 
 ```css
 .component-wrapper {
-  /* Define the container type. Use 'inline-size' for width-based scaling. */
-  /* You can also use 'size' for both width and height, but it requires explicit sizing. */
-  container-type: inline-size;
-  
-  /* Optional: Name the container for specific targeting */
-  container-name: fluid-card;
+    /* Define the container type. Use 'inline-size' for width-based scaling. */
+    /* You can also use 'size' for both width and height, but it requires explicit sizing. */
+    container-type: inline-size;
+
+    /* Optional: Name the container for specific targeting */
+    container-name: fluid-card;
 }
 ```
 
@@ -25,21 +25,21 @@ To use container query units, you must first define a containment context on a p
 
 Use container query units (`cqi`, `cqb`, etc.) to set sizes relative to the container's dimensions.
 
-*   `cqi`: 1% of the container's inline size (width in horizontal writing modes).
-*   `cqb`: 1% of the container's block size (height in horizontal writing modes).
+- `cqi`: 1% of the container's inline size (width in horizontal writing modes).
+- `cqb`: 1% of the container's block size (height in horizontal writing modes).
 
 **Note**: Container units can be used directly on any property without needing an `@container` query rule. They automatically resolve based on the nearest ancestor with a defined `container-type`.
 
 ```css
 .component-title {
-  /* Scale font size based on container width */
-  /* 10cqi means 10% of the container's width */
-  font-size: 10cqi;
+    /* Scale font size based on container width */
+    /* 10cqi means 10% of the container's width */
+    font-size: 10cqi;
 }
 
 .component-body {
-  /* Scale padding based on container width */
-  padding: 5cqi;
+    /* Scale padding based on container width */
+    padding: 5cqi;
 }
 ```
 
@@ -49,8 +49,8 @@ To prevent sizes from becoming too small or too large, use the CSS `clamp()` fun
 
 ```css
 .component-title {
-  /* Clamp font size between 1rem and 2.5rem, scaling with 5% of container width */
-  font-size: clamp(1rem, 5cqi, 2.5rem);
+    /* Clamp font size between 1rem and 2.5rem, scaling with 5% of container width */
+    font-size: clamp(1rem, 5cqi, 2.5rem);
 }
 ```
 
@@ -63,15 +63,15 @@ If container queries are not supported by the browser, you should provide a fall
 
 ```css
 .component-title {
-  /* Fallback for browsers that do not support container units */
-  font-size: clamp(1rem, 5vw, 2.5rem);
+    /* Fallback for browsers that do not support container units */
+    font-size: clamp(1rem, 5vw, 2.5rem);
 }
 
 @supports (font-size: 1cqi) {
-  .component-title {
-    /* Use container units where supported */
-    font-size: clamp(1rem, 5cqi, 2.5rem);
-  }
+    .component-title {
+        /* Use container units where supported */
+        font-size: clamp(1rem, 5cqi, 2.5rem);
+    }
 }
 ```
 

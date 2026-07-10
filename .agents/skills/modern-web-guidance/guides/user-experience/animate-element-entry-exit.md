@@ -7,55 +7,55 @@ In the past, CSS transitions could not animate elements when they were first add
 To animate an element when toggling its visibility via an attribute (e.g., `hidden` with `display: none`):
 
 1. **Define the visible state**: Set the final property values (e.g., `opacity: 1`) on the base class.
-2. **Define the entry starting state**: Use `@starting-style` to specify the values to transition *from* when the element becomes visible.
+2. **Define the entry starting state**: Use `@starting-style` to specify the values to transition _from_ when the element becomes visible.
 3. **Enable discrete transitions**: Include `display` in the `transition` property and use `transition-behavior: allow-discrete`.
 4. **Define the exit state**: Set the target values in the `hidden` attribute.
 
 ```css
 .card {
-  display: block;
-  opacity: 1;
-  translate: 0;
-  /* MANDATORY: Use transition-behavior: allow-discrete for display transition */
-  transition:
-    display 0.4s,
-    opacity 0.4s ease-out,
-    translate 0.4s ease-out;
-  transition-behavior: allow-discrete;
+    display: block;
+    opacity: 1;
+    translate: 0;
+    /* MANDATORY: Use transition-behavior: allow-discrete for display transition */
+    transition:
+        display 0.4s,
+        opacity 0.4s ease-out,
+        translate 0.4s ease-out;
+    transition-behavior: allow-discrete;
 }
 
 /* Entry animation: transition FROM these values when first rendered */
 @starting-style {
-  .card {
-    opacity: 0;
-    translate: 0 -20px;
-  }
+    .card {
+        opacity: 0;
+        translate: 0 -20px;
+    }
 }
 
 /* Exit animation: transition TO these values when hidden */
 .card:where(.hidden, [hidden]) {
-  display: none;
-  opacity: 0;
-  translate: 0 -20px;
+    display: none;
+    opacity: 0;
+    translate: 0 -20px;
 }
 
 /* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .card {
-    /* Disable movement and shorten duration for a simple fade */
-    translate: none;
-    transition-duration: 0.1s;
-  }
-
-  @starting-style {
     .card {
-      translate: none;
+        /* Disable movement and shorten duration for a simple fade */
+        translate: none;
+        transition-duration: 0.1s;
     }
-  }
 
-  .card:where(.hidden, [hidden]) {
-    translate: none;
-  }
+    @starting-style {
+        .card {
+            translate: none;
+        }
+    }
+
+    .card:where(.hidden, [hidden]) {
+        translate: none;
+    }
 }
 ```
 
@@ -68,21 +68,21 @@ For elements added via `appendChild()` or removed via `remove()`:
 
 ```javascript
 // Trigger exit transition
-element.setAttribute('hidden', true);
+element.setAttribute("hidden", true)
 
 // 2. Wait for all active transitions/animations to finish,
 //    with a failsafe timeout in case an animation never ends (e.g. for looping animations)
-const animations = element.getAnimations();
+const animations = element.getAnimations()
 if (animations.length > 0) {
-  await Promise.race([
-    // Promise.allSettled ensures we wait even if some animations fail
-    Promise.allSettled(animations.map(a => a.finished)),
-    new Promise(r => setTimeout(r, 2000))
-  ]);
+    await Promise.race([
+        // Promise.allSettled ensures we wait even if some animations fail
+        Promise.allSettled(animations.map((a) => a.finished)),
+        new Promise((r) => setTimeout(r, 2000)),
+    ])
 }
 
 // 3. Finally remove the node from the DOM
-element.remove();
+element.remove()
 ```
 
 ## Constraints & Accessibility
@@ -92,7 +92,7 @@ element.remove();
 - **MANDATORY**: Use `@starting-style` for entry animations. Browsers skip transitions on an element's first style update (initial render or `display: none` change) unless this is provided.
 - **DO**: Include `overlay` in the `transition` list if animating top-layer elements like `<dialog>` or `popover` to ensure they stay in the top layer during the exit animation.
 - **DO**: Respect user preferences for reduced motion using the `prefers-reduced-motion` media query.
-- **DO NOT**: Rely on `@starting-style` for exit animations; it only defines the *starting* point for an entry transition. Exit animations are defined by the transition to the hidden state.
+- **DO NOT**: Rely on `@starting-style` for exit animations; it only defines the _starting_ point for an entry transition. Exit animations are defined by the transition to the hidden state.
 
 ## Fallback strategies
 
@@ -104,11 +104,10 @@ For browsers that do not support these features, elements will toggle `display: 
 ```javascript
 // Detect support for discrete transitions and starting-style
 const supportsModernTransitions =
-  window.CSS &&
-  CSS.supports('transition-behavior', 'allow-discrete');
+    window.CSS && CSS.supports("transition-behavior", "allow-discrete")
 
 if (!supportsModernTransitions) {
-  // Implement manual JS-based fallback for entry/exit
+    // Implement manual JS-based fallback for entry/exit
 }
 ```
 
@@ -116,16 +115,20 @@ if (!supportsModernTransitions) {
 
 ```javascript
 // To show:
-el.style.display = '';
+el.style.display = ""
 requestAnimationFrame(() => {
-  requestAnimationFrame(() => {
-    el.classList.remove('hidden');
-  });
-});
+    requestAnimationFrame(() => {
+        el.classList.remove("hidden")
+    })
+})
 
 // To hide:
-el.setAttribute('hidden', true);
-el.addEventListener('transitionend', () => {
-  if (el.classList.contains('hidden')) el.style.display = 'none';
-}, { once: true });
+el.setAttribute("hidden", true)
+el.addEventListener(
+    "transitionend",
+    () => {
+        if (el.classList.contains("hidden")) el.style.display = "none"
+    },
+    { once: true }
+)
 ```

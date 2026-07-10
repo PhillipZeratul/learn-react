@@ -19,9 +19,9 @@ Design systems like Tailwind (50–950) and Radix (1–12) have carefully crafte
 2. **Detect neutrals** — low chroma? return as-is
 3. **Find nearest reference ramp** — Euclidean distance in OKLCH space
 4. **Select strategy:**
-   - **Exact match** — input color matches a reference shade closely
-   - **Single ramp** — one reference ramp is close enough
-   - **Blended dual-ramp** — combines two ramps when no single match is perfect
+    - **Exact match** — input color matches a reference shade closely
+    - **Single ramp** — one reference ramp is close enough
+    - **Blended dual-ramp** — combines two ramps when no single match is perfect
 5. **Transform** — rotate hue + correct lightness (piecewise linear interpolation) + adjust chroma (hybrid scaling: linear for delicate tones, power curves for vivid)
 
 ### Lightness Adjustment
@@ -35,32 +35,32 @@ Hybrid scaling: linear for lower saturation (preserves delicate tones), power cu
 ## API
 
 ```typescript
-import { DittoTones } from "dittotones";
-import { tailwindRamps } from "dittotones/ramps/tailwind";
+import { DittoTones } from "dittotones"
+import { tailwindRamps } from "dittotones/ramps/tailwind"
 
-const ditto = new DittoTones({ ramps: tailwindRamps });
-const result = ditto.generate("#F97316");
+const ditto = new DittoTones({ ramps: tailwindRamps })
+const result = ditto.generate("#F97316")
 
-result.scale; // { '50': Oklch, '100': Oklch, ..., '950': Oklch }
-result.matchedShade; // '500'
-result.method; // 'exact' | 'single' | 'blend'
-result.sources; // [{ name: 'orange', diff: 0.02, weight: 1 }]
+result.scale // { '50': Oklch, '100': Oklch, ..., '950': Oklch }
+result.matchedShade // '500'
+result.method // 'exact' | 'single' | 'blend'
+result.sources // [{ name: 'orange', diff: 0.02, weight: 1 }]
 ```
 
 ### Custom Ramps
 
 ```typescript
 const customRamps = new Map([
-  [
-    "brand",
-    {
-      "50": oklch(parse("oklch(98% 0.01 250)")),
-      "500": oklch(parse("#3B82F6")),
-      "950": oklch(parse("oklch(25% 0.05 250)")),
-    },
-  ],
-]);
-const ditto = new DittoTones({ ramps: customRamps });
+    [
+        "brand",
+        {
+            "50": oklch(parse("oklch(98% 0.01 250)")),
+            "500": oklch(parse("#3B82F6")),
+            "950": oklch(parse("oklch(25% 0.05 250)")),
+        },
+    ],
+])
+const ditto = new DittoTones({ ramps: customRamps })
 ```
 
 ## Built-in Ramp Systems

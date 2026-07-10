@@ -18,15 +18,15 @@ To prevent any automatic line breaks, apply `text-wrap: nowrap` to the element c
 
 ```css
 .no-wrap-text {
-  /* MANDATORY: Prevents automatic line breaks */
-  text-wrap: nowrap;
+    /* MANDATORY: Prevents automatic line breaks */
+    text-wrap: nowrap;
 
-  /* OPTIONAL: Handles the overflow visually */
-  overflow: hidden;
-  text-overflow: ellipsis;
+    /* OPTIONAL: Handles the overflow visually */
+    overflow: hidden;
+    text-overflow: ellipsis;
 
-  /* OPTIONAL: Constrain width to force and handle overflow within this element */
-  max-width: 200px;
+    /* OPTIONAL: Constrain width to force and handle overflow within this element */
+    max-width: 200px;
 }
 ```
 
@@ -38,9 +38,9 @@ While the longhand `text-wrap-mode: nowrap` exists, the property name is current
 
 ```css
 .granular-control {
-  /* Modern longhand equivalent to white-space: nowrap */
-  /* Preferred: text-wrap: nowrap; */
-  text-wrap-mode: nowrap;
+    /* Modern longhand equivalent to white-space: nowrap */
+    /* Preferred: text-wrap: nowrap; */
+    text-wrap-mode: nowrap;
 }
 ```
 
@@ -53,10 +53,10 @@ For browsers that do not yet support `text-wrap`, use the legacy `white-space` p
 
 ```css
 .no-wrap-with-fallback {
-  /* Fallback for older browsers */
-  white-space: nowrap;
+    /* Fallback for older browsers */
+    white-space: nowrap;
 
-  /* Modern standard */
-  text-wrap: nowrap;
+    /* Modern standard */
+    text-wrap: nowrap;
 }
 ```

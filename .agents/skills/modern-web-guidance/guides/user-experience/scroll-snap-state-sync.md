@@ -3,49 +3,50 @@ Synchronizing UI state with a scrollable container's snap position traditionally
 ## Implementation
 
 ### 1. Configure Scroll Snap in CSS
+
 The container must have `scroll-snap-type` defined, and have children with `scroll-snap-align` for the browser to track snap targets. In a long article with a table of contents, you can use this to snap section headers to the top of the viewport.
 
 ```css
 main {
-    /* Enable scroll snapping on the container */  
-  scroll-snap-type: y proximity;
-  overflow-y: auto;
+    /* Enable scroll snapping on the container */
+    scroll-snap-type: y proximity;
+    overflow-y: auto;
 }
 
 h2 {
-  /* Define how headers align when snapped */
-  scroll-snap-align: start;
+    /* Define how headers align when snapped */
+    scroll-snap-align: start;
 }
 ```
 
 ### 2. Listen for Snap Changes
+
 Use the `scrollsnapchange` event on the scroll container to react when the user finishes scrolling and the browser snaps to a new element. In our TOC demo, we use this to highlight the active link in the sidebar.
 
 ```html
 <!-- MANDATORY: Wrap table of contents links inside a proper navigation landmark -->
 <nav aria-label="Table of contents">
-  <ul>
-    <li><a href="#section-1" aria-current="location">Section 1</a></li>
-    <li><a href="#section-2">Section 2</a></li>
-  </ul>
+    <ul>
+        <li><a href="#section-1" aria-current="location">Section 1</a></li>
+        <li><a href="#section-2">Section 2</a></li>
+    </ul>
 </nav>
 ```
 
 ```javascript
-const main = document.getElementById('main');
-const links = document.querySelectorAll('nav a');
+const main = document.getElementById("main")
+const links = document.querySelectorAll("nav a")
 
 // The event fires when the scroller settles on a new snap target
-main.addEventListener('scrollsnapchange', (event) => {
-  // Use snapTargetBlock for vertical or snapTargetInline for horizontal
-  const snappedHeader = event.snapTargetBlock;
-  
-  if (snappedHeader) {
-    setSelectedParagraph(snappedHeader.id);
-  }
-});
-```
+main.addEventListener("scrollsnapchange", (event) => {
+    // Use snapTargetBlock for vertical or snapTargetInline for horizontal
+    const snappedHeader = event.snapTargetBlock
 
+    if (snappedHeader) {
+        setSelectedParagraph(snappedHeader.id)
+    }
+})
+```
 
 ## Accessibility
 
@@ -54,7 +55,6 @@ Caution: While Scroll Snap Events make it possible to visually synchronize other
 For a table of contents, ensure the sidebar links use `aria-current="true"` or `aria-current="location"` when they are active.
 
 In addition, be careful when using the `mandatory` value for `scroll-snap-type`, as it can cause content in-between snap-points to become inaccessible when longer than the screen.
-
 
 ## Fallback strategies
 

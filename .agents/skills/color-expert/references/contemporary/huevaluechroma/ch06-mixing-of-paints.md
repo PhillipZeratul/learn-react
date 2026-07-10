@@ -495,7 +495,7 @@ has shown, Wilcox's rationale can be traced back to early nineteenth century wri
   2
   3 >>
 
-  ***
+    ***
 
 ## Page 063
 
@@ -676,5 +676,5 @@ Titanium White
   << 1
   2
   3
-  > > Next:
-  > > Part 7: Hue
+    > > Next:
+    > > Part 7: Hue

@@ -35,9 +35,9 @@ How JPEG uses color space conversion and chroma subsampling as the first stage o
 - **Demo:** flower image with chrominance downsampled 10× in both directions (100× less color) — looks identical at normal zoom
 - Only visible zoomed to pixel level at petal edges where color/gray mismatch
 - **Common ratios:**
-  - 4:2:0 — 2× downsample in both directions = 4× less color (most common)
-  - 4:2:2 — 2× downsample only horizontal
-  - 4:4:4 — no downsampling (highest quality, used when Photoshop quality = maximum)
+    - 4:2:0 — 2× downsample in both directions = 4× less color (most common)
+    - 4:2:2 — 2× downsample only horizontal
+    - 4:4:4 — no downsampling (highest quality, used when Photoshop quality = maximum)
 - Quality slider in software controls both subsampling ratio and quantization level
 
 ### Lossy vs Lossless

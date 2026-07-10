@@ -470,8 +470,8 @@ The view of colour reflected in these standard definitions can be elaborated as 
   6
   7
   8
-  > > Next:
-  > > The Dimensions of Colour: Lightness
+    > > Next:
+    > > The Dimensions of Colour: Lightness
 
 ---
 
@@ -918,8 +918,8 @@ o
   6
   7
   8
-  > > Next:
-  > > The Dimensions of Colour: Chroma
+    > > Next:
+    > > The Dimensions of Colour: Chroma
 
 ---
 
@@ -1112,8 +1112,8 @@ that coincide roughly with the Munsell 10RP/10G and 5Y/5PB hue axes respectively
   6
   7
   8
-  > > Next:
-  > > The Dimensions of Colour: Brightness and Colourfulness
+    > > Next:
+    > > The Dimensions of Colour: Brightness and Colourfulness
 
 ---
 

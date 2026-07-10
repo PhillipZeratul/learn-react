@@ -40,9 +40,9 @@ Interview with Erika Mulvenna — fiber artist and color educator who developed 
 
 - **"Color theory should build confidence in your own internal color sense, not restrict you"**
 - 3 workshop goals:
-  1. You can approach color combinations any way you like
-  2. Build confidence in your own sense of color
-  3. Find tools to help explore putting colors together
+    1. You can approach color combinations any way you like
+    2. Build confidence in your own sense of color
+    3. Find tools to help explore putting colors together
 - "The effect of theory on confidence can be so damaging"
 - Lecture: "The Secret Life of the Color Wheel" — how much of the color wheel is actually scientific?
 

@@ -69,4 +69,4 @@ The project site provides 8 tools:
 
 If you use the data in published research, please cite:
 
-> Kim, Y., Thayer, K., Gorsky, G.S., & Heer, J. (2019). Color Names Across Languages: Salient Colors and Term Translation in Multilingual Color Naming Models. *EuroVis*.
+> Kim, Y., Thayer, K., Gorsky, G.S., & Heer, J. (2019). Color Names Across Languages: Salient Colors and Term Translation in Multilingual Color Naming Models. _EuroVis_.

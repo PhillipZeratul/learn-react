@@ -26,10 +26,10 @@ If you're an artist and you want to learn more about the science behind color te
 - **Color temperature ≠ hue** — it's a systematic combination of hue shift AND saturation change
 - **Temperature is not a perceptual dimension** like L, C, H — it's an emergent property
 - **Warming a palette** (sliding the gamut circle toward warm):
-  - Reds/oranges → slightly more vibrant (increased saturation)
-  - Blues/turquoises → closer to gray (decreased saturation)
-  - Greens → more yellow + desaturated (lime → olive)
-  - Indigos → shift toward magenta + desaturated
+    - Reds/oranges → slightly more vibrant (increased saturation)
+    - Blues/turquoises → closer to gray (decreased saturation)
+    - Greens → more yellow + desaturated (lime → olive)
+    - Indigos → shift toward magenta + desaturated
 - **Cooling** is the reverse systematic shift
 - **Hue-dependent:** the effect of warming/cooling differs depending on which hue you start from — it's not a uniform rotation
 - Companion to [Is Green Warm or Cool?](https://www.youtube.com/shorts/WQYLfwa2lAI) — which showed green/purple are fundamentally neither warm nor cool spectrally

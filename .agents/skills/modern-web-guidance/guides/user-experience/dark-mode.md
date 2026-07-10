@@ -10,7 +10,7 @@ MANDATORY: To help prevent a "flash of un-themed content" (FOUC), place a `<meta
 
 ```html
 <!-- MANDATORY: Declare support for both light and dark themes -->
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light dark" />
 ```
 
 ### 2. Apply page-wide color scheme to CSS :root or html
@@ -20,8 +20,8 @@ MANDATORY: Apply the `color-scheme` property to the `html` element or the `:root
 ```css
 /* MANDATORY: Apply color-scheme to :root or html for viewport-wide theming */
 :root {
-  /* MANDATORY: Automatically adapt native UI to user system preferences */
-  color-scheme: light dark;
+    /* MANDATORY: Automatically adapt native UI to user system preferences */
+    color-scheme: light dark;
 }
 ```
 
@@ -35,22 +35,28 @@ For more control over the colors of built-in UI such as `accent-color` or `scrol
 
 ```css
 :root {
-  --color-brand-light: oklch(45% 0.23 270);
-  --color-brand-dark: oklch(85% 0.15 210);
-  --color-brand-text-light: white;
-  --color-brand-text-dark: oklch(40% 0.23 270);
+    --color-brand-light: oklch(45% 0.23 270);
+    --color-brand-dark: oklch(85% 0.15 210);
+    --color-brand-text-light: white;
+    --color-brand-text-dark: oklch(40% 0.23 270);
 
-  --color-brand: light-dark(var(--color-brand-light), var(--color-brand-dark));
-  --color-brand-text: light-dark(var(--color-brand-text-light), var(--color-brand-text-dark));
+    --color-brand: light-dark(
+        var(--color-brand-light),
+        var(--color-brand-dark)
+    );
+    --color-brand-text: light-dark(
+        var(--color-brand-text-light),
+        var(--color-brand-text-dark)
+    );
 
-  /* MANDATORY: Automatically adapt native UI to user system preferences */
-  color-scheme: light dark;
+    /* MANDATORY: Automatically adapt native UI to user system preferences */
+    color-scheme: light dark;
 }
 
 button.primary {
-  /* These automatically adapt to color scheme */
-  background-color: var(--color-brand);
-  color: var(--color-brand-text);
+    /* These automatically adapt to color scheme */
+    background-color: var(--color-brand);
+    color: var(--color-brand-text);
 }
 ```
 
@@ -61,7 +67,6 @@ OPTIONAL: A number of system colors are available, which also automatically adap
 Even when overriding the system default, it can be useful to use the `prefers-color-scheme` media query to define **different** color pairs that take into account the colors of the browser and OS chrome around the page (or of the surrounding page, when the page is used as an iframe).
 
 For example, use a slightly dimmer light theme when the system setting is `dark`, or a more contrasting dark theme when the system setting is `light`, so the page is not visually overpowered by the surrounding UI.
-
 
 ## Fine-grained browser UI customization
 
@@ -76,7 +81,10 @@ This resolves to the OS setting by default, but you can use the `accent-color` p
 
 ```css
 html {
-  accent-color: light-dark(var(--color-accent-light), var(--color-accent-dark));
+    accent-color: light-dark(
+        var(--color-accent-light),
+        var(--color-accent-dark)
+    );
 }
 ```
 
@@ -90,9 +98,9 @@ You can use `scrollbar-color` together with `light-dark()` to set custom scrollb
 
 ```css
 :root {
-  --color-scrollbar-track: light-dark(#eee, #222);
-  --color-scrollbar-thumb: light-dark(#999, #666);
-  scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+    --color-scrollbar-track: light-dark(#eee, #222);
+    --color-scrollbar-thumb: light-dark(#999, #666);
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
 }
 ```
 
@@ -106,6 +114,7 @@ You can use `scrollbar-color` together with `light-dark()` to set custom scrollb
 ### Further customization
 
 Most browser UI exposes pseudo-elements to fully customize its appearance, such as:
+
 - `::placeholder`
 - `::spelling-error`
 - `::grammar-error`
@@ -124,6 +133,7 @@ The default color-scheme MUST be the user's system preference, which happens aut
 For website-specific customization, a manual toggle could be provided to allow users to choose between light, dark, or system-default modes.
 
 If a user-facing toggle to override it is desired, it should:
+
 - Update the `<meta name="color-scheme">` element to reflect the chosen theme (`light dark` for system default, `light` for light, and `dark` for dark).
 - If branching is desired for non-color values, set a class on `<html>` to match the theme preference and use descendant selectors. While `:root:has(> head > meta[name="color-scheme"][content="dark"])` would technically work, it is slower and confers no benefit, since we are already using JS to update the `<meta>` element.
 - Persist user choice in `localStorage`.
@@ -132,20 +142,22 @@ If a user-facing toggle to override it is desired, it should:
 - **IMPORTANT**: To avoid a Flash of Unstyled Content (FOUC) for users who have pinned a different color scheme than their system default, use an inline script (NOT `type=module`, NOT `defer`) to set it when the page loads:
 
 ```html
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light dark" />
 <script>
-{
-  const colorScheme = localStorage.getItem("color-scheme");
-  if (colorScheme) {
-    document.querySelector('meta[name="color-scheme"]').content = colorScheme;
-  }
-}
+    {
+        const colorScheme = localStorage.getItem("color-scheme")
+        if (colorScheme) {
+            document.querySelector('meta[name="color-scheme"]').content =
+                colorScheme
+        }
+    }
 </script>
 ```
 
 ### UX considerations
 
 Use a two-state control:
+
 1. System setting.
 2. The opposite (e.g. light when the system setting is dark, and dark when the system setting is light). Selecting this setting must pin that exact color scheme, not a dynamically computed "opposite of system setting" value. Example scenario:
     1. The OS is set to light mode.
@@ -154,6 +166,7 @@ Use a two-state control:
     4. The website should remain dark.
 
 **DON'T** expose all three states (system, light, dark). While the rationale is plausible — "Follow system (currently dark)" is a distinct user intent from "Always dark" — it provides suboptimal UX:
+
 - Users cannot meaningfully express intent for problems they don't currently have. A manual toggle is a temporary comfort adjustment ("it's too bright right now"), not a long-term preference ("make sure this never changes").
 - Two of the three options always produce the same visual result, violating the principle of feedback.
 
@@ -163,9 +176,10 @@ You can override the global theme for specific elements by setting `color-scheme
 This is useful for "dark mode" sections within a light-themed site, such as code blocks or media players.
 
 ```css
-pre, code {
-  /* Forces element and its children to use dark themed UI */
-  color-scheme: dark;
+pre,
+code {
+    /* Forces element and its children to use dark themed UI */
+    color-scheme: dark;
 }
 ```
 
@@ -176,8 +190,8 @@ For more information about component-specific overrides and their gotchas, see `
 ### Issues to be aware of when using color-scheme
 
 - Chrome and Firefox respect `color-scheme` for iframes: they render embedded pages in the correct color scheme and adjust the embedded page's `prefers-color-scheme` media query to reflect the embedding context's `color-scheme`. Safari does not, and resolves `prefers-color-scheme` to the system setting even inside iframes.
-  - **If you control both parent and iframe:** pass the parent's color scheme to the iframe explicitly — via a URL parameter (`?theme=dark`) at iframe construction time, or via `postMessage()` (which also lets you react to runtime changes). In the iframe, set a class on `<html>` (and/or `color-scheme` on `:root`) from that signal instead of relying on `prefers-color-scheme`.
-  - **If you only control the embedded page:** there is no reliable way to detect the embedding context's `color-scheme` from inside the iframe in Safari. Expose an explicit theme parameter on your embed API (e.g. a query string or `postMessage` protocol) and document it for embedders.
+    - **If you control both parent and iframe:** pass the parent's color scheme to the iframe explicitly — via a URL parameter (`?theme=dark`) at iframe construction time, or via `postMessage()` (which also lets you react to runtime changes). In the iframe, set a class on `<html>` (and/or `color-scheme` on `:root`) from that signal instead of relying on `prefers-color-scheme`.
+    - **If you only control the embedded page:** there is no reliable way to detect the embedding context's `color-scheme` from inside the iframe in Safari. Expose an explicit theme parameter on your embed API (e.g. a query string or `postMessage` protocol) and document it for embedders.
 
 ## Fallback strategies
 
@@ -196,22 +210,22 @@ To adapt to the user's preferences in older browsers, use `prefers-color-scheme`
 
 ```css
 :root {
-  /* Define brand colors for each mode */
-  --color-brand-light: #0056b3;
-  --color-brand-dark: #00e5ff;
-  --color-brand: var(--color-brand-light);
+    /* Define brand colors for each mode */
+    --color-brand-light: #0056b3;
+    --color-brand-dark: #00e5ff;
+    --color-brand: var(--color-brand-light);
 
-  /* MANDATORY: Fallback for browsers without light-dark support */
-  @media (prefers-color-scheme: dark) {
-    --color-brand: var(--color-brand-dark);
-  }
+    /* MANDATORY: Fallback for browsers without light-dark support */
+    @media (prefers-color-scheme: dark) {
+        --color-brand: var(--color-brand-dark);
+    }
 
-  /* Ignored in older browsers */
-  color-scheme: light dark;
+    /* Ignored in older browsers */
+    color-scheme: light dark;
 }
 
 button.primary {
-	background-color: var(--color-brand);
+    background-color: var(--color-brand);
 }
 ```
 
@@ -224,33 +238,37 @@ For browsers that support `color-scheme` but not yet `light-dark()`, light and d
 
 ```css
 :root {
-  /* Define browser UI accent color for each mode */
-  --brand-accent-light: #0056b3;
-  --brand-accent-dark: #00e5ff;
-  --accent-color: var(--brand-accent-light);
+    /* Define browser UI accent color for each mode */
+    --brand-accent-light: #0056b3;
+    --brand-accent-dark: #00e5ff;
+    --accent-color: var(--brand-accent-light);
 
-  /* MANDATORY: Fallback for browsers without light-dark support */
-  @media (prefers-color-scheme: dark) {
-    --accent-color: var(--brand-accent-dark);
-  }
+    /* MANDATORY: Fallback for browsers without light-dark support */
+    @media (prefers-color-scheme: dark) {
+        --accent-color: var(--brand-accent-dark);
+    }
 
-  /* OPTIONAL: use light-dark() for more control of built-in UI colors */
-  @supports (color: light-dark(white, black)) {
-    --accent-color: light-dark(var(--brand-accent-light), var(--brand-accent-dark));
-  }
+    /* OPTIONAL: use light-dark() for more control of built-in UI colors */
+    @supports (color: light-dark(white, black)) {
+        --accent-color: light-dark(
+            var(--brand-accent-light),
+            var(--brand-accent-dark)
+        );
+    }
 
-  /* MANDATORY: Automatically adapt native UI to user system preferences */
-  color-scheme: light dark;
+    /* MANDATORY: Automatically adapt native UI to user system preferences */
+    color-scheme: light dark;
 
-  /* Example inherited color property */
-  accent-color: var(--accent-color);
+    /* Example inherited color property */
+    accent-color: var(--accent-color);
 }
 
-pre, code {
-  color-scheme: dark;
+pre,
+code {
+    color-scheme: dark;
 
-  /* **Mandatory**: any inherited color properties must be set again, even if to the same design tokens */
-  accent-color: var(--accent-color);
+    /* **Mandatory**: any inherited color properties must be set again, even if to the same design tokens */
+    accent-color: var(--accent-color);
 }
 ```
 
@@ -270,19 +288,19 @@ If you are using custom properties to define colors, these will cascade to the l
 ```css
 /* Legacy fallback for WebKit/Blink browsers */
 @supports not (scrollbar-color: auto) {
-  .scroller::-webkit-scrollbar {
-    /* Must define base size in WebKit for custom colors to be visual */
-    width: 12px;
-    height: 12px;
-  }
+    .scroller::-webkit-scrollbar {
+        /* Must define base size in WebKit for custom colors to be visual */
+        width: 12px;
+        height: 12px;
+    }
 
-  .scroller::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-  }
+    .scroller::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+    }
 
-  .scroller::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-  }
+    .scroller::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+    }
 }
 ```
 

@@ -1,10 +1,9 @@
 # How Many Hex Color Combinations Are Accessible?
 
-**Source:** Research by @mrmrs_ — https://x.com/mrmrs_/status/2034403566040088832
+**Source:** Research by @mrmrs* — https://x.com/mrmrs*/status/2034403566040088832
 **Code:** https://github.com/mrmrs/color-contrast-rust
 **Method:** Rust brute-force across all ~281 trillion hex color pairs for six algorithms. Reported runtime: 39 hours.
 **Author:** mrmrs / mrmrs.cc
-
 
 ## The Numbers
 

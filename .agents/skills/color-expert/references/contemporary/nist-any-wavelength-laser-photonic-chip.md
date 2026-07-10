@@ -9,7 +9,7 @@ date: 2026-04-15
 
 # NIST "Any-Wavelength" Laser on a Photonic Chip
 
-NIST news release (Apr 15, 2026) announcing a Nature paper by Grant M. Brodnik, Grisha Spektor, Lindell M. Williams, Jizhao Zang, Alexa R. Carollo, Atasi Dan, Jennifer A. Black, David R. Carlson, and Scott B. Papp: *"Monolithic 3D integration of tantalum pentoxide photonics on arbitrary substrates."*
+NIST news release (Apr 15, 2026) announcing a Nature paper by Grant M. Brodnik, Grisha Spektor, Lindell M. Williams, Jizhao Zang, Alexa R. Carollo, Atasi Dan, Jennifer A. Black, David R. Carlson, and Scott B. Papp: _"Monolithic 3D integration of tantalum pentoxide photonics on arbitrary substrates."_
 
 ## What they built
 
@@ -30,7 +30,7 @@ Scale: ~50 fingernail-sized chips, ~10,000 photonic circuits each, all on a beer
 - **Breaks the "one laser diode per color" constraint.** Visible-wavelength lasers (especially blue, cyan, yellow) are historically the hardest and most expensive part of any quantum-optics, display, or spectroscopy stack. A nonlinear chip can replace a rack of lasers.
 - **Relevant to AR/VR displays.** Directly addresses RGB laser sources for near-eye displays: instead of separate R, G, B diode lasers with mismatched efficiency and alignment, one IR pump + designed circuits emits the three primaries from a single chip.
 - **Relevant to atomic clocks.** Optical atomic clocks need very specific transition wavelengths (Rb 780 nm, Sr 461 nm, Yb, Ca, etc.). Designing the chip = picking the atom.
-- **Color = geometry of a circuit.** Scott Papp's framing: *"We can create all these different colors, just by designing circuits."* The chip layout — microring resonator diameters, waveguide dispersion, poling periods — is what determines which wavelengths come out. Hue becomes a fabricated parameter.
+- **Color = geometry of a circuit.** Scott Papp's framing: _"We can create all these different colors, just by designing circuits."_ The chip layout — microring resonator diameters, waveguide dispersion, poling periods — is what determines which wavelengths come out. Hue becomes a fabricated parameter.
 
 ## Application list (from the NIST release)
 
@@ -44,7 +44,7 @@ Scale: ~50 fingernail-sized chips, ~10,000 photonic circuits each, all on a beer
 
 ## Relation to existing color knowledge
 
-- Ties into the **spectral-origin-of-color** thread: this is a direct physical demonstration that "what color a laser is" is a property of a *resonator geometry* plus nonlinear material, not an intrinsic property of the gain medium. Compare Goethe edge colors, iridescence / thin-film interference, and the general principle that perceived color traces back to a spectral power distribution that engineering can sculpt.
+- Ties into the **spectral-origin-of-color** thread: this is a direct physical demonstration that "what color a laser is" is a property of a _resonator geometry_ plus nonlinear material, not an intrinsic property of the gain medium. Compare Goethe edge colors, iridescence / thin-film interference, and the general principle that perceived color traces back to a spectral power distribution that engineering can sculpt.
 - Relevant to the **AR/VR / display** section of the knowledge base: practical path to wide-gamut laser-sourced displays where primaries can be tuned to match Rec.2020 / BT.2100 rather than being stuck at whatever LED diodes happen to exist.
 - Relevant to **metrology / atomic standards** — which is where most of our notions of "standard white" (D50, D65) and spectral calibration ultimately trace.
 - Not a color-theory paper, but an important upstream enabler for future color-technology work: compact, broadband, tunable coherent light is the substrate on which future spectral cameras, spectral displays, and per-wavelength SPD design will run.

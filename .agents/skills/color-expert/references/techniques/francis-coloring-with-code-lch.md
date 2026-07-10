@@ -21,40 +21,40 @@ Rotate around the color wheel by canonical intervals, keeping L and C constant.
 
 ```javascript
 function adjustHue(val) {
-  if (val < 0) val += Math.ceil(-val / 360) * 360;
-  return val % 360;
+    if (val < 0) val += Math.ceil(-val / 360) * 360
+    return val % 360
 }
 
 function createScientificPalettes(baseColor) {
-  const targetHueSteps = {
-    analogous:          [0, 30, 60],
-    triadic:            [0, 120, 240],
-    tetradic:           [0, 90, 180, 270],
-    complementary:      [0, 180],
-    splitComplementary: [0, 150, 210],
-  };
+    const targetHueSteps = {
+        analogous: [0, 30, 60],
+        triadic: [0, 120, 240],
+        tetradic: [0, 90, 180, 270],
+        complementary: [0, 180],
+        splitComplementary: [0, 150, 210],
+    }
 
-  const palettes = {};
-  for (const type of Object.keys(targetHueSteps)) {
-    palettes[type] = targetHueSteps[type].map((step) => ({
-      l: baseColor.l,
-      c: baseColor.c,
-      h: adjustHue(baseColor.h + step),
-      mode: "lch",
-    }));
-  }
-  return palettes;
+    const palettes = {}
+    for (const type of Object.keys(targetHueSteps)) {
+        palettes[type] = targetHueSteps[type].map((step) => ({
+            l: baseColor.l,
+            c: baseColor.c,
+            h: adjustHue(baseColor.h + step),
+            mode: "lch",
+        }))
+    }
+    return palettes
 }
 ```
 
 Usage:
 
 ```javascript
-import { formatHex } from "https://cdn.skypack.dev/culori@2.0.0";
+import { formatHex } from "https://cdn.skypack.dev/culori@2.0.0"
 
-const baseColor = { l: 50, c: 100, h: 0, mode: "lch" };
-const palettes = createScientificPalettes(baseColor);
-const triadicHex = palettes.triadic.map(formatHex);
+const baseColor = { l: 50, c: 100, h: 0, mode: "lch" }
+const palettes = createScientificPalettes(baseColor)
+const triadicHex = palettes.triadic.map(formatHex)
 // → ["#ff007c", "#1f8a00", "#0091ff"]
 ```
 
@@ -73,55 +73,68 @@ Given any array of colors (extracted from a photo, brand palette, etc.) and the 
 
 ```javascript
 import {
-  nearest,
-  differenceEuclidean,
-} from "https://cdn.skypack.dev/culori@2.0.0";
+    nearest,
+    differenceEuclidean,
+} from "https://cdn.skypack.dev/culori@2.0.0"
 
 function isColorEqual(c1, c2) {
-  return c1.h === c2.h && c1.l === c2.l && c1.c === c2.c;
+    return c1.h === c2.h && c1.l === c2.l && c1.c === c2.c
 }
 
 function discoverPalettes(colors) {
-  const palettes = {};
+    const palettes = {}
 
-  for (const color of colors) {
-    const targetPalettes = createScientificPalettes(color);
+    for (const color of colors) {
+        const targetPalettes = createScientificPalettes(color)
 
-    for (const paletteType of Object.keys(targetPalettes)) {
-      const palette = [];
-      let variance = 0;
+        for (const paletteType of Object.keys(targetPalettes)) {
+            const palette = []
+            let variance = 0
 
-      for (const targetColor of targetPalettes[paletteType]) {
-        // don't re-use colors already chosen for this palette
-        const availableColors = colors.filter(
-          (c1) => !palette.some((c2) => isColorEqual(c1, c2))
-        );
-        const match = nearest(availableColors, differenceEuclidean("lch"))(targetColor)[0];
-        variance += differenceEuclidean("lch")(targetColor, match);
-        palette.push(match);
-      }
+            for (const targetColor of targetPalettes[paletteType]) {
+                // don't re-use colors already chosen for this palette
+                const availableColors = colors.filter(
+                    (c1) => !palette.some((c2) => isColorEqual(c1, c2))
+                )
+                const match = nearest(
+                    availableColors,
+                    differenceEuclidean("lch")
+                )(targetColor)[0]
+                variance += differenceEuclidean("lch")(targetColor, match)
+                palette.push(match)
+            }
 
-      if (!palettes[paletteType] || variance < palettes[paletteType].variance) {
-        palettes[paletteType] = { colors: palette, variance };
-      }
+            if (
+                !palettes[paletteType] ||
+                variance < palettes[paletteType].variance
+            ) {
+                palettes[paletteType] = { colors: palette, variance }
+            }
+        }
     }
-  }
-  return palettes;
+    return palettes
 }
 ```
 
 Usage:
 
 ```javascript
-import { converter } from "https://cdn.skypack.dev/culori@2.0.0";
-const toLCH = converter("lch");
+import { converter } from "https://cdn.skypack.dev/culori@2.0.0"
+const toLCH = converter("lch")
 
 const baseColors = [
-  "#FFB97A","#FF957C","#FF727F","#FF5083","#F02F87",
-  "#C70084","#9A007F","#6A0076","#33006B"
-].map(toLCH);
+    "#FFB97A",
+    "#FF957C",
+    "#FF727F",
+    "#FF5083",
+    "#F02F87",
+    "#C70084",
+    "#9A007F",
+    "#6A0076",
+    "#33006B",
+].map(toLCH)
 
-const palettes = discoverPalettes(baseColors);
+const palettes = discoverPalettes(baseColors)
 ```
 
 **Requires at least 4 colors** in the pool to cover tetradic.
@@ -141,29 +154,34 @@ Pixel-art technique ([source video](https://www.youtube.com/watch?v=PNtMAxYaGyg)
 
 ```javascript
 function adjustHue(val) {
-  if (val < 0) val += Math.ceil(-val / 360) * 360;
-  return val % 360;
+    if (val < 0) val += Math.ceil(-val / 360) * 360
+    return val % 360
 }
 
 function map(n, start1, end1, start2, end2) {
-  return ((n - start1) / (end1 - start1)) * (end2 - start2) + start2;
+    return ((n - start1) / (end1 - start1)) * (end2 - start2) + start2
 }
 
 function createHueShiftPalette(opts) {
-  const { base, minLightness, maxLightness, hueStep } = opts;
-  const palette = [base];
+    const { base, minLightness, maxLightness, hueStep } = opts
+    const palette = [base]
 
-  for (let i = 1; i < 5; i++) {
-    const hueDark       = adjustHue(base.h - hueStep * i);
-    const hueLight      = adjustHue(base.h + hueStep * i);
-    const lightnessDark  = map(i, 0, 4, base.l, minLightness);
-    const lightnessLight = map(i, 0, 4, base.l, maxLightness);
-    const chroma = base.c;
+    for (let i = 1; i < 5; i++) {
+        const hueDark = adjustHue(base.h - hueStep * i)
+        const hueLight = adjustHue(base.h + hueStep * i)
+        const lightnessDark = map(i, 0, 4, base.l, minLightness)
+        const lightnessLight = map(i, 0, 4, base.l, maxLightness)
+        const chroma = base.c
 
-    palette.push(   { l: lightnessDark,  c: chroma, h: hueDark,  mode: "lch" });
-    palette.unshift({ l: lightnessLight, c: chroma, h: hueLight, mode: "lch" });
-  }
-  return palette;
+        palette.push({ l: lightnessDark, c: chroma, h: hueDark, mode: "lch" })
+        palette.unshift({
+            l: lightnessLight,
+            c: chroma,
+            h: hueLight,
+            mode: "lch",
+        })
+    }
+    return palette
 }
 ```
 
@@ -171,11 +189,11 @@ Usage:
 
 ```javascript
 const hueShiftPalette = createHueShiftPalette({
-  base: { l: 55, c: 75, h: 0, mode: "lch" },
-  minLightness: 10,
-  maxLightness: 90,
-  hueStep: 12,
-});
+    base: { l: 55, c: 75, h: 0, mode: "lch" },
+    minLightness: 10,
+    maxLightness: 90,
+    hueStep: 12,
+})
 // → ["#ffb97a","#ff957c","#ff727f","#ff5083","#f02f87","#c70084","#9a007f","#6a0076","#33006b"]
 ```
 

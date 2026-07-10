@@ -1,6 +1,6 @@
 # Improve next page load performance
 
-One of the most effective ways to improve page load performance for users navigating a site is to initiate loading the next page they're about to visit *before* they visit it. This can be done through a technique called speculative loading using the Speculation Rules API.
+One of the most effective ways to improve page load performance for users navigating a site is to initiate loading the next page they're about to visit _before_ they visit it. This can be done through a technique called speculative loading using the Speculation Rules API.
 
 ## How it works
 
@@ -34,14 +34,14 @@ A `tag` can also be used, either at a global level or on a per-rule basis. When 
 
 ```html
 <script type="speculationrules">
-  {
-    "tag": "product-page-speculations",
-    "prefetch": [
-      {
-        "urls": ["/product/1", "/product/2", "/product/3"]
-      }
-    ]
-  }
+    {
+        "tag": "product-page-speculations",
+        "prefetch": [
+            {
+                "urls": ["/product/1", "/product/2", "/product/3"]
+            }
+        ]
+    }
 </script>
 ```
 
@@ -49,12 +49,14 @@ A `tag` can also be used, either at a global level or on a per-rule basis. When 
 
 ```html
 <script type="speculationrules">
-  {
-    "tag": "all-links-speculations",
-    "prerender": [{
-      "where": { "href_matches": "/*" }
-    }]
-  }
+    {
+        "tag": "all-links-speculations",
+        "prerender": [
+            {
+                "where": { "href_matches": "/*" }
+            }
+        ]
+    }
 </script>
 ```
 
@@ -62,20 +64,26 @@ A `tag` can also be used, either at a global level or on a per-rule basis. When 
 
 ```html
 <script type="speculationrules">
-  {
-    "tag": "speculations-with-exclusions",
-    "prerender": [{
-      "where": {
-        "and": [
-          { "href_matches": "/*" },
-          { "not": {"href_matches": "/wp-admin"}},
-          { "not": {"href_matches": "/*\\?*(^|&)add-to-cart=*"}},
-          { "not": {"selector_matches": ".do-not-prerender"}},
-          { "not": {"selector_matches": "[rel~=nofollow]"}}
+    {
+        "tag": "speculations-with-exclusions",
+        "prerender": [
+            {
+                "where": {
+                    "and": [
+                        { "href_matches": "/*" },
+                        { "not": { "href_matches": "/wp-admin" } },
+                        {
+                            "not": {
+                                "href_matches": "/*\\?*(^|&)add-to-cart=*"
+                            }
+                        },
+                        { "not": { "selector_matches": ".do-not-prerender" } },
+                        { "not": { "selector_matches": "[rel~=nofollow]" } }
+                    ]
+                }
+            }
         ]
-      }
-    }]
-  }
+    }
 </script>
 ```
 
@@ -85,18 +93,22 @@ This example shows a rule set that prefetches all links eagerly, and then goes f
 
 ```html
 <script type="speculationrules">
-  {
-    "prefetch": [{
-      "tag": "prefetch-speculations",
-      "where": { "href_matches": "/*" },
-      "eagerness": "eager"
-    }],
-    "prerender": [{
-      "tag": "prerender-speculations",
-      "where": { "href_matches": "/*" },
-      "eagerness": "moderate"
-    }]
-  }
+    {
+        "prefetch": [
+            {
+                "tag": "prefetch-speculations",
+                "where": { "href_matches": "/*" },
+                "eagerness": "eager"
+            }
+        ],
+        "prerender": [
+            {
+                "tag": "prerender-speculations",
+                "where": { "href_matches": "/*" },
+                "eagerness": "moderate"
+            }
+        ]
+    }
 </script>
 ```
 

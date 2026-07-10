@@ -1,20 +1,24 @@
-# Graph Report - learn-react  (2026-05-15)
+# Graph Report - learn-react (2026-05-15)
 
 ## Corpus Check
+
 - 87 files · ~136,699 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
+
 - 421 nodes · 684 edges · 81 communities (24 shown, 57 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 14 edges (avg confidence: 0.82)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
+
 - Built from commit: `0ff36b9b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
+
 - [[_COMMUNITY_CurrentTimeIndicator()  RoutineEditor  RoutineEditorProps|CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps]]
 - [[_COMMUNITY_BaseModel  Brand  Coin|BaseModel / Brand / Coin]]
 - [[_COMMUNITY_Auth()  DateNavigator()  DateNavigatorProps|Auth() / DateNavigator() / DateNavigatorProps]]
@@ -92,6 +96,7 @@
 - [[_COMMUNITY_Community 80|Community 80]]
 
 ## God Nodes (most connected - your core abstractions)
+
 1. `SyncService` - 20 edges
 2. `getDatabase()` - 20 edges
 3. `useAuthStore` - 17 edges
@@ -104,18 +109,20 @@
 10. `DatabaseMaintenanceService` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Main Entry HTML` --conceptually_related_to--> `Vite & Vitest Configuration`  [INFERRED]
+
+- `Main Entry HTML` --conceptually_related_to--> `Vite & Vitest Configuration` [INFERRED]
   index.html → vite.config.ts
-- `initDb()` --calls--> `sqlite3InitModule()`  [INFERRED]
+- `initDb()` --calls--> `sqlite3InitModule()` [INFERRED]
   src/lib/db/sqlite-worker.ts → public/sqlite3.js
-- `Vite & Vitest Configuration` --shares_data_with--> `Capacitor Mobile Configuration`  [EXTRACTED]
+- `Vite & Vitest Configuration` --shares_data_with--> `Capacitor Mobile Configuration` [EXTRACTED]
   vite.config.ts → capacitor.config.ts
-- `Android Main Activity` --conceptually_related_to--> `Capacitor Mobile Configuration`  [INFERRED]
+- `Android Main Activity` --conceptually_related_to--> `Capacitor Mobile Configuration` [INFERRED]
   android/app/src/main/java/com/wutongonpaper/app/MainActivity.java → capacitor.config.ts
-- `Storybook Configuration` --references--> `Testing Screenshot`  [EXTRACTED]
+- `Storybook Configuration` --references--> `Testing Screenshot` [EXTRACTED]
   src/stories/Configure.mdx → src/stories/assets/testing.png
 
 ## Hyperedges (group relationships)
+
 - **Multi-Platform Configuration Bundle** — vite_config_root, capacitor_config_root, android_build_gradle [INFERRED 0.80]
 - **Cross-Platform Environment Configuration** — vite_env_importmetaenv, build_main, exampleunittest_addition_iscorrect [INFERRED 0.80]
 - **Tauri App Orchestration** — main_main, lib_run [EXTRACTED]
@@ -129,83 +136,103 @@
 ## Communities (81 total, 57 thin omitted)
 
 ### Community 0 - "CurrentTimeIndicator() / RoutineEditor / RoutineEditorProps"
+
 Cohesion: 0.06
 Nodes (59): CurrentTimeIndicator(), RoutineEditor, RoutineEditorProps, RRULE_OPTIONS, DragMode, DragState, EditingState, RoutineTimeTrackerWidget() (+51 more)
 
 ### Community 1 - "BaseModel / Brand / Coin"
+
 Cohesion: 0.1
 Nodes (18): Auth(), getDatabase(), isSupabaseConfigured, SupabaseClient, customUserId, state, DatabaseMaintenanceService, SyncService (+10 more)
 
 ### Community 2 - "Auth() / DateNavigator() / DateNavigatorProps"
+
 Cohesion: 0.13
 Nodes (24): BaseModel, Brand, Coin, Experience, HealthPoint, ModelConfig, QuestId, SyncAction (+16 more)
 
 ### Community 3 - "getDatabase() / DatabaseMaintenanceService / .clearAllData()"
+
 Cohesion: 0.1
 Nodes (18): DateNavigator(), DateNavigatorProps, SaveChangeDialog(), SaveChangeDialogProps, SettingsMenu(), SettingsMenuProps, PRESET_COLORS, SortableTagItemProps (+10 more)
 
 ### Community 4 - "Button.stories.ts / Button.tsx / Header.stories.ts"
+
 Cohesion: 0.1
 Nodes (19): Button(), ButtonProps, Asdf, Large, Primary, Secondary, Small, Story (+11 more)
 
 ### Community 5 - "CapacitorDatabaseService / .constructor() / .execute()"
+
 Cohesion: 0.12
 Nodes (8): CapacitorDatabaseService, initCapacitorDb(), DatabaseServiceFactory, MockDatabaseService, initTauriDb(), TauriDatabaseService, IDatabaseService, QueryResult
 
 ### Community 6 - "changes / initDb() / rows"
+
 Cohesion: 0.12
 Nodes (14): changes, initDb(), rows, handlerMap, li, p, promiseProxy, proxy (+6 more)
 
 ### Community 7 - "CompositeTypes / Constants / Database"
+
 Cohesion: 0.15
 Nodes (7): ResolvedTheme, Theme, THEME_VALUES, ThemeProvider(), ThemeProviderContext, ThemeProviderProps, ThemeProviderState
 
 ### Community 8 - "createRoutineCard() / routine-expansion.test.ts / routine-expansion.ts"
+
 Cohesion: 0.18
 Nodes (10): CompositeTypes, Constants, Database, DatabaseWithoutInternals, DefaultSchema, Enums, Json, Tables (+2 more)
 
 ### Community 9 - "disableTransitionsTemporarily() / getSystemTheme() / isEditableTarget()"
+
 Cohesion: 0.18
 Nodes (11): Auth Component, Auth State Type, Auth Store Hook, UI Button, Current Time Indicator, Header, Page, Routine Time Tracker Widget (+3 more)
 
 ### Community 10 - "Auth Component / Auth State Type / Auth Store Hook"
+
 Cohesion: 0.22
 Nodes (9): App Component, Root Component, RoutineTimeTrackerService, RoutineTimeTrackerState Model, SettingsMenu, Singleton User State Mapping, Tag Model, TagManager (+1 more)
 
 ### Community 13 - "WebDatabaseService / .constructor() / .execute()"
+
 Cohesion: 0.29
 Nodes (6): Capacitor Mobile Configuration, Main Entry HTML, Android Main Activity, Multi-Platform Build Strategy, WebSQLite OPFS Sandboxing, Vite & Vitest Configuration
 
 ### Community 14 - "Capacitor Mobile Configuration / Main Entry HTML / Android Main Activity"
+
 Cohesion: 0.33
 Nodes (5): Adding components, code:bash (npx shadcn@latest add button), code:tsx (import { Button } from "@/components/ui/Button"), React + TypeScript + Vite + shadcn/ui, Using components
 
 ### Community 15 - "RoutineTimeTrackerService / .ensureStateRecord() / .initialize()"
+
 Cohesion: 0.4
 Nodes (5): CapacitorDatabaseService, DatabaseServiceFactory, initDb, TauriDatabaseService, WebDatabaseService
 
 ### Community 16 - "CapacitorDatabaseService / DatabaseServiceFactory / initDb"
+
 Cohesion: 0.4
 Nodes (5): DatabaseMaintenanceService, getDatabase, supabase, SyncService, SyncService Tests
 
 ### Community 17 - "DatabaseMaintenanceService / getDatabase / supabase"
+
 Cohesion: 0.5
 Nodes (4): Storybook Configuration, Figma Plugin Screenshot, GitHub Logo, Testing Screenshot
 
 ### Community 18 - "Storybook Configuration / Figma Plugin Screenshot / GitHub Logo"
+
 Cohesion: 0.5
 Nodes (4): Routine Cards Table Definition, Routine Tags Table Definition, Routine Recurrence Logic, Seed Routine Cards
 
 ### Community 23 - "ImportMeta / ImportMetaEnv / vite-env.d.ts"
+
 Cohesion: 0.67
 Nodes (3): Routine Exception Mechanism, Routine Expansion Logic, RoutineEditor
 
 ## Knowledge Gaps
+
 - **185 isolated node(s):** `config`, `handlerMap`, `proxy`, `p`, `promiseProxy` (+180 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **57 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
+
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `getDatabase()` connect `BaseModel / Brand / Coin` to `Auth() / DateNavigator() / DateNavigatorProps`, `CapacitorDatabaseService / .constructor() / .execute()`?**

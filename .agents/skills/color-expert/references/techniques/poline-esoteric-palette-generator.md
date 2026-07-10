@@ -21,42 +21,42 @@
 ## API
 
 ```javascript
-import { Poline, positionFunctions } from "poline";
+import { Poline, positionFunctions } from "poline"
 
 // Basic — random anchors
-const poline = new Poline();
-poline.colorsCSS; // ["hsl(...)", ...]
-poline.colorsCSSoklch; // ["oklch(...)", ...]
+const poline = new Poline()
+poline.colorsCSS // ["hsl(...)", ...]
+poline.colorsCSSoklch // ["oklch(...)", ...]
 
 // Custom anchors + config
 const poline = new Poline({
-  anchorColors: [
-    [309, 0.72, 0.8], // [hue, saturation, lightness]
-    [67, 0.32, 0.08],
-  ],
-  numPoints: 6,
-  positionFunctionX: positionFunctions.sinusoidalPosition,
-  positionFunctionY: positionFunctions.quadraticPosition,
-  positionFunctionZ: positionFunctions.linearPosition,
-  closedLoop: false,
-  invertedLightness: false,
-});
+    anchorColors: [
+        [309, 0.72, 0.8], // [hue, saturation, lightness]
+        [67, 0.32, 0.08],
+    ],
+    numPoints: 6,
+    positionFunctionX: positionFunctions.sinusoidalPosition,
+    positionFunctionY: positionFunctions.quadraticPosition,
+    positionFunctionZ: positionFunctions.linearPosition,
+    closedLoop: false,
+    invertedLightness: false,
+})
 
 // Dynamic anchor management
-poline.addAnchorPoint({ color: [100, 0.91, 0.8] });
-poline.updateAnchorPoint({ pointIndex: 1, color: [120, 0.8, 0.5] });
-poline.removeAnchorPoint({ index: 2 });
+poline.addAnchorPoint({ color: [100, 0.91, 0.8] })
+poline.updateAnchorPoint({ pointIndex: 1, color: [120, 0.8, 0.5] })
+poline.removeAnchorPoint({ index: 2 })
 
 // Sample any position along the palette
-const mid = poline.getColorAt(0.5);
-mid.hsl; // [h, s, l]
-mid.hslCSS; // "hsl(120, 80%, 60%)"
+const mid = poline.getColorAt(0.5)
+mid.hsl // [h, s, l]
+mid.hslCSS // "hsl(120, 80%, 60%)"
 
 // Hue shift entire palette
-poline.shiftHue(60);
+poline.shiftHue(60)
 
 // Closed loop (last color = first)
-poline.closedLoop = true;
+poline.closedLoop = true
 ```
 
 ## Position Functions
@@ -80,10 +80,10 @@ Each axis (X, Y, Z) can use a different function — creating complex distributi
 ## Output Formats
 
 ```javascript
-poline.colors; // [[h, s, l], ...]
-poline.colorsCSS; // HSL CSS strings
-poline.colorsCSSlch; // LCH CSS strings
-poline.colorsCSSoklch; // OKLCH CSS strings
+poline.colors // [[h, s, l], ...]
+poline.colorsCSS // HSL CSS strings
+poline.colorsCSSlch // LCH CSS strings
+poline.colorsCSSoklch // OKLCH CSS strings
 ```
 
 ## Key Features

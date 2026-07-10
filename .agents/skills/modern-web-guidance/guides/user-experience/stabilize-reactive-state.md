@@ -16,29 +16,29 @@ To stabilize reactive state using Temporal:
 
 ```javascript
 // ❌ BAD: Mutating legacy Date breaks reactivity
-let dateState = { deadline: new Date() };
+let dateState = { deadline: new Date() }
 
 function extendDeadlineBad() {
-  // Mutates the object in place. Reference remains the same!
-  dateState.deadline.setHours(dateState.deadline.getHours() + 1);
+    // Mutates the object in place. Reference remains the same!
+    dateState.deadline.setHours(dateState.deadline.getHours() + 1)
 
-  // Frameworks will skip re-rendering because
-  // prevState === nextState (same memory reference)
-  updateState(dateState);
+    // Frameworks will skip re-rendering because
+    // prevState === nextState (same memory reference)
+    updateState(dateState)
 }
 
 // ✅ GOOD: Temporal ensures immutability and reliable reactivity
-let temporalState = { deadline: Temporal.Now.plainDateTimeISO() };
+let temporalState = { deadline: Temporal.Now.plainDateTimeISO() }
 
 function extendDeadlineGood() {
-  // Returns a new object with a new reference.
-  const newDeadline = temporalState.deadline.add({ hours: 1 });
+    // Returns a new object with a new reference.
+    const newDeadline = temporalState.deadline.add({ hours: 1 })
 
-  // Create a new state object with the new Temporal reference
-  temporalState = { deadline: newDeadline };
+    // Create a new state object with the new Temporal reference
+    temporalState = { deadline: newDeadline }
 
-  // Frameworks will detect the reference change and re-render the UI
-  updateState(temporalState);
+    // Frameworks will detect the reference change and re-render the UI
+    updateState(temporalState)
 }
 ```
 
@@ -60,13 +60,13 @@ Since the `Temporal` API is a newer feature and may not be supported in all brow
 ```html
 <!-- Conditionally load the Temporal polyfill only if not natively supported -->
 <script>
-  if (typeof Temporal === "undefined") {
-    try {
-      const module = await import("https://esm.sh/@js-temporal/polyfill");
-      globalThis.Temporal = module.Temporal;
-    } catch (e) {
-      console.error("Failed to load Temporal polyfill:", e);
+    if (typeof Temporal === "undefined") {
+      try {
+        const module = await import("https://esm.sh/@js-temporal/polyfill");
+        globalThis.Temporal = module.Temporal;
+      } catch (e) {
+        console.error("Failed to load Temporal polyfill:", e);
+      }
     }
-  }
 </script>
 ```

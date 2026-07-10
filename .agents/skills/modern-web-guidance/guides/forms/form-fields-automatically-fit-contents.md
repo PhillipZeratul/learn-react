@@ -15,43 +15,43 @@ It is recommended to set a `max-inline-size` (or `max-width`) on `<select>` elem
 ```css
 /* Applies horizontal auto-sizing to inputs */
 input {
-  /* Instructs the element to size itself to fit its content */
-  field-sizing: content;
+    /* Instructs the element to size itself to fit its content */
+    field-sizing: content;
 
-  /* Reset explicit width if inherited from global styles */
-  width: auto;
+    /* Reset explicit width if inherited from global styles */
+    width: auto;
 
-  /* Prevents the input from collapsing and disappearing when empty */
-  min-inline-size: 15ch;
+    /* Prevents the input from collapsing and disappearing when empty */
+    min-inline-size: 15ch;
 
-  /* Prevents infinite horizontal growth */
-  max-inline-size: 50ch;
+    /* Prevents infinite horizontal growth */
+    max-inline-size: 50ch;
 }
 
 textarea {
-  /* Instructs the element to size itself to fit its content */
-  field-sizing: content;
+    /* Instructs the element to size itself to fit its content */
+    field-sizing: content;
 
-  /* Reset explicit height if inherited from global styles */
-  height: auto;
+    /* Reset explicit height if inherited from global styles */
+    height: auto;
 
-  /* Use a fixed width to prevent jarring horizontal shifts when replacing a long placeholder */
-  width: 50ch; /* or 100% depending on your layout */
+    /* Use a fixed width to prevent jarring horizontal shifts when replacing a long placeholder */
+    width: 50ch; /* or 100% depending on your layout */
 
-  /* Sets a reasonable minimum height (e.g., 3 lines) for empty textareas */
-  min-block-size: 3lh;
+    /* Sets a reasonable minimum height (e.g., 3 lines) for empty textareas */
+    min-block-size: 3lh;
 
-  /* Prevents infinite vertical growth. Once a textarea hits this */
-  /* height, it will stop growing and show a vertical scrollbar. */
-  max-block-size: 10lh;
+    /* Prevents infinite vertical growth. Once a textarea hits this */
+    /* height, it will stop growing and show a vertical scrollbar. */
+    max-block-size: 10lh;
 }
 
 select {
-  /* Sizes the select element to fit the active option only */
-  field-sizing: content;
+    /* Sizes the select element to fit the active option only */
+    field-sizing: content;
 
-  /* Prevents the dropdown from expanding infinitely and breaking the layout */
-  max-inline-size: 50ch;
+    /* Prevents the dropdown from expanding infinitely and breaking the layout */
+    max-inline-size: 50ch;
 }
 ```
 
@@ -72,49 +72,51 @@ If dynamically growing fields are absolutely required for older browsers, you mu
 ```html
 <!-- The textarea is wrapped in a container that will mirror its value -->
 <div class="growable-textarea" data-replicated-value="">
-  <textarea></textarea>
+    <textarea></textarea>
 </div>
 ```
 
 ```javascript
 // Only attach the fallback event listeners if field-sizing is unsupported
-if (!CSS.supports('field-sizing', 'content')) {
-  document.querySelectorAll('.growable-textarea > textarea').forEach(textarea => {
-    textarea.addEventListener('input', () => {
-      textarea.parentNode.dataset.replicatedValue = textarea.value;
-    });
-  });
+if (!CSS.supports("field-sizing", "content")) {
+    document
+        .querySelectorAll(".growable-textarea > textarea")
+        .forEach((textarea) => {
+            textarea.addEventListener("input", () => {
+                textarea.parentNode.dataset.replicatedValue = textarea.value
+            })
+        })
 }
 ```
 
 ```css
 /* Only apply the fallback if field-sizing is NOT supported */
 @supports not (field-sizing: content) {
-  .growable-textarea {
-    display: grid;
-  }
+    .growable-textarea {
+        display: grid;
+    }
 
-  /* The pseudo-element and textarea must share the exact same cell, font, and padding */
-  .growable-textarea::after,
-  .growable-textarea > textarea {
-    grid-area: 1 / 1 / 2 / 2;
-    font: inherit;
-    padding: 0.5rem;
-    border: 1px solid #999;
-  }
+    /* The pseudo-element and textarea must share the exact same cell, font, and padding */
+    .growable-textarea::after,
+    .growable-textarea > textarea {
+        grid-area: 1 / 1 / 2 / 2;
+        font: inherit;
+        padding: 0.5rem;
+        border: 1px solid #999;
+    }
 
-  /* The pseudo-element renders the copied text invisibly to stretch the grid */
-  .growable-textarea::after {
-    /* The space is necessary for trailing empty lines to be rendered */
-    content: attr(data-replicated-value) " ";
-    white-space: pre-wrap;
-    visibility: hidden;
-  }
+    /* The pseudo-element renders the copied text invisibly to stretch the grid */
+    .growable-textarea::after {
+        /* The space is necessary for trailing empty lines to be rendered */
+        content: attr(data-replicated-value) " ";
+        white-space: pre-wrap;
+        visibility: hidden;
+    }
 
-  .growable-textarea > textarea {
-    resize: none;
-    overflow: hidden;
-  }
+    .growable-textarea > textarea {
+        resize: none;
+        overflow: hidden;
+    }
 }
 ```
 

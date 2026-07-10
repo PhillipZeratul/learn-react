@@ -24,15 +24,15 @@ If human colors also can have shades and tints, we need three dimensions to mode
 ## Key Concepts
 
 - **4 cone types** (L, M, S, UV) create **4 hue circuits** — each circuit is a triangle of 3 cones:
-  1. L-M-S (the human hue circle)
-  2. L-S-UV
-  3. L-M-UV
-  4. M-S-UV
+    1. L-M-S (the human hue circle)
+    2. L-S-UV
+    3. L-M-UV
+    4. M-S-UV
 - **Tetrahedral network** — the 4 hue circuits form the faces of a tetrahedron; UV represented as "speckle/noise" since we can't visualize it
 - **Not a color square** — 4 primaries don't just make a square; the combinatorics require a tetrahedron (4 faces, each a hue triangle)
 - **Dimensionality:**
-  - Humans: 3 cone types → 2D hue circle + lightness = 3D color solid
-  - Birds: 4 cone types → 3D hue tetrahedron + lightness = **4D color solid**
+    - Humans: 3 cone types → 2D hue circle + lightness = 3D color solid
+    - Birds: 4 cone types → 3D hue tetrahedron + lightness = **4D color solid**
 - Companion to [Bird Complementary Colors](https://www.youtube.com/shorts/RVPEXrHOiOI)
 
 ## Links

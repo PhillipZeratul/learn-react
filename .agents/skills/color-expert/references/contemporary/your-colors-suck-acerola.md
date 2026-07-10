@@ -61,10 +61,10 @@ Deep technical video essay on digital color theory for game developers and digit
 - **CIELAB** — attempt at perceptual uniformity; L* (lightness), a* (green↔red), b\* (blue↔yellow)
 - Still not perfectly uniform; hue shifts in blues, discontinuities
 - **OKLAB (Björn Ottosson, 2020)** — better perceptual uniformity
-  - Pipeline: sRGB → linear RGB → XYZ → LMS (cone response) → cube root → matrix transform → OKLAB
-  - L (lightness), a (green↔magenta), b (blue↔yellow)
-  - **Gradients are smooth** — no unexpected hue shifts or brightness dips
-  - Moving around the hue wheel at constant L keeps perceived brightness consistent
+    - Pipeline: sRGB → linear RGB → XYZ → LMS (cone response) → cube root → matrix transform → OKLAB
+    - L (lightness), a (green↔magenta), b (blue↔yellow)
+    - **Gradients are smooth** — no unexpected hue shifts or brightness dips
+    - Moving around the hue wheel at constant L keeps perceived brightness consistent
 
 ### Practical Advice
 

@@ -24,17 +24,17 @@ MANDATORY: Load the experimentation script with both `async` and `blocking="rend
 
 ```html
 <head>
-  <!--
+    <!--
     MANDATORY: Both `async` and `blocking="render"` are required.
     - `async`: Prevents parser-blocking, so the DOM is built in parallel.
     - `blocking="render"`: Holds rendering until the script executes,
       ensuring experiment changes are applied before the user sees anything.
   -->
-  <script
-    src="https://cdn.example.com/experiment-sdk.js"
-    async
-    blocking="render"
-  ></script>
+    <script
+        src="https://cdn.example.com/experiment-sdk.js"
+        async
+        blocking="render"
+    ></script>
 </head>
 ```
 
@@ -44,16 +44,16 @@ If the experiment requires a variant stylesheet, use `blocking="render"` on the 
 
 ```html
 <head>
-  <!--
+    <!--
     DO: Use blocking="render" on experiment stylesheets that are
     dynamically inserted or conditionally loaded by the experiment SDK.
     This ensures variant styles are applied before first paint.
   -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.example.com/experiment-variant-b.css"
-    blocking="render"
-  >
+    <link
+        rel="stylesheet"
+        href="https://cdn.example.com/experiment-variant-b.css"
+        blocking="render"
+    />
 </head>
 ```
 
@@ -63,32 +63,33 @@ If the experiment logic is lightweight enough to inline, use an inline module sc
 
 ```html
 <head>
-  <!--
+    <!--
     DO: Use an inline module script when the experiment logic is small.
     Module scripts are deferred by default (non-parser-blocking),
     and blocking="render" ensures rendering waits for execution.
   -->
-  <script type="module" blocking="render">
-    // Fetch the experiment configuration from your testing platform.
-    const config = await fetch('/api/experiment?id=homepage-cta')
-      .then(res => res.json());
+    <script type="module" blocking="render">
+        // Fetch the experiment configuration from your testing platform.
+        const config = await fetch("/api/experiment?id=homepage-cta").then(
+            (res) => res.json()
+        )
 
-    // Apply the variant by setting a data attribute on <html>.
-    // CSS rules keyed to this attribute will style the variant.
-    document.documentElement.dataset.variant = config.variant;
-  </script>
+        // Apply the variant by setting a data attribute on <html>.
+        // CSS rules keyed to this attribute will style the variant.
+        document.documentElement.dataset.variant = config.variant
+    </script>
 
-  <style>
-    /* Default styles (control group) */
-    .cta-button {
-      background-color: blue;
-    }
+    <style>
+        /* Default styles (control group) */
+        .cta-button {
+            background-color: blue;
+        }
 
-    /* Variant B styles, activated by the data attribute */
-    [data-variant="b"] .cta-button {
-      background-color: green;
-    }
-  </style>
+        /* Variant B styles, activated by the data attribute */
+        [data-variant="b"] .cta-button {
+            background-color: green;
+        }
+    </style>
 </head>
 ```
 
@@ -114,42 +115,42 @@ DO: Use a lightweight anti-flicker snippet as a fallback only when `blocking="re
 
 ```html
 <head>
-  <!--
+    <!--
     DO: Load the experiment script with blocking="render" for
     browsers that support it. This is the preferred approach.
   -->
-  <script
-    src="https://cdn.example.com/experiment-sdk.js"
-    async
-    blocking="render"
-  ></script>
+    <script
+        src="https://cdn.example.com/experiment-sdk.js"
+        async
+        blocking="render"
+    ></script>
 
-  <script>
-    // DO: Only apply the anti-flicker fallback in browsers
-    // that do not support blocking="render".
-    if (!Object.hasOwn(HTMLScriptElement.prototype, 'blocking')) {
-      // Hide the page until the experiment script runs.
-      document.documentElement.classList.add('ab-loading');
+    <script>
+        // DO: Only apply the anti-flicker fallback in browsers
+        // that do not support blocking="render".
+        if (!Object.hasOwn(HTMLScriptElement.prototype, "blocking")) {
+            // Hide the page until the experiment script runs.
+            document.documentElement.classList.add("ab-loading")
 
-      // DO: Set a timeout to reveal the page if the experiment
-      // script takes too long. This prevents an indefinitely
-      // blank page on slow connections. Adjust the timeout
-      // to match your experiment SDK's expected load time.
-      setTimeout(() => {
-        document.documentElement.classList.remove('ab-loading');
-      }, 4000);
-    }
-  </script>
+            // DO: Set a timeout to reveal the page if the experiment
+            // script takes too long. This prevents an indefinitely
+            // blank page on slow connections. Adjust the timeout
+            // to match your experiment SDK's expected load time.
+            setTimeout(() => {
+                document.documentElement.classList.remove("ab-loading")
+            }, 4000)
+        }
+    </script>
 
-  <style>
-    /*
+    <style>
+        /*
       DO: Use opacity to hide content during experiment loading.
       This is only applied when blocking="render" is unsupported.
     */
-    .ab-loading {
-      opacity: 0 !important;
-    }
-  </style>
+        .ab-loading {
+            opacity: 0 !important;
+        }
+    </style>
 </head>
 ```
 
@@ -157,7 +158,7 @@ DO: Use a lightweight anti-flicker snippet as a fallback only when `blocking="re
 // DO: In your experiment SDK's initialization callback,
 // remove the fallback class to reveal the page.
 function onExperimentReady() {
-  document.documentElement.classList.remove('ab-loading');
+    document.documentElement.classList.remove("ab-loading")
 }
 ```
 

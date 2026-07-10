@@ -2,8 +2,8 @@
 
 You can customize the appearance of scrollbars using the standard CSS properties `scrollbar-color` and `scrollbar-width`.
 
-*   **`scrollbar-color`**: Accepts two `<color>` values. The first applies to the thumb (the moving part), and the second to the track (the fixed background).
-*   **`scrollbar-width`**: Accepts `auto` (default), `thin` (a thinner variant), or `none` (hides the scrollbar completely while maintaining scrollability).
+- **`scrollbar-color`**: Accepts two `<color>` values. The first applies to the thumb (the moving part), and the second to the track (the fixed background).
+- **`scrollbar-width`**: Accepts `auto` (default), `thin` (a thinner variant), or `none` (hides the scrollbar completely while maintaining scrollability).
 
 ## Apply `scrollbar-color` and `scrollbar-width`
 
@@ -13,10 +13,10 @@ When using `scrollbar-color`, use CSS variables to keep thumb and track colors s
 
 ```css
 .scroller {
-  --scrollbar-thumb: var(--color-neutral-70);
-  --scrollbar-track: var(--color-neutral-90);
+    --scrollbar-thumb: var(--color-neutral-70);
+    --scrollbar-track: var(--color-neutral-90);
 
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 ```
 
@@ -41,19 +41,18 @@ If you are using custom properties to define colors, these will cascade to the l
 ```css
 /* Legacy fallback for WebKit/Blink browsers */
 @supports not (scrollbar-color: auto) {
-  .scroller::-webkit-scrollbar {
-    /* Must define base size in WebKit for custom colors to be visual */
-    width: 12px;
-    height: 12px;
-  }
+    .scroller::-webkit-scrollbar {
+        /* Must define base size in WebKit for custom colors to be visual */
+        width: 12px;
+        height: 12px;
+    }
 
-  .scroller::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-  }
+    .scroller::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+    }
 
-  .scroller::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-  }
+    .scroller::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+    }
 }
 ```
-

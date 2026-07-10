@@ -16,29 +16,29 @@ To apply shared styles, also assign a `view-transition-class`.
 
 ```css
 .item {
-  view-transition-class: list-item;
+    view-transition-class: list-item;
 }
 ```
 
 2. **Define the shared transition logic**
-   
+
 Use the `::view-transition-group()` pseudo-element with the class selector to apply styles to all members of that group.
 
 ```css
 /* Targets any view transition group that has the 'list-item' class */
 ::view-transition-group(.list-item) {
-  animation-duration: 0.5s;
-  animation-timing-function: ease-in-out;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-in-out;
 }
 
 /* Handle accessibility by respecting motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  /* Disable all group transitions, including the default `root` group. */
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
+    /* Disable all group transitions, including the default `root` group. */
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
 }
 ```
 
@@ -49,26 +49,26 @@ Use the `:only-child` selector to add specific transitions to the elements that 
 ```css
 /* A `::view-transition-new()` element is the only child if it wasn't present before the view transition, so it is an added element. */
 ::view-transition-new(.list-item):only-child {
-  animation-name: slide-in;
-  /* Specify an animation duration if you want something different than the UA default of 0.5s */
-  animation-duration: 1s;
+    animation-name: slide-in;
+    /* Specify an animation duration if you want something different than the UA default of 0.5s */
+    animation-duration: 1s;
 }
 /* A `::view-transition-old()` element is the only child if it isn't present after the view transition, so it is a removed element. */
 ::view-transition-old(.list-item):only-child {
-  animation-name: slide-out;
-  /* Specify an animation duration if you want something different than the UA default of 0.5s */
-  animation-duration: 1s;
+    animation-name: slide-out;
+    /* Specify an animation duration if you want something different than the UA default of 0.5s */
+    animation-duration: 1s;
 }
 
 @keyframes slide-in {
-  from {
-    translate: -100vw 0;
-  }
+    from {
+        translate: -100vw 0;
+    }
 }
 @keyframes slide-out {
-  to {
-    translate: -100vw 0;
-  }
+    to {
+        translate: -100vw 0;
+    }
 }
 ```
 
@@ -78,10 +78,10 @@ Wrap the DOM update in `document.startViewTransition()`. The browser will captur
 
 ```javascript
 function updateList(newData) {
-  document.startViewTransition(() => {
-    // All DOM changes inside this callback will be transitioned
-    render(newData);
-  });
+    document.startViewTransition(() => {
+        // All DOM changes inside this callback will be transitioned
+        render(newData)
+    })
 }
 ```
 
@@ -91,17 +91,17 @@ View transitions work by overlaying snapshots of the DOM elements, and then tran
 
 ```css
 ::view-transition {
-  /* Non-transitioned elements below the view transitions remain interactive */
-  pointer-events: none;
+    /* Non-transitioned elements below the view transitions remain interactive */
+    pointer-events: none;
 }
 ```
 
-In addition, by default, the `:root` element has a view transition named `root`, which enables default full-page transitions. If there are no changes to the root element, this will be a transition between two identical snapshots, which are not interactive. Because we are only transitioning specific elements, and not the entire screen, we can disable the `root` transition. 
+In addition, by default, the `:root` element has a view transition named `root`, which enables default full-page transitions. If there are no changes to the root element, this will be a transition between two identical snapshots, which are not interactive. Because we are only transitioning specific elements, and not the entire screen, we can disable the `root` transition.
 
 ```css
 :root {
-  /* Disable the root transition because we are only transitioning specific elements. */
-  view-transition-name: none;
+    /* Disable the root transition because we are only transitioning specific elements. */
+    view-transition-name: none;
 }
 ```
 
@@ -114,10 +114,10 @@ View Transitions are a progressive enhancement. If the browser does not support 
 
 ```javascript
 if (document.startViewTransition) {
-  document.startViewTransition(() => updateDOM());
+    document.startViewTransition(() => updateDOM())
 } else {
-  // Fallback: Perform the update without animation
-  updateDOM();
+    // Fallback: Perform the update without animation
+    updateDOM()
 }
 ```
 

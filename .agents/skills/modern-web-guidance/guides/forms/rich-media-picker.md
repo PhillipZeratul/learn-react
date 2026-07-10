@@ -16,86 +16,103 @@ To implement a rich media picker using the Customizable Select API:
 ```html
 <label for="role-picker">Select your role</label>
 <select class="custom-select" name="role" id="role-picker">
-  <button>
-    <selectedcontent></selectedcontent> <!-- Mirrors the selected option's content automatically so you do not need JS to update the button -->
-  </button>
+    <button>
+        <selectedcontent></selectedcontent>
+        <!-- Mirrors the selected option's content automatically so you do not need JS to update the button -->
+    </button>
 
-  <!-- Define concise aria-label values on options whose mirrored rich content would otherwise read awkwardly as a concatenated string -->
-  <option value="frontend" aria-label="Frontend Developer">
-    <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-    </svg>
-    <div class="option-text">
-      <span class="option-title">Frontend Developer</span>
-      <span class="option-desc">React, Vue, CSS</span>
-    </div>
-  </option>
+    <!-- Define concise aria-label values on options whose mirrored rich content would otherwise read awkwardly as a concatenated string -->
+    <option value="frontend" aria-label="Frontend Developer">
+        <svg
+            aria-hidden="true"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+        >
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        </svg>
+        <div class="option-text">
+            <span class="option-title">Frontend Developer</span>
+            <span class="option-desc">React, Vue, CSS</span>
+        </div>
+    </option>
 
-  <option value="backend" aria-label="Backend Developer">
-    <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <rect x="2" y="12" width="20" height="14" rx="2" ry="2"></rect>
-    </svg>
-    <div class="option-text">
-      <span class="option-title">Backend Developer</span>
-      <span class="option-desc">Node.js, Python</span>
-    </div>
-  </option>
+    <option value="backend" aria-label="Backend Developer">
+        <svg
+            aria-hidden="true"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+        >
+            <rect x="2" y="12" width="20" height="14" rx="2" ry="2"></rect>
+        </svg>
+        <div class="option-text">
+            <span class="option-title">Backend Developer</span>
+            <span class="option-desc">Node.js, Python</span>
+        </div>
+    </option>
 </select>
 ```
 
 ```css
 select.custom-select,
 select.custom-select::picker(select) {
-  appearance: base-select; /* MUST opt-in both the select and its picker to enable the customizable state, otherwise browser standard rendering applies */
+    appearance: base-select; /* MUST opt-in both the select and its picker to enable the customizable state, otherwise browser standard rendering applies */
 }
 
 select.custom-select {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 12px;
-  background-color: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  color: #f1f5f9;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #f1f5f9;
+    cursor: pointer;
 }
 
 select.custom-select::picker(select) {
-  background-color: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  width: anchor-size(width); /* Uses Anchor Positioning API to keep the dropdown precisely aligned to the button trigger width */
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    width: anchor-size(
+        width
+    ); /* Uses Anchor Positioning API to keep the dropdown precisely aligned to the button trigger width */
 }
 
 select.custom-select option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 4px;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 select.custom-select option:hover {
-  background-color: #1e293b;
+    background-color: #1e293b;
 }
 
 /* Remove standard OS checkmark for base-select */
 select.custom-select option::before {
-  display: none;
+    display: none;
 }
 
 /* MANDATORY: Provide multiple visual indicators (e.g., prominent background color and bold title font) to communicate the checked state cleanly */
 select.custom-select option:checked {
-  background-color: #3b82f6;
-  color: #ffffff;
+    background-color: #3b82f6;
+    color: #ffffff;
 }
 select.custom-select option:checked .option-title {
-  font-weight: 700;
+    font-weight: 700;
 }
 ```
 
@@ -121,12 +138,11 @@ For browsers that do not yet support `appearance: base-select`, the `<select>` e
 - **Non-Text Content Ignored**: Older browsers strip HTML tags (like `<svg>` or `<div>`) inside `<option>` tags and render only the text nodes. Ensure the text content of the `<option>` is readable and meaningful on its own.
 - **HTML Structure Handling**: Standard parsers may ignore the `<button>` and `<selectedcontent>` tags inside `<select>` or treat them as invalid. No heavy JavaScript polyfills are strictly required for progressive enhancement if you view standard text as a readable fallback.
 
-
 ```javascript
 document.addEventListener("DOMContentLoaded", () => {
-  // Check if browser supports base-select value
-  if (!CSS.supports("appearance", "base-select")) {
-    // Custom select overrides are not supported natively.
-  }
-});
+    // Check if browser supports base-select value
+    if (!CSS.supports("appearance", "base-select")) {
+        // Custom select overrides are not supported natively.
+    }
+})
 ```

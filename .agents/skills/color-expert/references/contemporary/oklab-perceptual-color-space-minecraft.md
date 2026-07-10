@@ -47,8 +47,8 @@ A geologist/Minecraft builder explains perceptual uniformity through practical d
 
 - All Minecraft blocks plotted in OKLAB space → fit in a nice shape around their average colors
 - **RGB gradient vs OKLAB gradient (same endpoints):**
-  - Red→Green: RGB path curves, darkens in middle; OKLAB path is nearly straight
-  - Blue→Sandstone: RGB arcs through darker colors; OKLAB is more direct
+    - Red→Green: RGB path curves, darkens in middle; OKLAB path is nearly straight
+    - Blue→Sandstone: RGB arcs through darker colors; OKLAB is more direct
 - "I'm genuinely shocked... this actually really changed my opinion. It's probably going to be my go-to space."
 - OKLAB could also identify **missing colors in Minecraft** scientifically — gaps in the block palette
 

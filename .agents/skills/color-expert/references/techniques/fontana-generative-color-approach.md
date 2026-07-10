@@ -42,8 +42,8 @@ Rayner's reasons:
 
 - **Lights → shift toward yellow** — mimics aged/yellowed media (vintage feel)
 - **Darks → shift toward blue or red** — depends on dominant hue:
-  - Warm dominant → blue darks
-  - Cool dominant → red darks
+    - Warm dominant → blue darks
+    - Cool dominant → red darks
 - Keeps the color space in complementary balance (light yellows ↔ dark blues)
 - "Pinch" the spectrum at purple to represent the actual hue distribution
 

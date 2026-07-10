@@ -15,14 +15,14 @@ A synthesizer-style interface for generating programmatic color palettes. Built 
 
 Six programmatic palette types, each producing 5–12 colors:
 
-| Type                    | Code | Description                                |
-| ----------------------- | ---- | ------------------------------------------ |
-| Analogous               | ANA  | Adjacent colors on the color wheel         |
-| Complementary           | COM  | Opposed colors on the wheel                |
-| Split Complementary     | SPL  | Opposed then bifurcated                    |
-| Triadic                 | TRI  | Triangle arrangement on wheel              |
-| Tetradic                | TET  | Square arrangement on wheel                |
-| Tints & Shades          | TAS  | Base color mixed with white and black (12) |
+| Type                | Code | Description                                |
+| ------------------- | ---- | ------------------------------------------ |
+| Analogous           | ANA  | Adjacent colors on the color wheel         |
+| Complementary       | COM  | Opposed colors on the wheel                |
+| Split Complementary | SPL  | Opposed then bifurcated                    |
+| Triadic             | TRI  | Triangle arrangement on wheel              |
+| Tetradic            | TET  | Square arrangement on wheel                |
+| Tints & Shades      | TAS  | Base color mixed with white and black (12) |
 
 ## Palette Variations (Styles)
 
@@ -77,6 +77,7 @@ API-based system (Go fork of Color Name API) matches hex values to nearest color
 ## Design Philosophy
 
 Author's stated gripes with existing palette tools:
+
 - Poor palette quality
 - Difficult base color input
 - Limited export capabilities
@@ -90,7 +91,7 @@ Creator notes: "The best palettes will always be those created by someone with a
 - Built on **Color.js**
 - No monetization
 - Described as "version 1.0 done" — no further updates planned
-- References Josef Albers' *Interaction of Color* (1963)
+- References Josef Albers' _Interaction of Color_ (1963)
 
 ## Links
 

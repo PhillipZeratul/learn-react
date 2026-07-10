@@ -435,7 +435,7 @@ complement
   3
   4
   5
-  > >
+    > >
 
 ---
 
@@ -643,6 +643,6 @@ to each other
   3
   4
   5
-  > > Next:
-  > > Part 4: Additive Colour
-  > > Mixing
+    > > Next:
+    > > Part 4: Additive Colour
+    > > Mixing

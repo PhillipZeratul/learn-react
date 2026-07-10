@@ -27,8 +27,8 @@ But his goal seems to be to bridge the gap between what physics says, how pigmen
 - **Cheskin's transparent overlay** — screentone overlay on a printed wheel lets you see tones and shades, solving the problem that 2D wheels can only show 2 dimensions of color
 - **Tint / Shade / Tone** — Birren standardized these terms (1937): tint = color + white, shade = color + black, tone = color + gray. Still taught today.
 - **RYB→CMY paradigm shift** — both Cheskin and Birren knew CMY were the true subtractive primaries but handled the transition differently:
-  - **Birren:** magenta, yellow, turquoise (early career) → red, blue, yellow (late career, 1987 — gave up and reverted)
-  - **Cheskin:** "magenta red," "yellow," "green blue" — kept familiar color names as anchors for lay audiences
+    - **Birren:** magenta, yellow, turquoise (early career) → red, blue, yellow (late career, 1987 — gave up and reverted)
+    - **Cheskin:** "magenta red," "yellow," "green blue" — kept familiar color names as anchors for lay audiences
 - **Cheskin's spectral error** — placed magenta red at the end of the visible spectrum where red belongs; magenta is non-spectral (requires both ends of the spectrum). Likely a pedagogical compromise.
 - **Mid-century color consulting** — a crowded professional field: Cheskin, Faber Birren, Walter Granville, Margaret Hayden Rorke, Estelle Tennis all advised companies on color for marketing, interiors, and corporate applications
 

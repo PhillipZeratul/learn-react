@@ -18,9 +18,9 @@ If you need to use `hidden="until-found"` instead, follow these instructions:
 
 1. **Apply the attribute:** Add the `hidden="until-found"` HTML attribute directly to the elements containing the content that should be hidden from view.
 2. **Synchronize UI state:** If the interface has related states that depend on the content's visibility (e.g., updating ARIA attributes, toggling open/close CSS classes, or rotating accordion icons):
-   - You **MUST** add an event listener for the `beforematch` event.
-   - Register the `beforematch` event listener directly on the element carrying the `hidden="until-found"` attribute. Since the event bubbles, you may alternatively use event delegation by registering a single listener on a parent element (such as a tab container) to manage multiple hidden sections at once.
-   - Inside the event listener, execute the logic to synchronize related UI elements (such as closing other open tabs or changing the state of a toggle button).
+    - You **MUST** add an event listener for the `beforematch` event.
+    - Register the `beforematch` event listener directly on the element carrying the `hidden="until-found"` attribute. Since the event bubbles, you may alternatively use event delegation by registering a single listener on a parent element (such as a tab container) to manage multiple hidden sections at once.
+    - Inside the event listener, execute the logic to synchronize related UI elements (such as closing other open tabs or changing the state of a toggle button).
 
 ## Example code
 
@@ -30,8 +30,8 @@ If you need to use `hidden="until-found"` instead, follow these instructions:
 
 ```html
 <details>
-  <summary>Click to expand</summary>
-  <p>This content is visually hidden.</p>
+    <summary>Click to expand</summary>
+    <p>This content is visually hidden.</p>
 </details>
 ```
 
@@ -41,21 +41,21 @@ When handling mutually exclusive content regions, like an exclusive accordion, u
 
 ```html
 <div class="accordion-group">
-  <!-- The name attribute creates an exclusive disclosure group -->
-  <details class="disclosure" name="my-accordion">
-    <summary>Section 1</summary>
-    <p>Section 1 content</p>
-  </details>
+    <!-- The name attribute creates an exclusive disclosure group -->
+    <details class="disclosure" name="my-accordion">
+        <summary>Section 1</summary>
+        <p>Section 1 content</p>
+    </details>
 
-  <details class="disclosure" name="my-accordion" open>
-    <summary>Section 2</summary>
-    <p>Section 2 content</p>
-  </details>
+    <details class="disclosure" name="my-accordion" open>
+        <summary>Section 2</summary>
+        <p>Section 2 content</p>
+    </details>
 
-  <details class="disclosure" name="my-accordion">
-    <summary>Section 3</summary>
-    <p>Section 3 content</p>
-  </details>
+    <details class="disclosure" name="my-accordion">
+        <summary>Section 3</summary>
+        <p>Section 3 content</p>
+    </details>
 </div>
 ```
 
@@ -64,7 +64,7 @@ When handling mutually exclusive content regions, like an exclusive accordion, u
 ```html
 <!-- The browser automatically removes hidden="until-found" upon a search match -->
 <div class="hidden-container" hidden="until-found">
-  <p>This content is visually hidden.</p>
+    <p>This content is visually hidden.</p>
 </div>
 ```
 
@@ -74,36 +74,43 @@ When handling custom mutually exclusive regions controlled by external buttons, 
 
 ```html
 <div class="custom-accordion">
-  <div class="controls">
-    <button aria-expanded="true" aria-controls="panel-1" id="btn-1">Section 1</button>
-    <button aria-expanded="false" aria-controls="panel-2" id="btn-2">Section 2</button>
-  </div>
+    <div class="controls">
+        <button aria-expanded="true" aria-controls="panel-1" id="btn-1">
+            Section 1
+        </button>
+        <button aria-expanded="false" aria-controls="panel-2" id="btn-2">
+            Section 2
+        </button>
+    </div>
 
-  <div id="panel-1" class="panel">
-    <p>Section 1 content (visible)</p>
-  </div>
+    <div id="panel-1" class="panel">
+        <p>Section 1 content (visible)</p>
+    </div>
 
-  <div id="panel-2" class="panel" hidden="until-found">
-    <p>Section 2 content (hidden)</p>
-  </div>
+    <div id="panel-2" class="panel" hidden="until-found">
+        <p>Section 2 content (hidden)</p>
+    </div>
 </div>
 ```
 
 ```javascript
-const accordion = document.querySelector('.custom-accordion');
+const accordion = document.querySelector(".custom-accordion")
 
-accordion.addEventListener('beforematch', (e) => {
-  // Hide all panels and synchronize button states before the browser reveals the matched panel
-  accordion.querySelectorAll('.panel').forEach((panel) => {
-    if (panel !== e.target) {
-      panel.hidden = 'until-found';
-    }
-  });
-  accordion.querySelectorAll('button').forEach((btn) => {
-    const controls = btn.getAttribute('aria-controls');
-    btn.setAttribute('aria-expanded', controls === e.target.id ? 'true' : 'false');
-  });
-});
+accordion.addEventListener("beforematch", (e) => {
+    // Hide all panels and synchronize button states before the browser reveals the matched panel
+    accordion.querySelectorAll(".panel").forEach((panel) => {
+        if (panel !== e.target) {
+            panel.hidden = "until-found"
+        }
+    })
+    accordion.querySelectorAll("button").forEach((btn) => {
+        const controls = btn.getAttribute("aria-controls")
+        btn.setAttribute(
+            "aria-expanded",
+            controls === e.target.id ? "true" : "false"
+        )
+    })
+})
 ```
 
 ## Best practices for `hidden="until-found"`
@@ -124,12 +131,12 @@ The `hidden="until-found"` attribute is not yet Baseline Widely available, but i
 For standard UI elements like accordions or "Read more" sections, use JavaScript to feature-detect and show all content if the feature is unsupported.
 
 ```javascript
-if (!('onbeforematch' in HTMLElement.prototype)) {
-  // Expand all hidden content for unsupported browsers
-  document.querySelectorAll('[hidden="until-found"]').forEach((el) => {
-    el.removeAttribute('hidden');
-    // MANDATORY: also update any aria references to this element.
-  });
+if (!("onbeforematch" in HTMLElement.prototype)) {
+    // Expand all hidden content for unsupported browsers
+    document.querySelectorAll('[hidden="until-found"]').forEach((el) => {
+        el.removeAttribute("hidden")
+        // MANDATORY: also update any aria references to this element.
+    })
 }
 ```
 

@@ -28,10 +28,10 @@ Thanks for joining me and for talking about the triangle. Take care, bye bye.
 
 - **Color wheel distortion** — the circular layout warps the actual visual relationships between colors; mixing paths on a wheel bend confusingly toward center
 - **Triangle layout advantages:**
-  - CMY (true visual subtractive primaries) at corners
-  - Actual pigments plotted within the space
-  - Neutral point offset to account for wider mixing curves on the green side
-  - Straight lines between colors better predict mixture results
+    - CMY (true visual subtractive primaries) at corners
+    - Actual pigments plotted within the space
+    - Neutral point offset to account for wider mixing curves on the green side
+    - Straight lines between colors better predict mixture results
 - **Mixing path example:** cadmium red + yellow stays along the edge (vibrant), but slight deviation = traveling inward (losing chroma) — the triangle shows this honestly
 - **Quinacridone magenta + phthalo green:** seem complementary but actually produce muted purples/blues, not neutral gray — the triangle correctly predicts this
 

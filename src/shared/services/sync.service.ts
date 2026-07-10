@@ -778,11 +778,66 @@ export class SyncService {
                                 `SyncService: Sync error for ${table}:${id} (${action.action}):`,
                                 error
                             )
+
+                            const p = payload as Record<string, unknown>
+                            const itemName = (p.title ||
+                                p.name ||
+                                p.description ||
+                                id) as string
+                            const actionName =
+                                action.action === "INSERT"
+                                    ? "create"
+                                    : action.action === "UPDATE"
+                                      ? "update"
+                                      : "delete"
+
                             SyncService.notifyError(
-                                `SyncService: Sync error for ${table}:${id}`,
+                                `Failed to ${actionName} "${itemName}" in ${table}. Local changes reverted.`,
                                 error
                             )
-                            hasError = true
+
+                            // Remove the offending item from the queue to unblock sync
+                            await db.execute(
+                                "DELETE FROM sync_queue WHERE id = ?",
+                                [action.id]
+                            )
+
+                            // Restore local DB to authoritative server state
+                            if (action.action === "INSERT") {
+                                await db.execute(
+                                    `DELETE FROM ${table} WHERE id = ?`,
+                                    [id]
+                                )
+                                config?.removeFromStore(id as string)
+                            } else {
+                                const { data: serverData, error: fetchErr } =
+                                    await supabase!
+                                        .from(table as TableName)
+                                        .select()
+                                        .eq("id", id as string)
+                                        .single()
+
+                                if (!fetchErr && serverData && config) {
+                                    const entity = config.fromDb(
+                                        serverData as Record<string, unknown>
+                                    )
+                                    await db.execute(
+                                        config.saveSql,
+                                        config.toSqlValues(entity)
+                                    )
+                                    config.upsertInStore(entity)
+                                } else if (
+                                    fetchErr &&
+                                    fetchErr.code === "PGRST116"
+                                ) {
+                                    // Not found on server, delete locally
+                                    await db.execute(
+                                        `DELETE FROM ${table} WHERE id = ?`,
+                                        [id]
+                                    )
+                                    config?.removeFromStore(id as string)
+                                }
+                            }
                         } else if (serverRecord && config) {
                             const entity = config.fromDb(serverRecord)
                             console.log(

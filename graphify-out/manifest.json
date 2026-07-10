@@ -1,582 +1,582 @@
 {
-  "/Users/phillipzhang/Work/Web/learn-react/eslint.config.js": {
-    "mtime": 1777121749.1356184,
-    "hash": "9ca5afa2b0ff02b075ccb16e0e246f93"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/vite.config.ts": {
-    "mtime": 1778493373.635086,
-    "hash": "12899b7ae38791f132ce1156b07fb061"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/vitest.shims.d.ts": {
-    "mtime": 1778489390.4708858,
-    "hash": "651a08814b4b81cb8496b175118545fb"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/capacitor.config.ts": {
-    "mtime": 1778493369.9770296,
-    "hash": "81a38bedc760d81bce68e6162e71eb4b"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/seed.sql": {
-    "mtime": 1777121749.19573,
-    "hash": "a62c51ff2a48389daddd6e23bf73e327"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260425041915_fix_performance_issue.sql": {
-    "mtime": 1777121749.195124,
-    "hash": "d41d8cd98f00b204e9800998ecf8427e"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260425120000_add_routine_recurrence.sql": {
-    "mtime": 1777121749.1954646,
-    "hash": "c91011a53777bfb00d941ce4fc8445b3"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260425115823_fix_rls_performance_issue.sql": {
-    "mtime": 1777121749.1953034,
-    "hash": "15c24e97555f469fcc2464a2af6084b2"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260426101551_fix_rls_policy.sql": {
-    "mtime": 1777198994.059442,
-    "hash": "13ecd1858d1449c5a97dcee7a31c4af6"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260423100444_remote_schema.sql": {
-    "mtime": 1777121749.1948583,
-    "hash": "d50cf29b864e25505122f0f417507f6c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260511120000_add_routine_time_tracker_states.sql": {
-    "mtime": 1778487036.3635483,
-    "hash": "0f309c0b5d346f8cd31a6ace659ee377"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260513170000_add_tag_hierarchy_and_sorting.sql": {
-    "mtime": 1778666107.545882,
-    "hash": "138153dc7dc166c214a79161adb47f43"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/public/sqlite3.js": {
-    "mtime": 1777121749.1450925,
-    "hash": "17533d79e224de298596d2a820132117"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/capacitor.settings.gradle": {
-    "mtime": 1777121749.132519,
-    "hash": "7e44c776e1fdcbc628d65648f351a243"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/variables.gradle": {
-    "mtime": 1777121749.1351104,
-    "hash": "32293aeff620cc10298866858c22ddc9"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/gradlew": {
-    "mtime": 1777121749.134201,
-    "hash": "f2d3d383787f61a4a99710ee8d780434"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/build.gradle": {
-    "mtime": 1777121749.1323683,
-    "hash": "d0aeb50da62f42fd733fe18f4c22e135"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/settings.gradle": {
-    "mtime": 1777121749.1348782,
-    "hash": "155d4bee21b33f174f2735d59e0bf52c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/build.gradle": {
-    "mtime": 1777121749.120017,
-    "hash": "1ad0742defa88d2d5c8160abaadc1cd0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/capacitor.build.gradle": {
-    "mtime": 1777121749.1201603,
-    "hash": "896f9737d09a3199e87e050a2b187bc0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java": {
-    "mtime": 1777121749.120941,
-    "hash": "c777a4127ae7213f7da22c4105bdfeab"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java": {
-    "mtime": 1777121749.132182,
-    "hash": "3f8a2768101e4de10f606ea4516fd339"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/java/com/wutongonpaper/app/MainActivity.java": {
-    "mtime": 1777121749.1217873,
-    "hash": "778253a75758e9ad5577bfb1a461c6ac"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/build.rs": {
-    "mtime": 1777121749.157336,
-    "hash": "8e6c89bd412b755ef41bd9bb191f2e31"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/src/lib.rs": {
-    "mtime": 1777121749.1648788,
-    "hash": "a84628321b4b61431b9e094072d7d32a"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/src/main.rs": {
-    "mtime": 1777121749.1651049,
-    "hash": "a8e64e9b6bd150703cbc12bc0d188f24"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/App.tsx": {
-    "mtime": 1778493370.0116434,
-    "hash": "90226d95eefdba3939da80fb652e94d0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/main.tsx": {
-    "mtime": 1778495807.8675737,
-    "hash": "880bc4b0b0c0720eecc68d0f7483d4a4"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/vite-env.d.ts": {
-    "mtime": 1778493373.618504,
-    "hash": "fd4c76ee4c2de93d0a367ab132891690"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/stores/settings.store.ts": {
-    "mtime": 1778493372.2185256,
-    "hash": "86c16a31cfc5b653d8b2f50da9dc356a"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/components/SettingsMenu.tsx": {
-    "mtime": 1778493372.0989316,
-    "hash": "3da5071829fee1cad101dfd56fdc8fe1"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/components/TagManager.tsx": {
-    "mtime": 1778747901.8702455,
-    "hash": "8aef9077dfa6222e4cc7d86ec841b44d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/auth/stores/auth.store.ts": {
-    "mtime": 1778494190.9529932,
-    "hash": "741bb4f20ca43641e92a5180ea50cca6"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/auth/components/Auth.tsx": {
-    "mtime": 1778493856.039035,
-    "hash": "7c6a03b2f9bd44ea8b261068415d2dcc"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/drag.store.ts": {
-    "mtime": 1778489388.1136296,
-    "hash": "d3d700b90eb102e7d552e8abfcebc410"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/routine-time-tracker-state.store.ts": {
-    "mtime": 1778493371.8152375,
-    "hash": "15b6007450929ba433ea517351cc2e8a"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/routine-time-tracker-state.store.test.ts": {
-    "mtime": 1778493371.7937646,
-    "hash": "e4d0b1c3deff4094a8e1485d87118e4d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/routine-card.store.ts": {
-    "mtime": 1778493692.8222592,
-    "hash": "f5931424d76ff1b0f8473b6401d63ed9"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/time-tracker-card.store.ts": {
-    "mtime": 1778495218.5953488,
-    "hash": "3760457613d8d71db9bd4a0c4fd5e212"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/tag.store.ts": {
-    "mtime": 1778495276.7862852,
-    "hash": "accf274bd6c627b8847b1947f8a979ad"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/utils.test.ts": {
-    "mtime": 1778587705.5495687,
-    "hash": "c0af004835b2c246b8248f6a5f0af33d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/routine-expansion.ts": {
-    "mtime": 1778587290.9367418,
-    "hash": "9b44f3483d437e83417a6ca5ef4e4b68"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/utils.ts": {
-    "mtime": 1778669181.3101866,
-    "hash": "e256e2b8613bf45e45156a2382940200"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/routine-expansion.test.ts": {
-    "mtime": 1778587792.0072281,
-    "hash": "6950a79a50c02d64d6f43dc765545ceb"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/layout.ts": {
-    "mtime": 1778587274.1672375,
-    "hash": "3faf11c71a1677e7eb0221908d7a1215"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/time-tracker-card.model.ts": {
-    "mtime": 1778493371.6254644,
-    "hash": "9cd14ab1a2dc489e8bfeef15bab4afa0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker-state.model.test.ts": {
-    "mtime": 1778493371.4752688,
-    "hash": "aabef4d68c1897bb56ee167346e38de3"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker.model.ts": {
-    "mtime": 1778489387.5920367,
-    "hash": "5d7b239d540574e1397ecea474137502"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/tag.model.ts": {
-    "mtime": 1778667390.055058,
-    "hash": "e4d5051e5be63721bf7de5bef9a6e700"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker-state.model.ts": {
-    "mtime": 1778586194.5985057,
-    "hash": "47d8c1c2000daf0c356dee0c48136a66"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-card.model.ts": {
-    "mtime": 1778493371.4422941,
-    "hash": "a056c5f25324d4d62735d3a72cd8e0f9"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TaskCard.tsx": {
-    "mtime": 1778662873.8628674,
-    "hash": "e99446cd9b8d1263ecdef3a125c0ba6f"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/CurrentTimeIndicator.tsx": {
-    "mtime": 1778662802.4421685,
-    "hash": "78ad1a0d19eb824c8cf6dfd8fe629d33"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimelineGrid.tsx": {
-    "mtime": 1778493371.235745,
-    "hash": "c468af994a44a36d8124b5573d473f43"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/RoutineTimeTrackerWidget.tsx": {
-    "mtime": 1778825948.5791285,
-    "hash": "fdfe1b45cc63216768c23fca636172b0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/SaveChangeDialog.tsx": {
-    "mtime": 1778493370.8432038,
-    "hash": "235519673b3a31b2733d34d663288fbe"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/DateNavigator.tsx": {
-    "mtime": 1778493370.2017312,
-    "hash": "84b79007cc9f9f7f8dd28760de5d031b"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimeTrackerEditor.tsx": {
-    "mtime": 1778825926.822242,
-    "hash": "663853bc6a438eb4eb6cbdae886f2e09"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/RoutineEditor.tsx": {
-    "mtime": 1778661288.3238096,
-    "hash": "ee0056c0d4ef487d50c912a707595c9d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimeTrackerActionButton.tsx": {
-    "mtime": 1778662948.3982425,
-    "hash": "df8339be96f513e177e0aee31143df5e"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/services/routine-time-tracker.service.ts": {
-    "mtime": 1778496574.7980947,
-    "hash": "3aa5132f02f8f85fce0cce927fbc09e0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/services/routine-time-tracker.service.test.ts": {
-    "mtime": 1778660487.8951495,
-    "hash": "61e7e1788e8e2ce054aa6f393f07f912"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/shared/test/setup.ts": {
-    "mtime": 1778493373.352834,
-    "hash": "cf00cc7ea4b97300f4558ea02f41e47d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/shared/models/base.model.ts": {
-    "mtime": 1778493372.954516,
-    "hash": "362db7be6203ab2a894a21cc7cc1c29b"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/database-maintenance.service.ts": {
-    "mtime": 1778493373.1137857,
-    "hash": "5646aa44faf2c118e8ade5b7be59d80d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/sync.service.ts": {
-    "mtime": 1778668103.7897859,
-    "hash": "f9863eace3371d27b7afe2db3f0fdac1"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/sync.service.test.ts": {
-    "mtime": 1778660334.808712,
-    "hash": "3607f585b8bf9f09e90fcd1b698b5d10"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/components/ThemeProvider.tsx": {
-    "mtime": 1778493370.0668046,
-    "hash": "e81977e28036180defaa6724ae2ff601"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/components/ui/Button.tsx": {
-    "mtime": 1778493370.0900066,
-    "hash": "7225aa5b7ec9227e40685d1ab54c193f"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Button.stories.ts": {
-    "mtime": 1778493373.4163814,
-    "hash": "0cd3ac123b8de7820b1eb059efc55b89"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Page.stories.ts": {
-    "mtime": 1778493373.58778,
-    "hash": "927793d8af4b267144576610e30b21f7"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Header.tsx": {
-    "mtime": 1778493373.4852433,
-    "hash": "e2fa94757f40f236ff6b6cad19ac17f0"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Button.tsx": {
-    "mtime": 1778493373.4346647,
-    "hash": "a77d3dd420fda29d0499d28148da5329"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Page.tsx": {
-    "mtime": 1778493373.605265,
-    "hash": "b6c6a32bca3fa235b9788f6c929ed9ce"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Header.stories.ts": {
-    "mtime": 1778493373.454911,
-    "hash": "a1932dbda67d7220d3432b5cd6b482a2"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/utils.ts": {
-    "mtime": 1778493372.7440748,
-    "hash": "d0b9fdf4a3ce463b3d98e22e8289695c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/database.types.ts": {
-    "mtime": 1778666642.3375945,
-    "hash": "69b6e286ab56278d929cb3f8872ba4af"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/supabase.ts": {
-    "mtime": 1778493372.6403637,
-    "hash": "584a7ef222dceb2a965be32736f2d30d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/capacitor-sqlite.ts": {
-    "mtime": 1778493372.3205528,
-    "hash": "0fbdc60ab455f28eef3153bbe62c30c5"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/tauri-sqlite.ts": {
-    "mtime": 1778493372.4426494,
-    "hash": "f4d45271f2d738077e0050f1cc9a07b1"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/sqlite.ts": {
-    "mtime": 1778493372.417796,
-    "hash": "9762e30bae858feb80747f14b756cc33"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/types.ts": {
-    "mtime": 1778493372.4620261,
-    "hash": "eafdd0fd44c50d12c0a07baba7058767"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/sqlite-worker.ts": {
-    "mtime": 1778493372.379739,
-    "hash": "afe4ad0d83ac296bde459f69c41b41fd"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/web-sqlite.ts": {
-    "mtime": 1778493372.5136418,
-    "hash": "7cd8c3d81f1d24d3a8aedd2c33d9e23c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/index.html": {
-    "mtime": 1778303549.5986538,
-    "hash": "72e0f500efcf4cc8c74b9373f09144e4"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/README.md": {
-    "mtime": 1778142803.4481745,
-    "hash": "5e09c08ed2c935baaf92b93ea2ed0746"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/GEMINI.md": {
-    "mtime": 1778584033.4598367,
-    "hash": "da79aa9343cd2b362206f03762160abc"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/Configure.mdx": {
-    "mtime": 1777121749.1785133,
-    "hash": "4bac92ed33937ba7e60a184727f3069d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/public/vite.svg": {
-    "mtime": 1777121749.1554928,
-    "hash": "8e3a10e157f75ada21ab742c022d5430"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": {
-    "mtime": 1777121749.1280189,
-    "hash": "5b77e8aec8b17eed320a97567c7cb8bf"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
-    "mtime": 1777121749.1278381,
-    "hash": "7ed1b3739b83215d0c4a0b4a7f2dcab4"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
-    "mtime": 1777121749.1281748,
-    "hash": "a49547a32c7d9b529af607b033811d81"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-xxxhdpi/splash.png": {
-    "mtime": 1777121749.1254265,
-    "hash": "b5b1b22b59abe686c1df0d74a423d034"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": {
-    "mtime": 1777121749.1274345,
-    "hash": "73b1e06d769fa08a9c3b8328cc15fd75"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
-    "mtime": 1777121749.1272388,
-    "hash": "1956941339dd5fe36d5c66601c89a08d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
-    "mtime": 1777121749.127587,
-    "hash": "f43e5674865a00186dd76183cf1f2f8e"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-xhdpi/splash.png": {
-    "mtime": 1777121749.1229043,
-    "hash": "b8c72969bc1f78aab71a76035360d4af"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable/splash.png": {
-    "mtime": 1777121749.1263666,
-    "hash": "acc976d4a36479233371a53021525c0c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
-    "mtime": 1777121749.1303256,
-    "hash": "ed3696b7c52d9747411a475dbe3fa34a"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
-    "mtime": 1777121749.1300251,
-    "hash": "9e029293ab1ae8e3a6a7b7d0b7177e46"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
-    "mtime": 1777121749.130614,
-    "hash": "85addb4159ecd3f76f02fbacd5ec86de"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": {
-    "mtime": 1777121749.1294394,
-    "hash": "4e9584ecc16d1fc75afb798688ce576f"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
-    "mtime": 1777121749.1291828,
-    "hash": "a3285eeaedda8201f04e7737b9df8421"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
-    "mtime": 1777121749.1296716,
-    "hash": "14cde87848553e24d7106f56eb8ceb6f"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-hdpi/splash.png": {
-    "mtime": 1777121749.124022,
-    "hash": "5eb10d16c81338abe8bbc033d49638a8"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-mdpi/splash.png": {
-    "mtime": 1777121749.1243777,
-    "hash": "d855a76a5070c8e6fcfd83a27549bdce"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-mdpi/splash.png": {
-    "mtime": 1777121749.1226056,
-    "hash": "acc976d4a36479233371a53021525c0c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-hdpi/splash.png": {
-    "mtime": 1777121749.1223137,
-    "hash": "f7a80786dd355bd39014e58027aa6e19"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-xxhdpi/splash.png": {
-    "mtime": 1777121749.12324,
-    "hash": "f87e988387b07d843905f38b084929fb"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": {
-    "mtime": 1777121749.1286151,
-    "hash": "15cdded29b9877ac98c5931024c5da5d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
-    "mtime": 1777121749.1284199,
-    "hash": "5689511ee4e41a367d0342f37ac48bdf"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
-    "mtime": 1777121749.1288517,
-    "hash": "c890fa4af62a63486d5dea62441ce7ab"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-xxhdpi/splash.png": {
-    "mtime": 1777121749.125068,
-    "hash": "2c1b668364e815256f67b71dcdfa4d6e"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-xhdpi/splash.png": {
-    "mtime": 1777121749.1247482,
-    "hash": "df100b2a36bdb98b711cca58941728de"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-xxxhdpi/splash.png": {
-    "mtime": 1777121749.1236062,
-    "hash": "055a69553b16b0bf5f72094a2e459fc7"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/icon.png": {
-    "mtime": 1777121749.1645293,
-    "hash": "9fdc4367276aafdd2c05ac214e9553c7"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square30x30Logo.png": {
-    "mtime": 1777121749.159655,
-    "hash": "011e9cb456309157a9fc78c978248e00"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square150x150Logo.png": {
-    "mtime": 1777121749.1590688,
-    "hash": "084d20bce8096367fc694dfdf72c8ac5"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/StoreLogo.png": {
-    "mtime": 1777121749.1607919,
-    "hash": "387b412d411bbd532dd3302d3948bf0e"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square107x107Logo.png": {
-    "mtime": 1777121749.1586437,
-    "hash": "d4bc38359e2c01daa08354c55fa4df7c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square89x89Logo.png": {
-    "mtime": 1777121749.1606376,
-    "hash": "9f91ee8e1c1232ebde61c64d7923038f"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square310x310Logo.png": {
-    "mtime": 1777121749.1600773,
-    "hash": "832231852e8e683e6aa2b690d194bdd2"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square142x142Logo.png": {
-    "mtime": 1777121749.1588564,
-    "hash": "1e9c0358705085439e5c989fcbd6e988"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/128x128.png": {
-    "mtime": 1777121749.1578457,
-    "hash": "3a0071e4ad670fad0329d3a5e83d0bf9"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square284x284Logo.png": {
-    "mtime": 1777121749.159436,
-    "hash": "6a936fe84398f24b7a63a36bddfd58d7"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/32x32.png": {
-    "mtime": 1777121749.1584313,
-    "hash": "faf8ee6541b945b98db35239b8a75715"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square44x44Logo.png": {
-    "mtime": 1777121749.1602585,
-    "hash": "a06297a35014e770cc33756fafa3b3a8"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square71x71Logo.png": {
-    "mtime": 1777121749.160455,
-    "hash": "a3c80a0af688359094aa685881570eed"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/128x128@2x.png": {
-    "mtime": 1777121749.1582038,
-    "hash": "eab2be12c5f8aeaf104a4695dd9171df"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/testing.png": {
-    "mtime": 1777121749.1913795,
-    "hash": "e7775490f0c4d76407b3d632429a00ba"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/figma-plugin.png": {
-    "mtime": 1777121749.1886742,
-    "hash": "a5cacbfdd62896794b7ff1dd7bb1f392"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/github.svg": {
-    "mtime": 1777121749.1889386,
-    "hash": "b522f8894cddbca5531d9343c0e35d76"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/addon-library.png": {
-    "mtime": 1777121749.1842926,
-    "hash": "9e34676f985b1581d42d47fef5425187"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/accessibility.png": {
-    "mtime": 1777121749.1797488,
-    "hash": "1fa05b556b0e43b05b11a4d08d84f36c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/tutorials.svg": {
-    "mtime": 1777121749.1924403,
-    "hash": "9ef52728e46bb4c63f0f1e3fa5861f3a"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/context.png": {
-    "mtime": 1777121749.1858237,
-    "hash": "aca13835556255e2c24fdfa733ded23f"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/theming.png": {
-    "mtime": 1777121749.192196,
-    "hash": "afed910b763f2446abd568317d2fb93c"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/share.png": {
-    "mtime": 1777121749.189668,
-    "hash": "081c0e6b5243e695a874df6d77fa39dc"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/docs.png": {
-    "mtime": 1777121749.1880565,
-    "hash": "9058ccf5504337b36bfec10f162bef81"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/youtube.svg": {
-    "mtime": 1777121749.1930966,
-    "hash": "42e8d9907ff8affc79bc8562059b4638"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/styling.png": {
-    "mtime": 1777121749.190539,
-    "hash": "219057f206a890c82e43ad79c0b89616"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/discord.svg": {
-    "mtime": 1777121749.186006,
-    "hash": "c589ed2705d48fe97f2ea98be82dd94a"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/accessibility.svg": {
-    "mtime": 1777121749.1800735,
-    "hash": "e5564af3aea142c5f655bb918e36756d"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/assets.png": {
-    "mtime": 1777121749.18536,
-    "hash": "57835e2f38e15d8ff012804ed7c58ac5"
-  },
-  "/Users/phillipzhang/Work/Web/learn-react/src/assets/react.svg": {
-    "mtime": 1777121749.1660345,
-    "hash": "f0402b67b6ce880f65666bb49e841696"
-  }
+    "/Users/phillipzhang/Work/Web/learn-react/eslint.config.js": {
+        "mtime": 1777121749.1356184,
+        "hash": "9ca5afa2b0ff02b075ccb16e0e246f93"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/vite.config.ts": {
+        "mtime": 1778493373.635086,
+        "hash": "12899b7ae38791f132ce1156b07fb061"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/vitest.shims.d.ts": {
+        "mtime": 1778489390.4708858,
+        "hash": "651a08814b4b81cb8496b175118545fb"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/capacitor.config.ts": {
+        "mtime": 1778493369.9770296,
+        "hash": "81a38bedc760d81bce68e6162e71eb4b"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/seed.sql": {
+        "mtime": 1777121749.19573,
+        "hash": "a62c51ff2a48389daddd6e23bf73e327"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260425041915_fix_performance_issue.sql": {
+        "mtime": 1777121749.195124,
+        "hash": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260425120000_add_routine_recurrence.sql": {
+        "mtime": 1777121749.1954646,
+        "hash": "c91011a53777bfb00d941ce4fc8445b3"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260425115823_fix_rls_performance_issue.sql": {
+        "mtime": 1777121749.1953034,
+        "hash": "15c24e97555f469fcc2464a2af6084b2"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260426101551_fix_rls_policy.sql": {
+        "mtime": 1777198994.059442,
+        "hash": "13ecd1858d1449c5a97dcee7a31c4af6"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260423100444_remote_schema.sql": {
+        "mtime": 1777121749.1948583,
+        "hash": "d50cf29b864e25505122f0f417507f6c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260511120000_add_routine_time_tracker_states.sql": {
+        "mtime": 1778487036.3635483,
+        "hash": "0f309c0b5d346f8cd31a6ace659ee377"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/supabase/migrations/20260513170000_add_tag_hierarchy_and_sorting.sql": {
+        "mtime": 1778666107.545882,
+        "hash": "138153dc7dc166c214a79161adb47f43"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/public/sqlite3.js": {
+        "mtime": 1777121749.1450925,
+        "hash": "17533d79e224de298596d2a820132117"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/capacitor.settings.gradle": {
+        "mtime": 1777121749.132519,
+        "hash": "7e44c776e1fdcbc628d65648f351a243"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/variables.gradle": {
+        "mtime": 1777121749.1351104,
+        "hash": "32293aeff620cc10298866858c22ddc9"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/gradlew": {
+        "mtime": 1777121749.134201,
+        "hash": "f2d3d383787f61a4a99710ee8d780434"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/build.gradle": {
+        "mtime": 1777121749.1323683,
+        "hash": "d0aeb50da62f42fd733fe18f4c22e135"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/settings.gradle": {
+        "mtime": 1777121749.1348782,
+        "hash": "155d4bee21b33f174f2735d59e0bf52c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/build.gradle": {
+        "mtime": 1777121749.120017,
+        "hash": "1ad0742defa88d2d5c8160abaadc1cd0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/capacitor.build.gradle": {
+        "mtime": 1777121749.1201603,
+        "hash": "896f9737d09a3199e87e050a2b187bc0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java": {
+        "mtime": 1777121749.120941,
+        "hash": "c777a4127ae7213f7da22c4105bdfeab"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java": {
+        "mtime": 1777121749.132182,
+        "hash": "3f8a2768101e4de10f606ea4516fd339"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/java/com/wutongonpaper/app/MainActivity.java": {
+        "mtime": 1777121749.1217873,
+        "hash": "778253a75758e9ad5577bfb1a461c6ac"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/build.rs": {
+        "mtime": 1777121749.157336,
+        "hash": "8e6c89bd412b755ef41bd9bb191f2e31"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/src/lib.rs": {
+        "mtime": 1777121749.1648788,
+        "hash": "a84628321b4b61431b9e094072d7d32a"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/src/main.rs": {
+        "mtime": 1777121749.1651049,
+        "hash": "a8e64e9b6bd150703cbc12bc0d188f24"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/App.tsx": {
+        "mtime": 1778493370.0116434,
+        "hash": "90226d95eefdba3939da80fb652e94d0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/main.tsx": {
+        "mtime": 1778495807.8675737,
+        "hash": "880bc4b0b0c0720eecc68d0f7483d4a4"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/vite-env.d.ts": {
+        "mtime": 1778493373.618504,
+        "hash": "fd4c76ee4c2de93d0a367ab132891690"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/stores/settings.store.ts": {
+        "mtime": 1778493372.2185256,
+        "hash": "86c16a31cfc5b653d8b2f50da9dc356a"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/components/SettingsMenu.tsx": {
+        "mtime": 1778493372.0989316,
+        "hash": "3da5071829fee1cad101dfd56fdc8fe1"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/settings/components/TagManager.tsx": {
+        "mtime": 1778747901.8702455,
+        "hash": "8aef9077dfa6222e4cc7d86ec841b44d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/auth/stores/auth.store.ts": {
+        "mtime": 1778494190.9529932,
+        "hash": "741bb4f20ca43641e92a5180ea50cca6"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/auth/components/Auth.tsx": {
+        "mtime": 1778493856.039035,
+        "hash": "7c6a03b2f9bd44ea8b261068415d2dcc"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/drag.store.ts": {
+        "mtime": 1778489388.1136296,
+        "hash": "d3d700b90eb102e7d552e8abfcebc410"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/routine-time-tracker-state.store.ts": {
+        "mtime": 1778493371.8152375,
+        "hash": "15b6007450929ba433ea517351cc2e8a"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/routine-time-tracker-state.store.test.ts": {
+        "mtime": 1778493371.7937646,
+        "hash": "e4d0b1c3deff4094a8e1485d87118e4d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/routine-card.store.ts": {
+        "mtime": 1778493692.8222592,
+        "hash": "f5931424d76ff1b0f8473b6401d63ed9"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/time-tracker-card.store.ts": {
+        "mtime": 1778495218.5953488,
+        "hash": "3760457613d8d71db9bd4a0c4fd5e212"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/stores/tag.store.ts": {
+        "mtime": 1778495276.7862852,
+        "hash": "accf274bd6c627b8847b1947f8a979ad"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/utils.test.ts": {
+        "mtime": 1778587705.5495687,
+        "hash": "c0af004835b2c246b8248f6a5f0af33d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/routine-expansion.ts": {
+        "mtime": 1778587290.9367418,
+        "hash": "9b44f3483d437e83417a6ca5ef4e4b68"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/utils.ts": {
+        "mtime": 1778669181.3101866,
+        "hash": "e256e2b8613bf45e45156a2382940200"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/routine-expansion.test.ts": {
+        "mtime": 1778587792.0072281,
+        "hash": "6950a79a50c02d64d6f43dc765545ceb"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/utils/layout.ts": {
+        "mtime": 1778587274.1672375,
+        "hash": "3faf11c71a1677e7eb0221908d7a1215"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/time-tracker-card.model.ts": {
+        "mtime": 1778493371.6254644,
+        "hash": "9cd14ab1a2dc489e8bfeef15bab4afa0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker-state.model.test.ts": {
+        "mtime": 1778493371.4752688,
+        "hash": "aabef4d68c1897bb56ee167346e38de3"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker.model.ts": {
+        "mtime": 1778489387.5920367,
+        "hash": "5d7b239d540574e1397ecea474137502"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/tag.model.ts": {
+        "mtime": 1778667390.055058,
+        "hash": "e4d5051e5be63721bf7de5bef9a6e700"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-time-tracker-state.model.ts": {
+        "mtime": 1778586194.5985057,
+        "hash": "47d8c1c2000daf0c356dee0c48136a66"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/models/routine-card.model.ts": {
+        "mtime": 1778493371.4422941,
+        "hash": "a056c5f25324d4d62735d3a72cd8e0f9"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TaskCard.tsx": {
+        "mtime": 1778662873.8628674,
+        "hash": "e99446cd9b8d1263ecdef3a125c0ba6f"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/CurrentTimeIndicator.tsx": {
+        "mtime": 1778662802.4421685,
+        "hash": "78ad1a0d19eb824c8cf6dfd8fe629d33"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimelineGrid.tsx": {
+        "mtime": 1778493371.235745,
+        "hash": "c468af994a44a36d8124b5573d473f43"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/RoutineTimeTrackerWidget.tsx": {
+        "mtime": 1778825948.5791285,
+        "hash": "fdfe1b45cc63216768c23fca636172b0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/SaveChangeDialog.tsx": {
+        "mtime": 1778493370.8432038,
+        "hash": "235519673b3a31b2733d34d663288fbe"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/DateNavigator.tsx": {
+        "mtime": 1778493370.2017312,
+        "hash": "84b79007cc9f9f7f8dd28760de5d031b"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimeTrackerEditor.tsx": {
+        "mtime": 1778825926.822242,
+        "hash": "663853bc6a438eb4eb6cbdae886f2e09"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/RoutineEditor.tsx": {
+        "mtime": 1778661288.3238096,
+        "hash": "ee0056c0d4ef487d50c912a707595c9d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/components/TimeTrackerActionButton.tsx": {
+        "mtime": 1778662948.3982425,
+        "hash": "df8339be96f513e177e0aee31143df5e"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/services/routine-time-tracker.service.ts": {
+        "mtime": 1778496574.7980947,
+        "hash": "3aa5132f02f8f85fce0cce927fbc09e0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/features/routine-time-tracker/services/routine-time-tracker.service.test.ts": {
+        "mtime": 1778660487.8951495,
+        "hash": "61e7e1788e8e2ce054aa6f393f07f912"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/shared/test/setup.ts": {
+        "mtime": 1778493373.352834,
+        "hash": "cf00cc7ea4b97300f4558ea02f41e47d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/shared/models/base.model.ts": {
+        "mtime": 1778493372.954516,
+        "hash": "362db7be6203ab2a894a21cc7cc1c29b"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/database-maintenance.service.ts": {
+        "mtime": 1778493373.1137857,
+        "hash": "5646aa44faf2c118e8ade5b7be59d80d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/sync.service.ts": {
+        "mtime": 1778668103.7897859,
+        "hash": "f9863eace3371d27b7afe2db3f0fdac1"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/shared/services/sync.service.test.ts": {
+        "mtime": 1778660334.808712,
+        "hash": "3607f585b8bf9f09e90fcd1b698b5d10"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/components/ThemeProvider.tsx": {
+        "mtime": 1778493370.0668046,
+        "hash": "e81977e28036180defaa6724ae2ff601"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/components/ui/Button.tsx": {
+        "mtime": 1778493370.0900066,
+        "hash": "7225aa5b7ec9227e40685d1ab54c193f"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Button.stories.ts": {
+        "mtime": 1778493373.4163814,
+        "hash": "0cd3ac123b8de7820b1eb059efc55b89"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Page.stories.ts": {
+        "mtime": 1778493373.58778,
+        "hash": "927793d8af4b267144576610e30b21f7"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Header.tsx": {
+        "mtime": 1778493373.4852433,
+        "hash": "e2fa94757f40f236ff6b6cad19ac17f0"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Button.tsx": {
+        "mtime": 1778493373.4346647,
+        "hash": "a77d3dd420fda29d0499d28148da5329"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Page.tsx": {
+        "mtime": 1778493373.605265,
+        "hash": "b6c6a32bca3fa235b9788f6c929ed9ce"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Header.stories.ts": {
+        "mtime": 1778493373.454911,
+        "hash": "a1932dbda67d7220d3432b5cd6b482a2"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/utils.ts": {
+        "mtime": 1778493372.7440748,
+        "hash": "d0b9fdf4a3ce463b3d98e22e8289695c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/database.types.ts": {
+        "mtime": 1778666642.3375945,
+        "hash": "69b6e286ab56278d929cb3f8872ba4af"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/supabase.ts": {
+        "mtime": 1778493372.6403637,
+        "hash": "584a7ef222dceb2a965be32736f2d30d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/capacitor-sqlite.ts": {
+        "mtime": 1778493372.3205528,
+        "hash": "0fbdc60ab455f28eef3153bbe62c30c5"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/tauri-sqlite.ts": {
+        "mtime": 1778493372.4426494,
+        "hash": "f4d45271f2d738077e0050f1cc9a07b1"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/sqlite.ts": {
+        "mtime": 1778493372.417796,
+        "hash": "9762e30bae858feb80747f14b756cc33"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/types.ts": {
+        "mtime": 1778493372.4620261,
+        "hash": "eafdd0fd44c50d12c0a07baba7058767"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/sqlite-worker.ts": {
+        "mtime": 1778493372.379739,
+        "hash": "afe4ad0d83ac296bde459f69c41b41fd"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/lib/db/web-sqlite.ts": {
+        "mtime": 1778493372.5136418,
+        "hash": "7cd8c3d81f1d24d3a8aedd2c33d9e23c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/index.html": {
+        "mtime": 1778303549.5986538,
+        "hash": "72e0f500efcf4cc8c74b9373f09144e4"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/README.md": {
+        "mtime": 1778142803.4481745,
+        "hash": "5e09c08ed2c935baaf92b93ea2ed0746"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/GEMINI.md": {
+        "mtime": 1778584033.4598367,
+        "hash": "da79aa9343cd2b362206f03762160abc"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/Configure.mdx": {
+        "mtime": 1777121749.1785133,
+        "hash": "4bac92ed33937ba7e60a184727f3069d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/public/vite.svg": {
+        "mtime": 1777121749.1554928,
+        "hash": "8e3a10e157f75ada21ab742c022d5430"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": {
+        "mtime": 1777121749.1280189,
+        "hash": "5b77e8aec8b17eed320a97567c7cb8bf"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+        "mtime": 1777121749.1278381,
+        "hash": "7ed1b3739b83215d0c4a0b4a7f2dcab4"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
+        "mtime": 1777121749.1281748,
+        "hash": "a49547a32c7d9b529af607b033811d81"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-xxxhdpi/splash.png": {
+        "mtime": 1777121749.1254265,
+        "hash": "b5b1b22b59abe686c1df0d74a423d034"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": {
+        "mtime": 1777121749.1274345,
+        "hash": "73b1e06d769fa08a9c3b8328cc15fd75"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+        "mtime": 1777121749.1272388,
+        "hash": "1956941339dd5fe36d5c66601c89a08d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
+        "mtime": 1777121749.127587,
+        "hash": "f43e5674865a00186dd76183cf1f2f8e"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-xhdpi/splash.png": {
+        "mtime": 1777121749.1229043,
+        "hash": "b8c72969bc1f78aab71a76035360d4af"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable/splash.png": {
+        "mtime": 1777121749.1263666,
+        "hash": "acc976d4a36479233371a53021525c0c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
+        "mtime": 1777121749.1303256,
+        "hash": "ed3696b7c52d9747411a475dbe3fa34a"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+        "mtime": 1777121749.1300251,
+        "hash": "9e029293ab1ae8e3a6a7b7d0b7177e46"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
+        "mtime": 1777121749.130614,
+        "hash": "85addb4159ecd3f76f02fbacd5ec86de"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": {
+        "mtime": 1777121749.1294394,
+        "hash": "4e9584ecc16d1fc75afb798688ce576f"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+        "mtime": 1777121749.1291828,
+        "hash": "a3285eeaedda8201f04e7737b9df8421"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
+        "mtime": 1777121749.1296716,
+        "hash": "14cde87848553e24d7106f56eb8ceb6f"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-hdpi/splash.png": {
+        "mtime": 1777121749.124022,
+        "hash": "5eb10d16c81338abe8bbc033d49638a8"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-mdpi/splash.png": {
+        "mtime": 1777121749.1243777,
+        "hash": "d855a76a5070c8e6fcfd83a27549bdce"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-mdpi/splash.png": {
+        "mtime": 1777121749.1226056,
+        "hash": "acc976d4a36479233371a53021525c0c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-hdpi/splash.png": {
+        "mtime": 1777121749.1223137,
+        "hash": "f7a80786dd355bd39014e58027aa6e19"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-xxhdpi/splash.png": {
+        "mtime": 1777121749.12324,
+        "hash": "f87e988387b07d843905f38b084929fb"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": {
+        "mtime": 1777121749.1286151,
+        "hash": "15cdded29b9877ac98c5931024c5da5d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+        "mtime": 1777121749.1284199,
+        "hash": "5689511ee4e41a367d0342f37ac48bdf"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
+        "mtime": 1777121749.1288517,
+        "hash": "c890fa4af62a63486d5dea62441ce7ab"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-xxhdpi/splash.png": {
+        "mtime": 1777121749.125068,
+        "hash": "2c1b668364e815256f67b71dcdfa4d6e"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-port-xhdpi/splash.png": {
+        "mtime": 1777121749.1247482,
+        "hash": "df100b2a36bdb98b711cca58941728de"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/android/app/src/main/res/drawable-land-xxxhdpi/splash.png": {
+        "mtime": 1777121749.1236062,
+        "hash": "055a69553b16b0bf5f72094a2e459fc7"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/icon.png": {
+        "mtime": 1777121749.1645293,
+        "hash": "9fdc4367276aafdd2c05ac214e9553c7"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square30x30Logo.png": {
+        "mtime": 1777121749.159655,
+        "hash": "011e9cb456309157a9fc78c978248e00"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square150x150Logo.png": {
+        "mtime": 1777121749.1590688,
+        "hash": "084d20bce8096367fc694dfdf72c8ac5"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/StoreLogo.png": {
+        "mtime": 1777121749.1607919,
+        "hash": "387b412d411bbd532dd3302d3948bf0e"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square107x107Logo.png": {
+        "mtime": 1777121749.1586437,
+        "hash": "d4bc38359e2c01daa08354c55fa4df7c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square89x89Logo.png": {
+        "mtime": 1777121749.1606376,
+        "hash": "9f91ee8e1c1232ebde61c64d7923038f"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square310x310Logo.png": {
+        "mtime": 1777121749.1600773,
+        "hash": "832231852e8e683e6aa2b690d194bdd2"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square142x142Logo.png": {
+        "mtime": 1777121749.1588564,
+        "hash": "1e9c0358705085439e5c989fcbd6e988"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/128x128.png": {
+        "mtime": 1777121749.1578457,
+        "hash": "3a0071e4ad670fad0329d3a5e83d0bf9"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square284x284Logo.png": {
+        "mtime": 1777121749.159436,
+        "hash": "6a936fe84398f24b7a63a36bddfd58d7"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/32x32.png": {
+        "mtime": 1777121749.1584313,
+        "hash": "faf8ee6541b945b98db35239b8a75715"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square44x44Logo.png": {
+        "mtime": 1777121749.1602585,
+        "hash": "a06297a35014e770cc33756fafa3b3a8"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/Square71x71Logo.png": {
+        "mtime": 1777121749.160455,
+        "hash": "a3c80a0af688359094aa685881570eed"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src-tauri/icons/128x128@2x.png": {
+        "mtime": 1777121749.1582038,
+        "hash": "eab2be12c5f8aeaf104a4695dd9171df"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/testing.png": {
+        "mtime": 1777121749.1913795,
+        "hash": "e7775490f0c4d76407b3d632429a00ba"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/figma-plugin.png": {
+        "mtime": 1777121749.1886742,
+        "hash": "a5cacbfdd62896794b7ff1dd7bb1f392"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/github.svg": {
+        "mtime": 1777121749.1889386,
+        "hash": "b522f8894cddbca5531d9343c0e35d76"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/addon-library.png": {
+        "mtime": 1777121749.1842926,
+        "hash": "9e34676f985b1581d42d47fef5425187"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/accessibility.png": {
+        "mtime": 1777121749.1797488,
+        "hash": "1fa05b556b0e43b05b11a4d08d84f36c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/tutorials.svg": {
+        "mtime": 1777121749.1924403,
+        "hash": "9ef52728e46bb4c63f0f1e3fa5861f3a"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/context.png": {
+        "mtime": 1777121749.1858237,
+        "hash": "aca13835556255e2c24fdfa733ded23f"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/theming.png": {
+        "mtime": 1777121749.192196,
+        "hash": "afed910b763f2446abd568317d2fb93c"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/share.png": {
+        "mtime": 1777121749.189668,
+        "hash": "081c0e6b5243e695a874df6d77fa39dc"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/docs.png": {
+        "mtime": 1777121749.1880565,
+        "hash": "9058ccf5504337b36bfec10f162bef81"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/youtube.svg": {
+        "mtime": 1777121749.1930966,
+        "hash": "42e8d9907ff8affc79bc8562059b4638"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/styling.png": {
+        "mtime": 1777121749.190539,
+        "hash": "219057f206a890c82e43ad79c0b89616"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/discord.svg": {
+        "mtime": 1777121749.186006,
+        "hash": "c589ed2705d48fe97f2ea98be82dd94a"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/accessibility.svg": {
+        "mtime": 1777121749.1800735,
+        "hash": "e5564af3aea142c5f655bb918e36756d"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/stories/assets/assets.png": {
+        "mtime": 1777121749.18536,
+        "hash": "57835e2f38e15d8ff012804ed7c58ac5"
+    },
+    "/Users/phillipzhang/Work/Web/learn-react/src/assets/react.svg": {
+        "mtime": 1777121749.1660345,
+        "hash": "f0402b67b6ce880f65666bb49e841696"
+    }
 }

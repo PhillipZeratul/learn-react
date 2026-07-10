@@ -5,8 +5,8 @@ When the `<dialog>` element was first introduced, it could be dismissed with the
 ```html
 <!-- MANDATORY: must be opened with either `showModal()` with JavaScript or the `show-modal` command using declarative command invokers in order respond to close requests including platform-specific controls. -->
 <dialog aria-labelledby="example">
-  <h1 id="example">Example</h1>
-  <p>Modal that can be dismissed with close requests.</p>
+    <h1 id="example">Example</h1>
+    <p>Modal that can be dismissed with close requests.</p>
 </dialog>
 ```
 
@@ -15,8 +15,8 @@ When opened in a modal state, a dialog without the `closedby` attribute responds
 ```html
 <!-- This is unnecessary as it is the default behavior for modal dialogs -->
 <dialog closedby="closerequest" aria-labelledby="example">
-  <h1 id="example">Example</h1>
-  <p>Modal that can be dismissed with close requests.</p>
+    <h1 id="example">Example</h1>
+    <p>Modal that can be dismissed with close requests.</p>
 </dialog>
 ```
 
@@ -24,8 +24,8 @@ If you also want “light dismiss” behavior, then you must set `closedby` to `
 
 ```html
 <dialog closedby="any" aria-labelledby="example">
-  <h1 id="example">Example</h1>
-  <p>Modal that can be dismissed with close requests and light dismiss.</p>
+    <h1 id="example">Example</h1>
+    <p>Modal that can be dismissed with close requests and light dismiss.</p>
 </dialog>
 ```
 

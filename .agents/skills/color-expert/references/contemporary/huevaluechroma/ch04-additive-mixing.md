@@ -154,7 +154,7 @@ Which precise hues are optimal as additive primaries depends on the nature and p
    3
    4
    5
-   > >
+    > >
 
 ---
 

@@ -23,11 +23,11 @@ And it isn't until 1907 when this editor or one of his writers working for him, 
 - **Zander's 1904 patent** used "Majenta" even earlier
 - **The term "magenta"** existed since 1850s as an aniline dye name (named after the Battle of Magenta, 1859)
 - **Before standardization**, the subtractive primary was called:
-  - "Bright crimson"
-  - "Pink" (William Benson, 1868)
-  - "Reddish white"
-  - "Purpur" (German: purple)
-  - "Fuchsine" / "Nachtrosa"
+    - "Bright crimson"
+    - "Pink" (William Benson, 1868)
+    - "Reddish white"
+    - "Purpur" (German: purple)
+    - "Fuchsine" / "Nachtrosa"
 - **William Benson (1868)** called the three subtractive primaries: **Seagreen, Pink, and Yellow** — correct hues, different names
 - **RYB color wheels** date back to Moses Harris (1770s)
 - **Correct subtractive primaries** (CMY) discovered mid-19th century, but naming took ~50 years to settle

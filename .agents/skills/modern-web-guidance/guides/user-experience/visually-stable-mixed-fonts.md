@@ -14,12 +14,12 @@ Using `from-font` is the most robust approach. It extracts the aspect ratio of t
 
 ```css
 .content-area {
-  font-family: "MyCustomWebFont";
-  /* Automatically extract and apply x-height ratio from MyCustomWebFont */
-  font-size-adjust: from-font;
+    font-family: "MyCustomWebFont";
+    /* Automatically extract and apply x-height ratio from MyCustomWebFont */
+    font-size-adjust: from-font;
 }
-.content-area span{
-  font-family: "MyOtherCustomWebFont"
+.content-area span {
+    font-family: "MyOtherCustomWebFont";
 }
 ```
 
@@ -28,13 +28,13 @@ Using `from-font` is the most robust approach. It extracts the aspect ratio of t
 When the font to adjust is not a child of the font to base the size on, specify a value to adjust the x-height by.
 
 ```css
-.theme{
-  font-family: Verdana, sans-serif;
+.theme {
+    font-family: Verdana, sans-serif;
 }
-.theme.alternate{
-  font-family: Times;
-  /* Set to the aspect ratio (x-height / font-size) of the primary font */
-  font-size-adjust: 0.51;
+.theme.alternate {
+    font-family: Times;
+    /* Set to the aspect ratio (x-height / font-size) of the primary font */
+    font-size-adjust: 0.51;
 }
 ```
 
@@ -52,10 +52,10 @@ Supported by: Chrome 127 (Jul 2024), Edge 127 (Jul 2024), Firefox 118 (Sep 2023)
 ```css
 /* Feature detection for font-size-adjust */
 @supports not (font-size-adjust: from-font) {
-  .content-area {
-    /* Manual adjustment for browsers without support (if needed) */
-    line-height: 1.6;
-    font-size: 1.2rem;
-  }
+    .content-area {
+        /* Manual adjustment for browsers without support (if needed) */
+        line-height: 1.6;
+        font-size: 1.2rem;
+    }
 }
 ```

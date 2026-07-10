@@ -21,34 +21,34 @@ TypeScript color management framework that works like a **smart, interconnected 
 ## API
 
 ```typescript
-import { ColorRouter } from "color-router";
-import { ColorRenderer } from "color-router/renderers";
+import { ColorRouter } from "color-router"
+import { ColorRenderer } from "color-router/renderers"
 
-const router = new ColorRouter();
+const router = new ColorRouter()
 
 // Define colors
-router.createPalette("base");
-router.define("base.primary", "#3498db");
-router.define("base.text", router.ref("base.primary")); // linked!
+router.createPalette("base")
+router.define("base.primary", "#3498db")
+router.define("base.text", router.ref("base.primary")) // linked!
 
 // Functions
-router.define("base.hover", router.func("darken", "base.primary", 0.1));
+router.define("base.hover", router.func("darken", "base.primary", 0.1))
 router.define(
-  "base.contrast",
-  router.func("bestContrastWith", "base.primary", "base"),
-);
+    "base.contrast",
+    router.func("bestContrastWith", "base.primary", "base")
+)
 
 // Palette inheritance
 router.createPalette("dark", {
-  extends: "light",
-  overrides: {
-    background: router.ref("base.black"),
-    text: router.ref("base.white"),
-  },
-});
+    extends: "light",
+    overrides: {
+        background: router.ref("base.black"),
+        text: router.ref("base.white"),
+    },
+})
 
 // Change base.primary → everything updates automatically
-router.define("base.primary", "#e74c3c");
+router.define("base.primary", "#e74c3c")
 ```
 
 ## Built-in Functions
@@ -70,12 +70,12 @@ router.define("base.primary", "#e74c3c");
 
 ```css
 :root {
-  --base-primary: #0066cc;
-  --light-mixed: color-mix(
-    in lab,
-    var(--light-primary) 30%,
-    var(--base-orange)
-  );
+    --base-primary: #0066cc;
+    --light-mixed: color-mix(
+        in lab,
+        var(--light-primary) 30%,
+        var(--base-orange)
+    );
 }
 ```
 
@@ -86,10 +86,10 @@ router.define("base.primary", "#e74c3c");
 ## Dependency Graph Analysis
 
 ```typescript
-const graph = router.getDependencyGraph();
-graph.dfsTraversal("brand.primary"); // depth-first
-graph.findShortestPath("brand.primary", "btn.text"); // path between colors
-graph.hasCycles(); // detect circular deps
+const graph = router.getDependencyGraph()
+graph.dfsTraversal("brand.primary") // depth-first
+graph.findShortestPath("brand.primary", "btn.text") // path between colors
+graph.hasCycles() // detect circular deps
 ```
 
 ## Why It Matters for Design Systems

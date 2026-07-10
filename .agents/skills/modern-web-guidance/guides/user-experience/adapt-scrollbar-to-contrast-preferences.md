@@ -13,21 +13,21 @@ OPTIONAL: Use a `@media (prefers-contrast: more)` block to define dark, distinct
 ```css
 /* Define default standard colors as variables */
 .scroller {
-  --scrollbar-thumb: #bbb;
-  --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: #bbb;
+    --scrollbar-track: #f1f1f1;
 
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-  scrollbar-width: thin;
-  scrollbar-gutter: stable;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
 }
 
 /* OPTIONAL: Provide clear, high-contrast overrides */
 @media (prefers-contrast: more) {
-  .scroller {
-    /* Use extremely distinct colors like solid black against white */
-    --scrollbar-thumb: #000000;
-    --scrollbar-track: #ffffff;
-  }
+    .scroller {
+        /* Use extremely distinct colors like solid black against white */
+        --scrollbar-thumb: #000000;
+        --scrollbar-track: #ffffff;
+    }
 }
 ```
 
@@ -56,19 +56,18 @@ If you are using custom properties to define colors, these will cascade to the l
 ```css
 /* Legacy fallback for WebKit/Blink browsers */
 @supports not (scrollbar-color: auto) {
-  .scroller::-webkit-scrollbar {
-    /* Must define base size in WebKit for custom colors to be visual */
-    width: 12px;
-    height: 12px;
-  }
+    .scroller::-webkit-scrollbar {
+        /* Must define base size in WebKit for custom colors to be visual */
+        width: 12px;
+        height: 12px;
+    }
 
-  .scroller::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-  }
+    .scroller::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+    }
 
-  .scroller::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
-  }
+    .scroller::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+    }
 }
 ```
-

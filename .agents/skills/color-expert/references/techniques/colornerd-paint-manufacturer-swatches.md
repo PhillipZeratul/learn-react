@@ -1,7 +1,7 @@
 # colornerd — 29,875 Paint Manufacturer Color Swatches
 
 **Source:** [GitHub — jpederson/colornerd](https://github.com/jpederson/colornerd)
-**Author:** James Pederson 
+**Author:** James Pederson
 **npm:** `colornerd` | **Stars:** 86
 **Picker:** https://jpederson.com/colornerd/
 
@@ -32,19 +32,19 @@ Library of **29,875 color swatches** from 12 major paint and color manufacturers
 // SCSS
 @include "node_modules/colornerd/scss/colornerd";
 a {
-  color: hks("36-K");
+    color: hks("36-K");
 }
 a {
-  color: benjamin-moore("HC-172");
+    color: benjamin-moore("HC-172");
 }
 a {
-  color: sherwin-williams("SW 6258");
+    color: sherwin-williams("SW 6258");
 }
 ```
 
 ```javascript
 // JSON
-import colors from "colornerd/json/benjamin-moore.json";
+import colors from "colornerd/json/benjamin-moore.json"
 ```
 
 Also available as CSV for spreadsheet/data analysis.

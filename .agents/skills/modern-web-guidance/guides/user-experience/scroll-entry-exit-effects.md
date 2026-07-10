@@ -10,23 +10,26 @@ To add entry and exit effects to an element, you need to combine a few CSS prope
 
     ```css
     @keyframes slide-in {
-      from { transform: translateX(-100%); }
+        from {
+            transform: translateX(-100%);
+        }
     }
     @keyframes slide-out {
-      to { transform: translateX(100%); }
+        to {
+            transform: translateX(100%);
+        }
     }
     ```
 
 2.  **Attach the entry and exit keyframes to the element.** You can do this by defining multiple animations in the `animation` property.
-
-    -   Give the entry animation an `animation-fill-mode` of `backwards` so that it applies its initial state before the animation starts.
-    -   Give the exit animation an `animation-fill-mode` of `forwards` so that it maintains its final state after the animation is complete.
+    - Give the entry animation an `animation-fill-mode` of `backwards` so that it applies its initial state before the animation starts.
+    - Give the exit animation an `animation-fill-mode` of `forwards` so that it maintains its final state after the animation is complete.
 
     ```css
     .animated-element {
-      animation:
-        slide-in 1s linear backwards,
-        slide-out 1s linear forwards;
+        animation:
+            slide-in 1s linear backwards,
+            slide-out 1s linear forwards;
     }
     ```
 
@@ -34,20 +37,19 @@ To add entry and exit effects to an element, you need to combine a few CSS prope
 
     ```css
     .animated-element {
-      animation-timeline: view();
+        animation-timeline: view();
     }
     ```
 
     By default, `view()` tracks the element on the `block` axis. If you need to track it on the `inline` axis, you can use `view(inline)`.
 
 4.  **Limit the animations to the `entry` and `exit` ranges.** The `animation-range` property allows you to specify which part of the timeline an animation should run on.
-
-    -   The `entry` range covers the time from when the element first enters the viewport until it is fully visible.
-    -   The `exit` range covers the time from when the element starts to leave the viewport until it is completely hidden.
+    - The `entry` range covers the time from when the element first enters the viewport until it is fully visible.
+    - The `exit` range covers the time from when the element starts to leave the viewport until it is completely hidden.
 
     ```css
     .animated-element {
-      animation-range: entry, exit;
+        animation-range: entry, exit;
     }
     ```
 
@@ -57,26 +59,26 @@ This code animates the direct children of the scroller on scroll using an **anon
 
 ```css
 @media (prefers-reduced-motion: no-preference) {
-  @supports ((animation-timeline: view()) and (animation-range: entry)) {
-    @keyframes grow {
-      from {
-        scale: 0.5;
-      }
-    }
-    @keyframes shrink {
-      to {
-        scale: 0.5;
-      }
-    }
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+        @keyframes grow {
+            from {
+                scale: 0.5;
+            }
+        }
+        @keyframes shrink {
+            to {
+                scale: 0.5;
+            }
+        }
 
-    .scroller > * {
-      animation:
-        grow auto linear backwards,
-        shrink auto linear forwards;
-      animation-timeline: view(inline);
-      animation-range: entry, exit;
+        .scroller > * {
+            animation:
+                grow auto linear backwards,
+                shrink auto linear forwards;
+            animation-timeline: view(inline);
+            animation-range: entry, exit;
+        }
     }
-  }
 }
 ```
 
@@ -86,27 +88,27 @@ The following code has the same visual outcome, but animates the direct children
 
 ```css
 @media (prefers-reduced-motion: no-preference) {
-  @supports ((animation-timeline: view()) and (animation-range: entry)) {
-    @keyframes grow {
-      from {
-        scale: 0.5;
-      }
-    }
-    @keyframes shrink {
-      to {
-        scale: 0.5;
-      }
-    }
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+        @keyframes grow {
+            from {
+                scale: 0.5;
+            }
+        }
+        @keyframes shrink {
+            to {
+                scale: 0.5;
+            }
+        }
 
-    .scroller > * {
-      view-timeline: --tl inline;
-      animation:
-        grow auto linear backwards,
-        shrink auto linear forwards;
-      animation-timeline: --tl;
-      animation-range: entry, exit;
+        .scroller > * {
+            view-timeline: --tl inline;
+            animation:
+                grow auto linear backwards,
+                shrink auto linear forwards;
+            animation-timeline: --tl;
+            animation-range: entry, exit;
+        }
     }
-  }
 }
 ```
 
@@ -115,12 +117,12 @@ The following code has the same visual outcome, but animates the direct children
 When using scroll-driven animations, it's important to follow a few best practices to ensure a smooth and accessible experience:
 
 - **DO** include feature detection: Not all browsers support scroll-driven animations. Use `@supports ((animation-timeline: view()) and (animation-range: entry))` to check for support and provide a fallback for browsers that don't support it.
-  - The `(animation-range: entry)` check **MUST** be included here, to filter out browsers with only partial support.
-  - **DO NOT** use the `scroll-timeline-polyfill` package for the fallback strategy as it is not feature complete and has a lot of known issues.
-  - If the animation is only considered to be decorative, opt for Progressive Enhancement and **DO NOT** provide a fallback.
+    - The `(animation-range: entry)` check **MUST** be included here, to filter out browsers with only partial support.
+    - **DO NOT** use the `scroll-timeline-polyfill` package for the fallback strategy as it is not feature complete and has a lot of known issues.
+    - If the animation is only considered to be decorative, opt for Progressive Enhancement and **DO NOT** provide a fallback.
 - **DO** respect user preferences: Some users prefer to have less motion on the web. Use the `prefers-reduced-motion` media query to disable or reduce your animations for these users.
 - **DO** try to animate only performant CSS properties: For the smoothest animations, stick to animating properties that can be handled by the browser's compositor thread, such as `transform` and `opacity`. Animating other properties like `width` or `height` can lead to performance issues.
-- **DO** use the correct declaration order: When using the `animation` shorthand property, declare `animation-timeline` *after* it to prevent the shorthand from resetting the timeline.
+- **DO** use the correct declaration order: When using the `animation` shorthand property, declare `animation-timeline` _after_ it to prevent the shorthand from resetting the timeline.
 
 When using the `view()` function to create a scroll-driven animation:
 
@@ -151,23 +153,28 @@ For this use-case specifically, the following script applies the fallback for br
 
 ```html
 <script>
-  if (!CSS.supports('(animation-timeline: view()) and (animation-range: entry)')) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          // This matches the effect as defined in the CSS example above.
-          // Customize this further if needed.
-          entry.target.style.scale = 0.5 + entry.intersectionRatio * 0.5;
-        }
-      },
-      {
-        threshold: Array.from({ length: 101 }, (_, i) => i / 100),
-      }
-    );
+    if (
+        !CSS.supports(
+            "(animation-timeline: view()) and (animation-range: entry)"
+        )
+    ) {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    // This matches the effect as defined in the CSS example above.
+                    // Customize this further if needed.
+                    entry.target.style.scale =
+                        0.5 + entry.intersectionRatio * 0.5
+                }
+            },
+            {
+                threshold: Array.from({ length: 101 }, (_, i) => i / 100),
+            }
+        )
 
-    document.querySelectorAll('.scroller > *').forEach((el) => {
-      observer.observe(el);
-    });
-  }
+        document.querySelectorAll(".scroller > *").forEach((el) => {
+            observer.observe(el)
+        })
+    }
 </script>
 ```

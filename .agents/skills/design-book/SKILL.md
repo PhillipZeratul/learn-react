@@ -23,7 +23,7 @@ otherwise.
 Every Design Book token sits on one of three layers. Naming follows the
 layer; mixing layers is the most common mistake.
 
-1. **Values** — atoms. Descriptive names that describe *what the value is*,
+1. **Values** — atoms. Descriptive names that describe _what the value is_,
    not what it means. `values.gray800`, `values.blue500`, `values.dim16`.
    Hex codes, raw lengths, raw strings.
 
@@ -36,7 +36,7 @@ layer; mixing layers is the most common mistake.
    `bestContrastWith(color.surface, ramp)`,
    `spacingScale(space.base, { multiplier: 1.5 })`.
 
-Rule of thumb: a value token *never* gets a semantic name. Calling one
+Rule of thumb: a value token _never_ gets a semantic name. Calling one
 `values.brand` smuggles a decision into a layer that's supposed to be
 opinion-free.
 
@@ -86,6 +86,7 @@ an existing one?
 - **Strings**: deduplicate.
 
 Descriptive name guidance:
+
 - Greys: `gray50` (lightest) → `gray900` (darkest), tailwind-style.
 - Hues: `blue500`, `red500`, named at the perceptually-mid step. Add `100`,
   `300`, `700`, `900` only when the source actually uses tints/shades.
@@ -94,16 +95,16 @@ Descriptive name guidance:
 
 ### 4. Identify the semantic layer
 
-For each entry that carries a *role* (`button-bg`, `link-color`, `text`,
+For each entry that carries a _role_ (`button-bg`, `link-color`, `text`,
 `heading-size`, `gutter`, …), create a reference token pointing at the
 value-layer entry it should resolve to.
 
 ```typescript
-colorScope.set('brand',       ref('values.gray800'));
-colorScope.set('surface',     ref('values.gray50'));
-colorScope.set('onSurface',   ref('values.gray900')); // pair token
-colorScope.set('text',        ref('color.onSurface'));// refs can chain
-colorScope.set('interaction', ref('values.blue500'));
+colorScope.set("brand", ref("values.gray800"))
+colorScope.set("surface", ref("values.gray50"))
+colorScope.set("onSurface", ref("values.gray900")) // pair token
+colorScope.set("text", ref("color.onSurface")) // refs can chain
+colorScope.set("interaction", ref("values.blue500"))
 ```
 
 Watch for **pair tokens** — two tokens that always travel together. The
@@ -114,21 +115,21 @@ two refs.
 
 ### 5. Identify rules (procedural tokens)
 
-Look at the *static* system for places where it pre-computed values it
+Look at the _static_ system for places where it pre-computed values it
 didn't need to. Each one is a candidate for a procedural token.
 
-| Static pattern | Procedural replacement |
-| --- | --- |
-| `--hover: <darker version of base>` | `darken(ref('color.brand'), { amount: 0.15 })` |
-| `--press: <even darker>` | `darken(ref('color.brand'), { amount: 0.3 })` |
-| `--button-text: white` / `black` chosen by hand | `bestContrastWith(ref('color.brand'), ramp)` |
-| `--border: <faint shade>` | `minContrastWith(ref('color.surface'), ramp, { ratio: 1.5 })` |
-| `--accent: <one of the brand colours>` | `mostVivid(values, { against, minContrast, not: [ref('values.error')] })` |
-| `--ramp-100…900`: hand-mixed steps | `colorMix(ref('color.surface'), ref('color.interaction'), { ratio })` per step |
-| `--space-sm/md/lg/xl`: multiples of a base | `spacingScale(ref('space.base'), { multiplier })` |
-| `--font-h1/h2/h3`: modular scale | `typographyScale(ref('type.base'), { ratio, step })` |
-| Surface-aware shade ("slightly darker if light, lighter if dark") | `shade(ref('color.surface'), { amount: 0.1 })` |
-| Hue rotation / per-channel tweak | `relativeTo(base, 'oklch', [null, null, '+180'])` |
+| Static pattern                                                    | Procedural replacement                                                         |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `--hover: <darker version of base>`                               | `darken(ref('color.brand'), { amount: 0.15 })`                                 |
+| `--press: <even darker>`                                          | `darken(ref('color.brand'), { amount: 0.3 })`                                  |
+| `--button-text: white` / `black` chosen by hand                   | `bestContrastWith(ref('color.brand'), ramp)`                                   |
+| `--border: <faint shade>`                                         | `minContrastWith(ref('color.surface'), ramp, { ratio: 1.5 })`                  |
+| `--accent: <one of the brand colours>`                            | `mostVivid(values, { against, minContrast, not: [ref('values.error')] })`      |
+| `--ramp-100…900`: hand-mixed steps                                | `colorMix(ref('color.surface'), ref('color.interaction'), { ratio })` per step |
+| `--space-sm/md/lg/xl`: multiples of a base                        | `spacingScale(ref('space.base'), { multiplier })`                              |
+| `--font-h1/h2/h3`: modular scale                                  | `typographyScale(ref('type.base'), { ratio, step })`                           |
+| Surface-aware shade ("slightly darker if light, lighter if dark") | `shade(ref('color.surface'), { amount: 0.1 })`                                 |
+| Hue rotation / per-channel tweak                                  | `relativeTo(base, 'oklch', [null, null, '+180'])`                              |
 
 **Don't over-procedural-ise.** If a value isn't related to anything else,
 leave it as a value or a ref. Procedural tokens are for relationships,
@@ -143,65 +144,80 @@ A typical migration produces something like:
 
 ```typescript
 import {
-  DesignBook, color, ref, px,
-  darken, shade, colorMix, bestContrastWith, minContrastWith,
-  spacingScale, typographyScale,
-  Renderer, TableViewRenderer,
-} from 'design-book';
+    DesignBook,
+    color,
+    ref,
+    px,
+    darken,
+    shade,
+    colorMix,
+    bestContrastWith,
+    minContrastWith,
+    spacingScale,
+    typographyScale,
+    Renderer,
+    TableViewRenderer,
+} from "design-book"
 
-const book = new DesignBook('app');
+const book = new DesignBook("app")
 
 // ---- values (atoms) ---------------------------------------------------
-const values = book.addScope('values');
-values.set('gray50',  color('#fafafa'));
-values.set('gray800', color('#202126'));
-values.set('gray900', color('#1a1a1a'));
-values.set('blue500', color('#1d4eb8'));
-values.set('red500',  color('#dc2626'));
+const values = book.addScope("values")
+values.set("gray50", color("#fafafa"))
+values.set("gray800", color("#202126"))
+values.set("gray900", color("#1a1a1a"))
+values.set("blue500", color("#1d4eb8"))
+values.set("red500", color("#dc2626"))
 
 // ---- color (semantic refs) -------------------------------------------
-const colorScope = book.addScope('color');
-colorScope.set('surface',     ref('values.gray50'));
-colorScope.set('onSurface',   ref('values.gray900'));
-colorScope.set('brand',       ref('values.gray800'));
-colorScope.set('interaction', ref('values.blue500'));
-colorScope.set('text',        ref('color.onSurface'));
+const colorScope = book.addScope("color")
+colorScope.set("surface", ref("values.gray50"))
+colorScope.set("onSurface", ref("values.gray900"))
+colorScope.set("brand", ref("values.gray800"))
+colorScope.set("interaction", ref("values.blue500"))
+colorScope.set("text", ref("color.onSurface"))
 
 // ---- procedural -------------------------------------------------------
-colorScope.set('linkHover', darken(ref('color.interaction'), { amount: 0.15 }));
-colorScope.set('line',      minContrastWith(ref('color.surface'), values, { ratio: 1.5 }));
-colorScope.set('onBrand',   bestContrastWith(ref('color.brand'), values, {
-  not: [ref('values.red500')], // exclude role-loaded tokens
-}));
+colorScope.set("linkHover", darken(ref("color.interaction"), { amount: 0.15 }))
+colorScope.set(
+    "line",
+    minContrastWith(ref("color.surface"), values, { ratio: 1.5 })
+)
+colorScope.set(
+    "onBrand",
+    bestContrastWith(ref("color.brand"), values, {
+        not: [ref("values.red500")], // exclude role-loaded tokens
+    })
+)
 
 // ---- space ------------------------------------------------------------
-const space = book.addScope('space');
-space.set('base', px(16));
-space.set('xs',   spacingScale(ref('space.base'), { multiplier: 0.25 }));
-space.set('s',    spacingScale(ref('space.base'), { multiplier: 0.5 }));
-space.set('m',    spacingScale(ref('space.base'), { multiplier: 1 }));
-space.set('l',    spacingScale(ref('space.base'), { multiplier: 1.5 }));
-space.set('xl',   spacingScale(ref('space.base'), { multiplier: 2 }));
+const space = book.addScope("space")
+space.set("base", px(16))
+space.set("xs", spacingScale(ref("space.base"), { multiplier: 0.25 }))
+space.set("s", spacingScale(ref("space.base"), { multiplier: 0.5 }))
+space.set("m", spacingScale(ref("space.base"), { multiplier: 1 }))
+space.set("l", spacingScale(ref("space.base"), { multiplier: 1.5 }))
+space.set("xl", spacingScale(ref("space.base"), { multiplier: 2 }))
 
 // ---- typography -------------------------------------------------------
-const type = book.addScope('type');
-type.set('base', px(16));
-type.set('h3',   typographyScale(ref('type.base'), { ratio: 1.25, step: 1 }));
-type.set('h2',   typographyScale(ref('type.base'), { ratio: 1.25, step: 2 }));
-type.set('h1',   typographyScale(ref('type.base'), { ratio: 1.25, step: 3 }));
+const type = book.addScope("type")
+type.set("base", px(16))
+type.set("h3", typographyScale(ref("type.base"), { ratio: 1.25, step: 1 }))
+type.set("h2", typographyScale(ref("type.base"), { ratio: 1.25, step: 2 }))
+type.set("h1", typographyScale(ref("type.base"), { ratio: 1.25, step: 3 }))
 ```
 
 If a theme has multiple modes (light / dark), model the dark theme as a
-scope that *extends* the light one:
+scope that _extends_ the light one:
 
 ```typescript
-const light = book.addScope('light');
-light.set('bg', color('#ffffff'));
-light.set('text', color('#1a1a1a'));
+const light = book.addScope("light")
+light.set("bg", color("#ffffff"))
+light.set("text", color("#1a1a1a"))
 
-const dark = book.addScope('dark', { extends: 'light' });
-dark.set('bg', color('#1a1a1a'));
-dark.set('text', color('#ffffff'));
+const dark = book.addScope("dark", { extends: "light" })
+dark.set("bg", color("#1a1a1a"))
+dark.set("text", color("#ffffff"))
 // Anything light defines that dark doesn't override remains inherited.
 ```
 
@@ -210,13 +226,13 @@ dark.set('text', color('#ffffff'));
 Diff the output against the original.
 
 ```typescript
-const css = new Renderer(book, 'css-variables').render();
+const css = new Renderer(book, "css-variables").render()
 // Compare against the original :root block.
 
-const overview = new TableViewRenderer(book).render();
+const overview = new TableViewRenderer(book).render()
 // Inspect every token + dependency in one table.
 
-book.inspect('color.linkHover');
+book.inspect("color.linkHover")
 // { value, function, args, options, dependencies, dependents, … }
 ```
 
@@ -234,7 +250,7 @@ common causes:
 
 Figma stores its design tokens as **variables**, organised into
 **collections** (often one collection per theme) with **modes** (e.g.
-Light / Dark). Variables can be primitives or *aliases* (a reference to
+Light / Dark). Variables can be primitives or _aliases_ (a reference to
 another variable). This maps cleanly onto Design Book: variables → tokens,
 collections → scopes, modes → `extends`, aliases → `ref()`.
 
@@ -328,20 +344,23 @@ whether to (a) flatten (`color.buttonBackground`), (b) create a new scope
 
 **Types** —
 
-| Figma `resolvedType` | Design Book |
-| --- | --- |
-| `COLOR` | `color('#rrggbb')` — convert `r,g,b,a` floats (0–1) to hex. |
-| `FLOAT` (used as a size) | `px(value)` (or `rem`/`ms` if name implies it) |
-| `FLOAT` (used as a multiplier) | raw number stored via a value scope, or skip and pull into a `multiplier` option |
-| `STRING` | `string('…')` |
-| `BOOLEAN` | encode as `string('true')` / `string('false')`; Design Book doesn't model booleans natively |
+| Figma `resolvedType`           | Design Book                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `COLOR`                        | `color('#rrggbb')` — convert `r,g,b,a` floats (0–1) to hex.                                 |
+| `FLOAT` (used as a size)       | `px(value)` (or `rem`/`ms` if name implies it)                                              |
+| `FLOAT` (used as a multiplier) | raw number stored via a value scope, or skip and pull into a `multiplier` option            |
+| `STRING`                       | `string('…')`                                                                               |
+| `BOOLEAN`                      | encode as `string('true')` / `string('false')`; Design Book doesn't model booleans natively |
 
 To convert a Figma RGBA float to hex:
 
 ```typescript
 function rgbaToHex({ r, g, b }: { r: number; g: number; b: number }) {
-  const to = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
-  return `#${to(r)}${to(g)}${to(b)}`;
+    const to = (n: number) =>
+        Math.round(n * 255)
+            .toString(16)
+            .padStart(2, "0")
+    return `#${to(r)}${to(g)}${to(b)}`
 }
 ```
 
@@ -387,7 +406,7 @@ Figma doesn't store rules. But naming conventions usually leak them:
   `0.25, 0.5, 1, 1.5, 2, 3` of base `16`.
 - Font-size sequences in geometric ratios → `typographyScale`.
 
-After the literal import, *ask the user* which patterns to convert from
+After the literal import, _ask the user_ which patterns to convert from
 static to procedural. Show the candidates, let them confirm before
 rewriting.
 
@@ -445,22 +464,25 @@ rules.
 Register a custom function:
 
 ```typescript
-import { createFunctionToken, extractDependencies } from 'design-book';
+import { createFunctionToken, extractDependencies } from "design-book"
 
-book.registerFunction('myCustom', (resolvedInput: string, options?: { factor?: number }) => {
-  // Return a CSS-valid string.
-  return /* … */;
-});
+book.registerFunction(
+    "myCustom",
+    (resolvedInput: string, options?: { factor?: number }) => {
+        // Return a CSS-valid string.
+        return /* … */
+    }
+)
 
 function myCustom(base, options) {
-  return createFunctionToken('myCustom', [base], {
-    options: { factor: options?.factor ?? 1 },
-    metadata: {
-      dependencies: extractDependencies([base]),
-      visualDependencies: [],
-      returnType: 'color',
-    },
-  });
+    return createFunctionToken("myCustom", [base], {
+        options: { factor: options?.factor ?? 1 },
+        metadata: {
+            dependencies: extractDependencies([base]),
+            visualDependencies: [],
+            returnType: "color",
+        },
+    })
 }
 ```
 

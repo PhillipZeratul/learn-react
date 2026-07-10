@@ -31,9 +31,9 @@ If you'd like to learn a lot about color temperature, sign up for my online cour
 - **Cool daylight:** biased toward shorter wavelengths; scattered blue light from atmosphere fills shadows with blue
 - **Warm incandescent:** biased toward longer wavelengths, including infrared (felt as heat — hence "warm")
 - **Painting approach for cool daylight:**
-  - Highlights: neutral (close to perfect gray)
-  - Shadows: progressively bluer — representing backfilled scattered atmospheric light
-  - Even warm-toned objects (brown potato) get blue sneaked into shadows
+    - Highlights: neutral (close to perfect gray)
+    - Shadows: progressively bluer — representing backfilled scattered atmospheric light
+    - Even warm-toned objects (brown potato) get blue sneaked into shadows
 - **The "fake sky" demo** — blue bounce card simulates atmospheric scatter; blocking it with black sheet dramatically changes shadow color
 - Companion to [Warm/Cool ≠ Hue](https://www.youtube.com/shorts/XmQ9O4efPrQ) and [Is Green Warm or Cool?](https://www.youtube.com/shorts/WQYLfwa2lAI)
 

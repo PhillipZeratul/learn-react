@@ -24,9 +24,9 @@ She was in fact a color theorist in her own right and actually applied for a pat
 - Synthesized academic painting with Impressionist/Post-Impressionist color theory
 - Described as having "sumptuously harmonious" colors
 - **Patented a color wheel (~1911)** with primaries:
-  - **Primrose** (≈ cool yellow)
-  - **Rose** (≈ magenta)
-  - **Turquoise** (≈ cyan)
+    - **Primrose** (≈ cool yellow)
+    - **Rose** (≈ magenta)
+    - **Turquoise** (≈ cyan)
 - Her primaries were essentially CMY — remarkably ahead of the dominant RYB model of her era
 
 ## Links

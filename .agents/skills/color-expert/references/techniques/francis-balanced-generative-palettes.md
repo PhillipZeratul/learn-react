@@ -25,17 +25,17 @@ This is a pure JS technique — no libraries required, pairs cleanly with any ge
 
 ```javascript
 function createWeightedSelector(items) {
-  const weightedArray = [];
+    const weightedArray = []
 
-  for (const item of items) {
-    for (let i = 0; i < item.weight; i++) {
-      weightedArray.push(item.value);
+    for (const item of items) {
+        for (let i = 0; i < item.weight; i++) {
+            weightedArray.push(item.value)
+        }
     }
-  }
 
-  return function () {
-    return weightedArray[Math.floor(Math.random() * weightedArray.length)];
-  };
+    return function () {
+        return weightedArray[Math.floor(Math.random() * weightedArray.length)]
+    }
 }
 ```
 
@@ -45,14 +45,14 @@ Takes `[{ value, weight }]` objects. Returns a closure that produces a random `v
 
 ```javascript
 const pickColor = createWeightedSelector([
-  { weight: 60, value: 'black' },    // neutral    — 60%
-  { weight: 30, value: 'orange' },   // primary    — 30%
-  { weight: 10, value: 'tomato' },   // accent     — 10%
-]);
+    { weight: 60, value: "black" }, // neutral    — 60%
+    { weight: 30, value: "orange" }, // primary    — 30%
+    { weight: 10, value: "tomato" }, // accent     — 10%
+])
 
 // In the render loop:
-const color = pickColor();
-renderObject(color);
+const color = pickColor()
+renderObject(color)
 ```
 
 Weights are arbitrary — they do not need to sum to 100. `[6, 3, 1]` behaves the same as `[60, 30, 10]`.
@@ -69,22 +69,22 @@ Weights are arbitrary — they do not need to sum to 100. `[6, 3, 1]` behaves th
 
 ```javascript
 function modulateColorHSL(baseColor, hRange = 8, sRange = 8, lRange = 8) {
-  const random = (min, max) => Math.random() * (max - min) + min;
-  return {
-    h: baseColor.h + random(-hRange, hRange),
-    s: baseColor.s + random(-sRange, sRange),
-    l: baseColor.l + random(-lRange, lRange),
-  };
+    const random = (min, max) => Math.random() * (max - min) + min
+    return {
+        h: baseColor.h + random(-hRange, hRange),
+        s: baseColor.s + random(-sRange, sRange),
+        l: baseColor.l + random(-lRange, lRange),
+    }
 }
 ```
 
 ### Usage
 
 ```javascript
-const baseColor = { h: 240, s: 75, l: 75 };
+const baseColor = { h: 240, s: 75, l: 75 }
 
-const modulated = modulateColorHSL(baseColor, 12, 12, 12);
-const css = `hsl(${modulated.h}, ${modulated.s}%, ${modulated.l}%)`;
+const modulated = modulateColorHSL(baseColor, 12, 12, 12)
+const css = `hsl(${modulated.h}, ${modulated.s}%, ${modulated.l}%)`
 ```
 
 Each object rendered to the canvas uses a slightly different version of the base. Over many objects the palette reads as "hand-mixed paint" rather than PostScript flat fills.
@@ -102,15 +102,15 @@ The article's headline recommendation is the combination:
 
 ```javascript
 const pickBase = createWeightedSelector([
-  { weight: 60, value: { h: 0,   s: 0,  l: 10 } },  // near-black
-  { weight: 30, value: { h: 30,  s: 90, l: 55 } },  // orange
-  { weight: 10, value: { h: 10,  s: 80, l: 60 } },  // tomato
-]);
+    { weight: 60, value: { h: 0, s: 0, l: 10 } }, // near-black
+    { weight: 30, value: { h: 30, s: 90, l: 55 } }, // orange
+    { weight: 10, value: { h: 10, s: 80, l: 60 } }, // tomato
+])
 
 function drawShape() {
-  const base = pickBase();
-  const c = modulateColorHSL(base, 6, 10, 6);
-  return `hsl(${c.h}, ${c.s}%, ${c.l}%)`;
+    const base = pickBase()
+    const c = modulateColorHSL(base, 6, 10, 6)
+    return `hsl(${c.h}, ${c.s}%, ${c.l}%)`
 }
 ```
 

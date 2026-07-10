@@ -23,9 +23,9 @@ Now this is something really cool — if you take something that casts a shadow,
 - **Slit decomposition:** blocking the combined beam with a slit separates it back into R, G, B components
 - **Colored shadows:** an object lit by 3 RGB lights casts 3 shadows in CMY (cyan, magenta, yellow) — each shadow is the absence of one primary
 - **Complementary blocking:** each CMY shadow blocks only its complementary RGB light when passed over the slit
-  - Cyan shadow = absence of red (green + blue remain)
-  - Magenta shadow = absence of green (red + blue remain)
-  - Yellow shadow = absence of blue (red + green remain)
+    - Cyan shadow = absence of red (green + blue remain)
+    - Magenta shadow = absence of green (red + blue remain)
+    - Yellow shadow = absence of blue (red + green remain)
 - Demonstrates the direct physical relationship between additive primaries (RGB) and subtractive primaries (CMY)
 
 ## Links

@@ -57,50 +57,50 @@ The foundational color library used by many tools in this collection (PickyPalet
 ### Parse & Convert
 
 ```javascript
-parse("#ff6600"); // → { mode: 'rgb', r: 1, g: 0.4, b: 0 }
-converter("oklch")(color); // → convert any color to OKLCH
-formatHex(color); // → '#ff6600'
-formatCss(color); // → CSS Color Level 4 string
+parse("#ff6600") // → { mode: 'rgb', r: 1, g: 0.4, b: 0 }
+converter("oklch")(color) // → convert any color to OKLCH
+formatHex(color) // → '#ff6600'
+formatCss(color) // → CSS Color Level 4 string
 ```
 
 ### Gamut Mapping
 
 ```javascript
-displayable(color); // is it in sRGB?
-clampChroma(color, "oklch", "rgb"); // reduce chroma until displayable
-toGamut("rgb", "oklch"); // CSS Color L4 gamut mapping algorithm
-inGamut("p3")(color); // check any gamut
+displayable(color) // is it in sRGB?
+clampChroma(color, "oklch", "rgb") // reduce chroma until displayable
+toGamut("rgb", "oklch") // CSS Color L4 gamut mapping algorithm
+inGamut("p3")(color) // check any gamut
 ```
 
 ### Interpolation (gradients & palettes)
 
 ```javascript
-interpolate(["red", "blue"], "oklch"); // smooth gradient function
-interpolate([["red", 0], ["green", 0.3], "blue"], "oklch"); // positioned stops
+interpolate(["red", "blue"], "oklch") // smooth gradient function
+interpolate([["red", 0], ["green", 0.3], "blue"], "oklch") // positioned stops
 // Spline methods: linear, basis, natural, monotone (+ closed variants)
 // Hue fixup: shorter, longer, increasing, decreasing
 // Easing: smoothstep, gamma, midpoint, in-out-sine
-samples(10); // [0, 0.11, 0.22, ..., 1]
+samples(10) // [0, 0.11, 0.22, ..., 1]
 ```
 
 ### Color Difference (10 metrics)
 
 ```javascript
-differenceEuclidean("oklch"); // general purpose
-differenceCiede2000(); // gold standard perceptual
-differenceCie76(); // = Euclidean in Lab65
-differenceCie94(); // improved CIE76
-differenceCmc(); // textile industry (asymmetric!)
-differenceHyab(); // best for large differences
-differenceItp(); // HDR
-differenceKotsarenkoRamos(); // image processing (YIQ weighted)
-nearest(colors, metric, accessor); // find N nearest within threshold
+differenceEuclidean("oklch") // general purpose
+differenceCiede2000() // gold standard perceptual
+differenceCie76() // = Euclidean in Lab65
+differenceCie94() // improved CIE76
+differenceCmc() // textile industry (asymmetric!)
+differenceHyab() // best for large differences
+differenceItp() // HDR
+differenceKotsarenkoRamos() // image processing (YIQ weighted)
+nearest(colors, metric, accessor) // find N nearest within threshold
 ```
 
 ### Blending (12 modes)
 
 ```javascript
-blend([bg, fg], "multiply", "rgb");
+blend([bg, fg], "multiply", "rgb")
 // Modes: normal, multiply, screen, overlay, darken, lighten,
 //        color-dodge, color-burn, hard-light, soft-light,
 //        difference, exclusion
@@ -109,29 +109,29 @@ blend([bg, fg], "multiply", "rgb");
 ### Color Vision Deficiency
 
 ```javascript
-filterDeficiencyProt(1.0)(color); // protanopia simulation
-filterDeficiencyDeuter(0.5)(color); // deuteranomaly (partial)
-filterDeficiencyTrit(1.0)(color); // tritanopia
+filterDeficiencyProt(1.0)(color) // protanopia simulation
+filterDeficiencyDeuter(0.5)(color) // deuteranomaly (partial)
+filterDeficiencyTrit(1.0)(color) // tritanopia
 // severity: 0 = normal, 1 = full deficiency
 ```
 
 ### CSS Filters
 
 ```javascript
-filterBrightness(1.5)(color);
-filterContrast(0.8)(color);
-filterSaturate(2.0)(color);
-filterGrayscale(1.0)(color);
-filterSepia(0.5)(color);
-filterInvert(1.0)(color);
-filterHueRotate(90)(color);
+filterBrightness(1.5)(color)
+filterContrast(0.8)(color)
+filterSaturate(2.0)(color)
+filterGrayscale(1.0)(color)
+filterSepia(0.5)(color)
+filterInvert(1.0)(color)
+filterHueRotate(90)(color)
 ```
 
 ### WCAG
 
 ```javascript
-wcagLuminance(color); // relative luminance
-wcagContrast(colorA, colorB); // contrast ratio
+wcagLuminance(color) // relative luminance
+wcagContrast(colorA, colorB) // contrast ratio
 ```
 
 ### Utilities

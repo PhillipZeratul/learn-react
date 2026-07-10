@@ -6,12 +6,12 @@ A connected series of papers by Jan Koenderink, Andrea van Doorn, and Doris I. B
 
 ## The Papers
 
-| Year | Title | Venue |
-|------|-------|-------|
-| 2022 | The space of colour & the colour of space | Gestalt Theory |
-| 2024 | The well-tempered color circle: A chromatic Gestalt | i-Perception 15(4) |
-| 2024 | "Warm," "cool," and the colors | Journal of Vision 24(7):5 |
-| 2024 | Chromatics: Warm and cool | Art & Perception 13(2), 85–119 |
+| Year | Title                                                       | Venue                                                             |
+| ---- | ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| 2022 | The space of colour & the colour of space                   | Gestalt Theory                                                    |
+| 2024 | The well-tempered color circle: A chromatic Gestalt         | i-Perception 15(4)                                                |
+| 2024 | "Warm," "cool," and the colors                              | Journal of Vision 24(7):5                                         |
+| 2024 | Chromatics: Warm and cool                                   | Art & Perception 13(2), 85–119                                    |
 | 2026 | An empirical three-dimensional metric field for color space | bioRxiv — see [dedicated file](koenderink-3d-metric-field-rgb.md) |
 
 ## Core Claims

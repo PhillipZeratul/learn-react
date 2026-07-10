@@ -12,7 +12,7 @@ When an element moves in or out of the top layer, it must transition the `overla
 
 ### 3. Entry Animations with `@starting-style`
 
-Use the `@starting-style` at-rule to define the styles an element should transition *from* when it is first rendered or its `display` changes from `none`.
+Use the `@starting-style` at-rule to define the styles an element should transition _from_ when it is first rendered or its `display` changes from `none`.
 
 ### 4. Animating the Backdrop
 
@@ -24,65 +24,65 @@ The `::backdrop` pseudo-element can be animated similarly by applying transition
 /* 1. Define the visible (open) state */
 dialog[open],
 [popover]:popover-open {
-  opacity: 1;
-  transform: scale(1);
+    opacity: 1;
+    transform: scale(1);
 
-  /* 2. Define the starting state for entry (must come after open state) */
-  @starting-style {
-    opacity: 0;
-    transform: scale(0.9);
-  }
+    /* 2. Define the starting state for entry (must come after open state) */
+    @starting-style {
+        opacity: 0;
+        transform: scale(0.9);
+    }
 }
 
 /* 3. Define the base (closed/exit) state and transitions */
 dialog,
 [popover] {
-  opacity: 0;
-  transform: scale(0.9);
+    opacity: 0;
+    transform: scale(0.9);
 
-  /* MANDATORY: transition display and overlay for top-layer elements */
-  transition-property: opacity, transform, display, overlay;
-  transition-duration: 0.3s;
-  transition-timing-function: ease-out;
-  /* Applies to discrete properties like display and overlay */
-  transition-behavior: allow-discrete; /* Note: be sure to write this after the shorthand */
+    /* MANDATORY: transition display and overlay for top-layer elements */
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 0.3s;
+    transition-timing-function: ease-out;
+    /* Applies to discrete properties like display and overlay */
+    transition-behavior: allow-discrete; /* Note: be sure to write this after the shorthand */
 }
 
 /* 4. Animate the backdrop */
 dialog::backdrop,
 [popover]::backdrop {
-  background-color: rgba(0, 0, 0, 0);
-  /* The transition shorthand can also be used with allow-discrete */
-  transition:
-    display 0.3s allow-discrete,
-    overlay 0.3s allow-discrete,
-    background-color 0.3s ease-out;
+    background-color: rgba(0, 0, 0, 0);
+    /* The transition shorthand can also be used with allow-discrete */
+    transition:
+        display 0.3s allow-discrete,
+        overlay 0.3s allow-discrete,
+        background-color 0.3s ease-out;
 }
 
 dialog[open]::backdrop,
 [popover]:popover-open::backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
 
-  @starting-style {
-    background-color: rgba(0, 0, 0, 0);
-  }
+    @starting-style {
+        background-color: rgba(0, 0, 0, 0);
+    }
 }
 
 /* 5. Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  dialog,
-  [popover] {
-    /* Disable movement and shorten duration for a simple fade */
-    transform: none;
-    transition-duration: 0.1s;
-  }
-
-  @starting-style {
-    dialog[open],
-    [popover]:popover-open {
-      transform: none;
+    dialog,
+    [popover] {
+        /* Disable movement and shorten duration for a simple fade */
+        transform: none;
+        transition-duration: 0.1s;
     }
-  }
+
+    @starting-style {
+        dialog[open],
+        [popover]:popover-open {
+            transform: none;
+        }
+    }
 }
 ```
 
@@ -111,14 +111,14 @@ For browsers that do not support these features, top-layer elements will appear 
 ```javascript
 // Feature detection for top-layer animations
 const supportsTopLayerAnimation =
-  window.CSS &&
-  CSS.supports('transition-behavior', 'allow-discrete') &&
-  CSS.supports('overlay', 'auto');
+    window.CSS &&
+    CSS.supports("transition-behavior", "allow-discrete") &&
+    CSS.supports("overlay", "auto")
 
 if (!supportsTopLayerAnimation) {
-  // Manual JS fallback for entry/exit animations:
-  // 1. Add an `.is-opening` class for entry.
-  // 2. On close, add an `.is-closing` class, wait for the `transitionend` event, then call .close() or hide the popover.
+    // Manual JS fallback for entry/exit animations:
+    // 1. Add an `.is-opening` class for entry.
+    // 2. On close, add an `.is-closing` class, wait for the `transitionend` event, then call .close() or hide the popover.
 }
 ```
 
@@ -131,9 +131,9 @@ If the browser does not support Popover, use the `@oddbird/popover-polyfill`:
 
 ```html
 <script type="module">
-  if (!HTMLElement.prototype.hasOwnProperty('popover')) {
-    await import('https://unpkg.com/@oddbird/popover-polyfill');
-  }
+    if (!HTMLElement.prototype.hasOwnProperty("popover")) {
+        await import("https://unpkg.com/@oddbird/popover-polyfill")
+    }
 </script>
 ```
 

@@ -23,9 +23,9 @@ To implement a pull-to-reveal pattern:
  * either fully visible or fully hidden.
  */
 .scroll-container {
-  height: 100vh;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
+    height: 100vh;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
 }
 
 /**
@@ -33,8 +33,8 @@ To implement a pull-to-reveal pattern:
  * It has scroll-snap-align so it snaps into place when pulled down.
  */
 .search-bar {
-  height: 60px;
-  scroll-snap-align: start;
+    height: 60px;
+    scroll-snap-align: start;
 }
 
 /**
@@ -44,8 +44,8 @@ To implement a pull-to-reveal pattern:
  * initial render, hiding the search bar above it.
  */
 .main-content {
-  scroll-snap-align: start;
-  scroll-initial-target: nearest;
+    scroll-snap-align: start;
+    scroll-initial-target: nearest;
 }
 ```
 
@@ -70,14 +70,17 @@ For browsers that do not yet support the API, use a JavaScript fallback. Note th
  * Progressive Enhancement Fallback
  */
 document.addEventListener("DOMContentLoaded", () => {
-  // Check for native CSS support
-  if (!CSS.supports("scroll-initial-target", "nearest")) {
-    const targetContent = document.querySelector('.main-content.target');
-    if (targetContent) {
-      // Use behavior: "instant" to mimic the native CSS behavior
-      // 'block: start' should match your CSS 'scroll-snap-align' (or expected top position)
-      targetContent.scrollIntoView({ behavior: 'instant', block: 'start' });
+    // Check for native CSS support
+    if (!CSS.supports("scroll-initial-target", "nearest")) {
+        const targetContent = document.querySelector(".main-content.target")
+        if (targetContent) {
+            // Use behavior: "instant" to mimic the native CSS behavior
+            // 'block: start' should match your CSS 'scroll-snap-align' (or expected top position)
+            targetContent.scrollIntoView({
+                behavior: "instant",
+                block: "start",
+            })
+        }
     }
-  }
-});
+})
 ```

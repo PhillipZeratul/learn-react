@@ -20,15 +20,15 @@ Three tools for extracting color palettes from images — plus one that enables 
 
 ### Seven Methods (with RGB / Lab variants)
 
-| Method                 | What it does                                                                 | Trade-off                                                      |
-| ---------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **K-Means**            | Lloyd-style iteration (`ml-kmeans`) to k centroids                           | Fast; favors round, similar-sized clusters in the color space  |
-| **PCA + K-Means**      | One PCA axis orders pixels; quantile-spaced seeds, then K-Means              | Often better seeds than random init; still k-means assumptions   |
-| **DBSCAN**             | Density-connected regions in RGB/Lab                                         | Arbitrary shapes; noise points can be dropped                  |
-| **OPTICS**             | Ordering by reachability; clusters from density (`density-clustering`)       | Handles varying density better than a single DBSCAN ε           |
-| **Agglomerative**      | Hierarchical clustering (average linkage / AGNES), cut to k groups           | Flexible tree cut; heavier on large samples                    |
-| **Median-Cut**         | Recursively splits the box with the largest R/G/B range at the median pixel  | Classic quantization; very fast; builds eight buckets in code, then respects the global palette-size limit |
-| **Random Sampling**    | k **distinct** random pixels from the subsample, equal weight                | Baseline / stress-test; not optimizing a cluster criterion      |
+| Method              | What it does                                                                | Trade-off                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **K-Means**         | Lloyd-style iteration (`ml-kmeans`) to k centroids                          | Fast; favors round, similar-sized clusters in the color space                                              |
+| **PCA + K-Means**   | One PCA axis orders pixels; quantile-spaced seeds, then K-Means             | Often better seeds than random init; still k-means assumptions                                             |
+| **DBSCAN**          | Density-connected regions in RGB/Lab                                        | Arbitrary shapes; noise points can be dropped                                                              |
+| **OPTICS**          | Ordering by reachability; clusters from density (`density-clustering`)      | Handles varying density better than a single DBSCAN ε                                                      |
+| **Agglomerative**   | Hierarchical clustering (average linkage / AGNES), cut to k groups          | Flexible tree cut; heavier on large samples                                                                |
+| **Median-Cut**      | Recursively splits the box with the largest R/G/B range at the median pixel | Classic quantization; very fast; builds eight buckets in code, then respects the global palette-size limit |
+| **Random Sampling** | k **distinct** random pixels from the subsample, equal weight               | Baseline / stress-test; not optimizing a cluster criterion                                                 |
 
 ### 3 Color Spaces for Clustering
 
@@ -106,12 +106,12 @@ A 1 kB (min+gzip) color extraction library for browser and Node. Scans every pix
 ### API
 
 ```typescript
-import { extract, Channels } from 'colorgram';
+import { extract, Channels } from "colorgram"
 
 const palette = extract(
-  { data: imageData.data, channels: Channels.RGBAlpha },
-  12 // top N colors
-);
+    { data: imageData.data, channels: Channels.RGBAlpha },
+    12 // top N colors
+)
 // Returns: Array of [R, G, B, proportion]
 ```
 
@@ -135,14 +135,14 @@ Also exports `sample()` (raw buckets), `hsl()` (RGB→HSL), `sortByHsl()`.
 
 ### What It Is
 
-A two-part system from Google Arts & Culture that extracts palettes from images *and* enables nearest-neighbor palette search across art collections.
+A two-part system from Google Arts & Culture that extracts palettes from images _and_ enables nearest-neighbor palette search across art collections.
 
 ### Architecture
 
-| Part | Language | Purpose |
-| --- | --- | --- |
-| **Frontend** | JavaScript | Palette extractor — processes `ImageData` to compute color palettes from images |
-| **Backend** | Python + TensorFlow | Palette embedding model — maps palettes into Euclidean space preserving perceptual color distance |
+| Part         | Language            | Purpose                                                                                           |
+| ------------ | ------------------- | ------------------------------------------------------------------------------------------------- |
+| **Frontend** | JavaScript          | Palette extractor — processes `ImageData` to compute color palettes from images                   |
+| **Backend**  | Python + TensorFlow | Palette embedding model — maps palettes into Euclidean space preserving perceptual color distance |
 
 ### How It Works
 

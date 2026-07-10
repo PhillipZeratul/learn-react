@@ -39,17 +39,17 @@ Different hues reach their full chroma at different lightness levels, giving us 
 
 ### Key Concepts from the Interactive Visualization
 
-- **CIE Saturation** — "colorfulness of an area judged in proportion to its brightness." A *ratio*: colorfulness ÷ brightness. Measures purity — how free a color is from whitishness relative to its own brightness.
-- **CIE Chroma** — "colorfulness of an area judged relative to the brightness of a similarly illuminated area that appears white." An *absolute amount*, not a ratio. Distance from a neutral gray of equal lightness.
+- **CIE Saturation** — "colorfulness of an area judged in proportion to its brightness." A _ratio_: colorfulness ÷ brightness. Measures purity — how free a color is from whitishness relative to its own brightness.
+- **CIE Chroma** — "colorfulness of an area judged relative to the brightness of a similarly illuminated area that appears white." An _absolute amount_, not a ratio. Distance from a neutral gray of equal lightness.
 - **Equal chroma = vertical lines** in a perceptual hue plane; **equal saturation = lines radiating from black**
 - **Computer color pickers warp** the hue plane so saturation lines are parallel — convenient for computation but distorts perceptual chroma
 
 ### Iso-Line Behavior (the key insight from the interactive)
 
-| X-axis mode | Iso-saturation lines | Iso-chroma lines |
-|-------------|---------------------|-----------------|
-| **Saturation** | Vertical (constant saturation per column) | Curve away from black — same absolute chroma needs less saturation as lightness drops |
-| **Chroma** | Converge at black point — saturation is a ratio demanding less chroma at low brightness | Vertical (constant chroma regardless of lightness) |
+| X-axis mode    | Iso-saturation lines                                                                    | Iso-chroma lines                                                                      |
+| -------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Saturation** | Vertical (constant saturation per column)                                               | Curve away from black — same absolute chroma needs less saturation as lightness drops |
+| **Chroma**     | Converge at black point — saturation is a ratio demanding less chroma at low brightness | Vertical (constant chroma regardless of lightness)                                    |
 
 ### Color Spaces Referenced
 

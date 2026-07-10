@@ -30,14 +30,14 @@ Anyway, this has been interesting.
 - **Tetrachromacy** — birds have 4 cone types: L (red), M (green), S (blue), UV (ultraviolet)
 - **Human complementary pairs** are 1+2 cone splits (red↔cyan, green↔magenta, blue↔yellow) — always adds to 3
 - **Bird complementary pairs** must add to 4 cones, creating two structures:
-  - **1+3:** e.g., red ↔ ultra cyan (G+B+UV), UV ↔ human white (R+G+B)
-  - **2+2:** e.g., yellow (R+G) ↔ ultra blue (B+UV), gruv (G+UV) ↔ magenta (R+B)
+    - **1+3:** e.g., red ↔ ultra cyan (G+B+UV), UV ↔ human white (R+G+B)
+    - **2+2:** e.g., yellow (R+G) ↔ ultra blue (B+UV), gruv (G+UV) ↔ magenta (R+B)
 - **Novel bird color categories:**
-  - **Ultra cyan** (G+B+UV) — complement of red
-  - **Ultra blue** (B+UV) — complement of yellow
-  - **Gruv** (G+UV) — its complement is human magenta
-  - **Ultra yellow**, **ultra cyan**, **ultra magenta** — secondaries involving UV
-  - **Human white** (R+G+B) — is a _color_ for birds, complement of UV
+    - **Ultra cyan** (G+B+UV) — complement of red
+    - **Ultra blue** (B+UV) — complement of yellow
+    - **Gruv** (G+UV) — its complement is human magenta
+    - **Ultra yellow**, **ultra cyan**, **ultra magenta** — secondaries involving UV
+    - **Human white** (R+G+B) — is a _color_ for birds, complement of UV
 - **Bird white** = R+G+B+UV (all 4 cones equally stimulated)
 - **6 bird secondaries** from pairs: yellow, cyan, magenta, ruv, buv, gruv
 - **Additional "tertiary" class** from 3-cone combos: ultrayellow, ultracyan, ultramagenta, human-white
