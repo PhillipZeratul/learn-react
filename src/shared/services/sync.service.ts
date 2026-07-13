@@ -189,15 +189,80 @@ export class SyncService {
             this.triggerSync(true)
         })
 
-        // Upstream Lifecycle: Foreground
+        // Upstream Lifecycle: Web Visibility & Close
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
                 console.log(
                     "SyncService: [EVENT] App foregrounded, pulling deltas..."
                 )
                 this.triggerSync(true)
+            } else if (document.visibilityState === "hidden") {
+                console.log(
+                    "SyncService: [EVENT] App hidden, triggering sync..."
+                )
+                this.triggerSync(true)
             }
         })
+
+        // Best effort for Web tab close
+        window.addEventListener("beforeunload", () => {
+            console.log(
+                "SyncService: [EVENT] Window beforeunload, triggering sync..."
+            )
+            this.triggerSync(true)
+        })
+
+        // Downstream Lifecycle: Tauri Window Close (Desktop)
+        if ("__TAURI_INTERNALS__" in window || "__TAURI_IPC__" in window) {
+            try {
+                const { getCurrentWindow } =
+                    await import("@tauri-apps/api/window")
+                const appWindow = getCurrentWindow()
+                await appWindow.onCloseRequested(async (event) => {
+                    console.log(
+                        "SyncService: [EVENT] Window close requested, syncing before exit..."
+                    )
+                    event.preventDefault() // Prevent immediate close
+
+                    try {
+                        // Max 3 seconds to sync, then close anyway to prevent hanging
+                        await Promise.race([
+                            SyncService.sync(),
+                            new Promise((resolve) => setTimeout(resolve, 3000)),
+                        ])
+                    } catch (err) {
+                        console.error("SyncService: Sync on exit failed:", err)
+                    }
+
+                    // Actually close the window
+                    await appWindow.destroy()
+                })
+            } catch (err) {
+                console.warn(
+                    "SyncService: Failed to setup Tauri close listener:",
+                    err
+                )
+            }
+        }
+
+        // Downstream Lifecycle: Capacitor App Background (Mobile)
+        try {
+            const { App: CapacitorApp } = await import("@capacitor/app")
+            await CapacitorApp.addListener(
+                "appStateChange",
+                async ({ isActive }) => {
+                    if (!isActive) {
+                        console.log(
+                            "SyncService: [EVENT] App moved to background, triggering sync..."
+                        )
+                        // Best effort fire-and-forget sync on mobile background
+                        SyncService.triggerSync(true)
+                    }
+                }
+            )
+        } catch (err) {
+            console.warn("SyncService: Capacitor App API not available", err)
+        }
 
         // Downstream: Realtime Listener (will be called again on user change)
         this.startRealtimeListener()
