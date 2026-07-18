@@ -218,7 +218,11 @@ export class SyncService {
                 const { getCurrentWindow } =
                     await import("@tauri-apps/api/window")
                 const appWindow = getCurrentWindow()
+                let isClosing = false
                 await appWindow.onCloseRequested(async (event) => {
+                    if (isClosing) return
+                    isClosing = true
+
                     console.log(
                         "SyncService: [EVENT] Window close requested, syncing before exit..."
                     )
@@ -235,7 +239,7 @@ export class SyncService {
                     }
 
                     // Actually close the window
-                    await appWindow.destroy()
+                    await appWindow.close()
                 })
             } catch (err) {
                 console.warn(
