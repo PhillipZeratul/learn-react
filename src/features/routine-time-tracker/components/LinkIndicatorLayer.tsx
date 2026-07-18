@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react"
-import { getVisualBoundsForDate, TOP_MARGIN } from "../utils/utils"
+import { TOP_MARGIN } from "../utils/utils"
+import { getAbsoluteBounds } from "../utils/time-coordinates"
 import { dragOverridesSignal } from "../stores/drag.store"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 import { LinkIndicator } from "./LinkIndicator"
@@ -8,7 +9,7 @@ import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 
 interface LinkIndicatorLayerProps {
     cards: Array<RoutineCard | TimeTrackerCard>
-    currentDate: Date | null
+    baseDate: Date | null
     layoutMap: Map<string, { left: string; width: string }>
 }
 
@@ -24,16 +25,16 @@ interface KnownLink {
  */
 function computeActiveBoundaries(
     cards: Array<RoutineCard | TimeTrackerCard>,
-    currentDate: Date
+    baseDate: Date
 ): Set<string> {
     const ppm = pixelsPerMinuteSignal.peek()
     const overrides = dragOverridesSignal.peek()
 
     const bounds = cards.map((c) => {
-        const { startMin, duration } = getVisualBoundsForDate(
+        const { startMin, duration } = getAbsoluteBounds(
             c.start_at,
             c.end_at,
-            currentDate
+            baseDate
         )
         const ov = overrides[c.id]
         const top = ov ? ov.top : startMin * ppm + TOP_MARGIN
@@ -57,7 +58,7 @@ function computeActiveBoundaries(
 
 export const LinkIndicatorLayer = ({
     cards,
-    currentDate,
+    baseDate,
     layoutMap,
 }: LinkIndicatorLayerProps) => {
     // ── All hooks unconditionally before any early return ─────────────────────
@@ -75,8 +76,8 @@ export const LinkIndicatorLayer = ({
     }, [layoutMap])
 
     const [knownLinks, setKnownLinks] = useState<KnownLink[]>(() => {
-        if (!currentDate) return []
-        const active = computeActiveBoundaries(cards, currentDate)
+        if (!baseDate) return []
+        const active = computeActiveBoundaries(cards, baseDate)
         return Array.from(active).map((id) => {
             const [cardAId, cardBId] = id.split("_to_")
             return { id, cardAId, cardBId }
@@ -88,10 +89,10 @@ export const LinkIndicatorLayer = ({
     }, [])
 
     // ── Guard ────────────────────────────────────────────────────────────────
-    if (!currentDate) return null
+    if (!baseDate) return null
 
     // ── Derived state (snapshot, not reactive) ───────────────────────────────
-    const activeBoundaries = computeActiveBoundaries(cards, currentDate)
+    const activeBoundaries = computeActiveBoundaries(cards, baseDate)
 
     // Add any newly formed links via microtask (keeps setState outside render).
     const newLinkIds = Array.from(activeBoundaries).filter(
@@ -120,7 +121,7 @@ export const LinkIndicatorLayer = ({
                     cardAId={link.cardAId}
                     cardBId={link.cardBId}
                     cardsRef={cardsRef}
-                    currentDate={currentDate}
+                    baseDate={baseDate}
                     layoutMapRef={layoutMapRef}
                     onAnimationDone={() => removeLink(link.id)}
                 />

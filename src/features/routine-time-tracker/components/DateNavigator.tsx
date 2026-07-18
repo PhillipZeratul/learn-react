@@ -8,25 +8,24 @@ import {
 
 interface DateNavigatorProps {
     date: Date
-    onDateChange: (d: Date) => void
+    onNavigate: (days: number) => void
+    onGoToToday: () => void
 }
 
-export const DateNavigator = ({ date, onDateChange }: DateNavigatorProps) => {
+export const DateNavigator = ({
+    date,
+    onNavigate,
+    onGoToToday,
+}: DateNavigatorProps) => {
     const isToday = new Date().toDateString() === date.toDateString()
 
-    const changeDate = (days: number) => {
-        const newDate = new Date(date)
-        newDate.setDate(date.getDate() + days)
-        onDateChange(newDate)
-    }
-
     return (
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-background px-4 py-2">
+        <div className="sticky top-0 z-40 flex h-[52px] items-center justify-between border-b bg-background px-4">
             <div className="flex items-center gap-1">
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => changeDate(-1)}
+                    onClick={() => onNavigate(-1)}
                     className="size-8"
                 >
                     <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
@@ -34,21 +33,33 @@ export const DateNavigator = ({ date, onDateChange }: DateNavigatorProps) => {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDateChange(new Date())}
-                    className={`text-xs font-bold ${isToday ? "text-primary" : ""}`}
+                    onClick={onGoToToday}
+                    className={`flex h-auto flex-col py-1 text-xs font-bold ${isToday ? "text-primary" : ""}`}
                     suppressHydrationWarning
                 >
-                    {isToday
-                        ? "TODAY"
-                        : date.toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                          })}
+                    {isToday ? (
+                        <>
+                            <span>TODAY</span>
+                            <span className="text-[10px] font-normal text-muted-foreground">
+                                {date.toLocaleDateString(undefined, {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                })}
+                            </span>
+                        </>
+                    ) : (
+                        date.toLocaleDateString(undefined, {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                        })
+                    )}
                 </Button>
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => changeDate(1)}
+                    onClick={() => onNavigate(1)}
                     className="size-8"
                 >
                     <HugeiconsIcon icon={ArrowRight01Icon} size={16} />

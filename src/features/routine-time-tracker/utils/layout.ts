@@ -1,22 +1,14 @@
-import { getVisualBoundsForDate } from "./utils"
+import { getAbsoluteBounds } from "./time-coordinates"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 
 export function calculateLayout(
     cards: (RoutineCard | TimeTrackerCard)[],
-    currentDate: Date
+    baseDate: Date
 ) {
     const sorted = cards.toSorted((a, b) => {
-        const aBounds = getVisualBoundsForDate(
-            a.start_at,
-            a.end_at,
-            currentDate
-        )
-        const bBounds = getVisualBoundsForDate(
-            b.start_at,
-            b.end_at,
-            currentDate
-        )
+        const aBounds = getAbsoluteBounds(a.start_at, a.end_at, baseDate)
+        const bBounds = getAbsoluteBounds(b.start_at, b.end_at, baseDate)
         const startDiff = aBounds.startMin - bBounds.startMin
         if (startDiff !== 0) return startDiff
         return bBounds.duration - aBounds.duration
@@ -27,10 +19,10 @@ export function calculateLayout(
     let clusterEndMin = -1
 
     for (const card of sorted) {
-        const { startMin, duration } = getVisualBoundsForDate(
+        const { startMin, duration } = getAbsoluteBounds(
             card.start_at,
             card.end_at,
-            currentDate
+            baseDate
         )
         const endMin = startMin + duration
 
@@ -57,10 +49,10 @@ export function calculateLayout(
 
         for (const card of cluster) {
             let placed = false
-            const { startMin } = getVisualBoundsForDate(
+            const { startMin } = getAbsoluteBounds(
                 card.start_at,
                 card.end_at,
-                currentDate
+                baseDate
             )
 
             let bestColIndex = -1
@@ -70,10 +62,10 @@ export function calculateLayout(
                 const col = clusterCols[i]
                 const lastCard = col[col.length - 1]
                 const { startMin: lastStart, duration: lastDur } =
-                    getVisualBoundsForDate(
+                    getAbsoluteBounds(
                         lastCard.start_at,
                         lastCard.end_at,
-                        currentDate
+                        baseDate
                     )
                 const lastEnd = lastStart + lastDur
                 const gap = startMin - lastEnd

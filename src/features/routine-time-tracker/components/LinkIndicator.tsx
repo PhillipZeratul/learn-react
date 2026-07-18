@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from "react"
 import { effect } from "@preact/signals-react"
-import { getVisualBoundsForDate, TOP_MARGIN } from "../utils/utils"
+import { TOP_MARGIN } from "../utils/utils"
+import { getAbsoluteBounds } from "../utils/time-coordinates"
 import { dragOverridesSignal } from "../stores/drag.store"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 import type { RoutineCard } from "../models/routine-card.model"
@@ -12,7 +13,7 @@ export interface LinkIndicatorProps {
     cardBId: string
     /** All cards in the column – passed by ref so the effect doesn't need to re-subscribe. */
     cardsRef: React.RefObject<Array<RoutineCard | TimeTrackerCard>>
-    currentDate: Date
+    baseDate: Date
     /** Layout map – passed by ref so the effect doesn't need to re-subscribe. */
     layoutMapRef: React.RefObject<Map<string, { left: string; width: string }>>
     onAnimationDone: () => void
@@ -29,7 +30,7 @@ export const LinkIndicator = ({
     cardAId,
     cardBId,
     cardsRef,
-    currentDate,
+    baseDate,
     layoutMapRef,
     onAnimationDone,
 }: LinkIndicatorProps) => {
@@ -54,10 +55,10 @@ export const LinkIndicator = ({
         const overrideA = overrides[cardAId]
         const overrideB = overrides[cardBId]
 
-        const boundsA = getVisualBoundsForDate(
+        const boundsA = getAbsoluteBounds(
             cardA.start_at,
             cardA.end_at,
-            currentDate
+            baseDate
         )
         const topA = overrideA
             ? overrideA.top
@@ -65,10 +66,10 @@ export const LinkIndicator = ({
         const heightA = overrideA ? overrideA.height : boundsA.duration * ppm
         const bottomA = topA + heightA
 
-        const boundsB = getVisualBoundsForDate(
+        const boundsB = getAbsoluteBounds(
             cardB.start_at,
             cardB.end_at,
-            currentDate
+            baseDate
         )
         const topB = overrideB
             ? overrideB.top
@@ -96,8 +97,8 @@ export const LinkIndicator = ({
         }
 
         return { top: boundaryY, leftPct }
-    }, [cardAId, cardBId, cardsRef, currentDate, layoutMapRef])
-    // ^^ cardAId, cardBId, currentDate are stable per mount; cardsRef/layoutMapRef are refs
+    }, [cardAId, cardBId, cardsRef, baseDate, layoutMapRef])
+    // ^^ cardAId, cardBId, baseDate are stable per mount; cardsRef/layoutMapRef are refs
 
     // Drive position updates at signal frequency (60 fps) via direct DOM writes.
     useEffect(() => {

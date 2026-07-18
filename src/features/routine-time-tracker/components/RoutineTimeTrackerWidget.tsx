@@ -20,18 +20,17 @@ import {
     timeToISO,
     isTouchEvent,
     formatLocalDate,
-    isCardOverlappingDate,
-    getVisualBoundsForDate,
     getNowISO,
     resolveTagColor,
     TOP_MARGIN,
     BOTTOM_MARGIN,
 } from "../utils/utils"
+import { getAbsoluteBounds } from "../utils/time-coordinates"
 import { RoutineTimeTrackerService } from "../services/routine-time-tracker.service"
 import { RoutineEditor } from "./RoutineEditor"
 import { TimeTrackerEditor } from "./TimeTrackerEditor"
 import {
-    getRoutineInstancesForDate,
+    getRoutineInstancesForDateRange,
     splitRoutineSeries,
 } from "../utils/routine-expansion"
 import type { IsoDateTime } from "@/shared/models/base.model"
@@ -140,7 +139,9 @@ export default function RoutineTimeTrackerWidget() {
         }
     }
 
+    const [baseDate, setBaseDate] = useState<Date | null>(null)
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
+    const DAYS_TO_RENDER = 9
 
     const [now, setNow] = useState<Date | null>(null)
 
@@ -148,6 +149,10 @@ export default function RoutineTimeTrackerWidget() {
         const initialDate = new Date()
         // Defer to next tick to avoid cascading render lint error
         const timer = setTimeout(() => {
+            const bDate = new Date(initialDate)
+            bDate.setHours(0, 0, 0, 0)
+            bDate.setDate(bDate.getDate() - 7)
+            setBaseDate(bDate)
             setCurrentDate(initialDate)
             setNow(initialDate)
         }, 0)
@@ -165,47 +170,61 @@ export default function RoutineTimeTrackerWidget() {
             : false
 
     const currentDateTimeTrackerCards = useMemo(() => {
-        if (!currentDate || !now) return []
+        if (!baseDate || !now) return []
+        const endDate = new Date(baseDate)
+        endDate.setDate(endDate.getDate() + DAYS_TO_RENDER)
         return allTimeTrackerCards.reduce<TimeTrackerCard[]>((acc, c) => {
-            if (
-                !c.is_deleted &&
-                isCardOverlappingDate(c.start_at, c.end_at, currentDate)
-            ) {
-                // For active tasks on the current day, virtualize end_at to 'now' for real-time UI updates
-                if (c.end_at === null && isCurrentDay) {
-                    acc.push({
-                        ...c,
-                        end_at: now.toISOString() as IsoDateTime,
-                        _isActive: true,
-                    })
-                } else {
-                    acc.push(c)
+            if (!c.is_deleted) {
+                const cStartMs = new Date(c.start_at).getTime()
+                const cEndMs = c.end_at
+                    ? new Date(c.end_at).getTime()
+                    : cStartMs
+                if (
+                    cStartMs <= endDate.getTime() &&
+                    cEndMs >= baseDate.getTime()
+                ) {
+                    // For active tasks on the current day, virtualize end_at to 'now' for real-time UI updates
+                    if (c.end_at === null && isCurrentDay) {
+                        acc.push({
+                            ...c,
+                            end_at: now.toISOString() as IsoDateTime,
+                            _isActive: true,
+                        })
+                    } else {
+                        acc.push(c)
+                    }
                 }
             }
             return acc
         }, [])
-    }, [allTimeTrackerCards, currentDate, isCurrentDay, now])
+    }, [allTimeTrackerCards, baseDate, isCurrentDay, now])
 
     const currentDateRoutineCards = useMemo(() => {
-        if (!currentDate) return []
-        return getRoutineInstancesForDate(allRoutineCards, currentDate)
-    }, [allRoutineCards, currentDate])
+        if (!baseDate) return []
+        const endDate = new Date(baseDate)
+        endDate.setDate(endDate.getDate() + DAYS_TO_RENDER)
+        return getRoutineInstancesForDateRange(
+            allRoutineCards,
+            baseDate,
+            endDate
+        )
+    }, [allRoutineCards, baseDate])
 
     const routineLayoutMap = useMemo(() => {
-        if (!currentDate) return new Map()
+        if (!baseDate) return new Map()
         return calculateLayout(
             currentDateRoutineCards.filter((t) => !t.is_deleted),
-            currentDate
+            baseDate
         )
-    }, [currentDateRoutineCards, currentDate])
+    }, [currentDateRoutineCards, baseDate])
 
     const timeTrackerLayoutMap = useMemo(() => {
-        if (!currentDate) return new Map()
+        if (!baseDate) return new Map()
         return calculateLayout(
             currentDateTimeTrackerCards.filter((t) => !t.is_deleted),
-            currentDate
+            baseDate
         )
-    }, [currentDateTimeTrackerCards, currentDate])
+    }, [currentDateTimeTrackerCards, baseDate])
 
     const [editingState, setEditingState] = useState<EditingState>(null)
     const [dragState, setDragState] = useState<DragState | null>(null)
@@ -654,22 +673,12 @@ export default function RoutineTimeTrackerWidget() {
                     dragState.initialEndMin - dragState.initialStartMin
 
                 // Absolute bounds clamping
-                let maxStartMin = 24 * 60 - duration
-                if (dragState.type === "timeTracker" && currentDate) {
+                let maxStartMin = Infinity
+                if (dragState.type === "timeTracker") {
                     const realNow = new Date()
-                    const currentDateStr = formatLocalDate(currentDate)
-                    const realNowStr = formatLocalDate(realNow)
-
-                    if (currentDateStr === realNowStr) {
-                        const nowMinutes =
-                            realNow.getHours() * 60 + realNow.getMinutes()
-                        maxStartMin = Math.min(
-                            maxStartMin,
-                            nowMinutes - duration
-                        )
-                    } else if (currentDateStr > realNowStr) {
-                        maxStartMin = 0
-                    }
+                    const nowMinutes =
+                        (realNow.getTime() - baseDate!.getTime()) / 60000
+                    maxStartMin = Math.min(maxStartMin, nowMinutes - duration)
                 }
 
                 newStartMin = Math.max(0, Math.min(maxStartMin, newStartMin))
@@ -722,18 +731,11 @@ export default function RoutineTimeTrackerWidget() {
                 let targetEdgeMin = initialEdgeMin + activeDeltaMin
 
                 let maxEdgeMin = absoluteMax
-                if (dragState.type === "timeTracker" && currentDate) {
+                if (dragState.type === "timeTracker") {
                     const realNow = new Date()
-                    const currentDateStr = formatLocalDate(currentDate)
-                    const realNowStr = formatLocalDate(realNow)
-
-                    if (currentDateStr === realNowStr) {
-                        const nowMinutes =
-                            realNow.getHours() * 60 + realNow.getMinutes()
-                        maxEdgeMin = Math.min(maxEdgeMin, nowMinutes)
-                    } else if (currentDateStr > realNowStr) {
-                        maxEdgeMin = 0
-                    }
+                    const nowMinutes =
+                        (realNow.getTime() - baseDate!.getTime()) / 60000
+                    maxEdgeMin = Math.min(maxEdgeMin, nowMinutes)
                 }
 
                 targetEdgeMin = Math.max(
@@ -771,7 +773,7 @@ export default function RoutineTimeTrackerWidget() {
                 })
             }
         },
-        [dragState, currentDate]
+        [dragState, baseDate]
     )
 
     useEffect(() => {
@@ -784,44 +786,42 @@ export default function RoutineTimeTrackerWidget() {
             const ppm = pixelsPerMinuteSignal.value
 
             if (timelineContainerRef.current) {
-                timelineContainerRef.current.style.height = `${24 * 60 * ppm + BOTTOM_MARGIN}px`
+                timelineContainerRef.current.style.height = `${DAYS_TO_RENDER * 24 * 60 * ppm + BOTTOM_MARGIN}px`
             }
         })
         return () => dispose()
-    }, [])
+    }, [DAYS_TO_RENDER])
 
     // Scroll to current time on mount and focus
-    const scrollToCurrentTime = useCallback(() => {
-        if (!scrollContainerRef.current) return
+    const scrollToCurrentTime = useCallback(
+        (smooth: boolean = true) => {
+            if (!scrollContainerRef.current || !baseDate) return
 
-        const scrollNow = new Date()
-        const currentMinutes =
-            scrollNow.getHours() * 60 + scrollNow.getMinutes()
-        const targetY =
-            currentMinutes * pixelsPerMinuteSignal.value + TOP_MARGIN
-        const containerHeight = scrollContainerRef.current.clientHeight
+            const scrollNow = new Date()
+            const currentMinutes =
+                (scrollNow.getTime() - baseDate.getTime()) / 60000
+            const targetY =
+                currentMinutes * pixelsPerMinuteSignal.value + TOP_MARGIN
+            const containerHeight = scrollContainerRef.current.clientHeight
 
-        scrollContainerRef.current.scrollTo({
-            top: targetY - containerHeight / 2,
-            behavior: "smooth",
-        })
-    }, [])
+            scrollContainerRef.current.scrollTo({
+                top: targetY - containerHeight / 2,
+                behavior: smooth ? "smooth" : "auto",
+            })
+        },
+        [baseDate]
+    )
 
     useEffect(() => {
-        if (!currentDate) return
-
-        // Initial scroll - only if viewing today (which is the default)
+        // Initial scroll - jump immediately (no smooth animation)
         const timer = setTimeout(() => {
-            if (currentDate.toDateString() === new Date().toDateString()) {
-                scrollToCurrentTime()
-            }
-        }, 100)
+            scrollToCurrentTime(false)
+        }, 10)
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
                 const currentNow = new Date()
-                let shouldScroll =
-                    currentDate.toDateString() === currentNow.toDateString()
+                let shouldScroll = false
 
                 // Auto-switch to today if backgrounded for more than threshold
                 if (lastBackgroundTime.current) {
@@ -837,7 +837,7 @@ export default function RoutineTimeTrackerWidget() {
                 }
 
                 if (shouldScroll) {
-                    scrollToCurrentTime()
+                    scrollToCurrentTime(false)
                 }
             } else {
                 lastBackgroundTime.current = Date.now()
@@ -852,7 +852,7 @@ export default function RoutineTimeTrackerWidget() {
                 handleVisibilityChange
             )
         }
-    }, [currentDate, scrollToCurrentTime])
+    }, [setCurrentDate, scrollToCurrentTime])
 
     useEffect(() => {
         if (!scrollContainerRef.current) return
@@ -1000,7 +1000,7 @@ export default function RoutineTimeTrackerWidget() {
     }
 
     const handleCreateTask = async (clientX: number, clientY: number) => {
-        if (!scrollContainerRef.current) return
+        if (!scrollContainerRef.current || !baseDate) return
 
         const rect = scrollContainerRef.current.getBoundingClientRect()
         const relativeY =
@@ -1008,28 +1008,42 @@ export default function RoutineTimeTrackerWidget() {
         const relativeX = clientX - rect.left
         const contentWidth = scrollContainerRef.current.clientWidth
 
-        const minutes = Math.floor(
+        const minutesFromBase = Math.floor(
             (relativeY - TOP_MARGIN) / pixelsPerMinuteSignal.value
         )
-        if (minutes < 0 || minutes >= 24 * 60) return
+        if (minutesFromBase < 0) return
 
-        const roundedMinutes = Math.round(minutes / 30) * 30
-        const startHour = Math.floor(roundedMinutes / 60)
-        const startMin = roundedMinutes % 60
+        const roundedMinutes = Math.round(minutesFromBase / 30) * 30
 
-        const dateStr = formatLocalDate(currentDate)
+        const startDays = Math.floor(roundedMinutes / (24 * 60))
+        const startLocalMins = roundedMinutes % (24 * 60)
+        const startTarget = new Date(baseDate)
+        startTarget.setDate(startTarget.getDate() + startDays)
+
+        const startHour = Math.floor(startLocalMins / 60)
+        const startMin = startLocalMins % 60
+        const dateStr = formatLocalDate(startTarget)
         const startTime = `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`
         const startIso = timeToISO(startTime, dateStr)
 
         const endMinutes = roundedMinutes + 60
-        const endHour = Math.floor(endMinutes / 60)
-        const endMin = endMinutes % 60
+        const endDays = Math.floor(endMinutes / (24 * 60))
+        const endLocalMins = endMinutes % (24 * 60)
+        const endTarget = new Date(baseDate)
+        endTarget.setDate(endTarget.getDate() + endDays)
+
+        const endHour = Math.floor(endLocalMins / 60)
+        const endMin = endLocalMins % 60
+        const endDateStr = formatLocalDate(endTarget)
         const endTime = `${String(Math.min(24, endHour)).padStart(2, "0")}:${String(endMin).padStart(2, "0")}`
-        const endIso = timeToISO(endTime, dateStr)
+        const endIso = timeToISO(endTime, endDateStr)
 
         const isTimeTrackerBlock = relativeX < contentWidth / 2
 
         if (isTimeTrackerBlock) {
+            if (new Date(startIso).getTime() > now.getTime()) {
+                return
+            }
             const newCard = createTimeTrackerCard({
                 start_at: startIso,
                 end_at: endIso,
@@ -1070,24 +1084,15 @@ export default function RoutineTimeTrackerWidget() {
         const rect = cardElement.getBoundingClientRect()
         const relativeY = clientY - rect.top
         const height = rect.height
-
-        const isStartClamped = cardElement.dataset.startClamped === "true"
-        const isEndClamped = cardElement.dataset.endClamped === "true"
-
         let mode: DragMode = "center"
         if (relativeY < height * 0.25) mode = "top"
         else if (relativeY > height * 0.75) mode = "bottom"
 
-        // Prevent dragging clamped edges
-        if (mode === "top" && isStartClamped) return
-        if (mode === "bottom" && isEndClamped) return
-        if (mode === "center" && (isStartClamped || isEndClamped)) return
-
         longPressTimer.current = setTimeout(() => {
-            const { startMin, duration } = getVisualBoundsForDate(
+            const { startMin, duration } = getAbsoluteBounds(
                 task.start_at,
                 task.end_at,
-                currentDate
+                baseDate!
             )
 
             // Initialize snapping and linking states
@@ -1153,11 +1158,7 @@ export default function RoutineTimeTrackerWidget() {
                     allDailyCards.forEach((c) => {
                         if (c.id === task.id) return
                         const { startMin: cStart, duration: cDur } =
-                            getVisualBoundsForDate(
-                                c.start_at,
-                                c.end_at,
-                                currentDate
-                            )
+                            getAbsoluteBounds(c.start_at, c.end_at, baseDate!)
 
                         const originalC =
                             type === "timeTracker"
@@ -1211,11 +1212,7 @@ export default function RoutineTimeTrackerWidget() {
                 allDailyCards.forEach((c) => {
                     if (c.id === task.id) return
                     const { startMin: cStart, duration: cDur } =
-                        getVisualBoundsForDate(
-                            c.start_at,
-                            c.end_at,
-                            currentDate
-                        )
+                        getAbsoluteBounds(c.start_at, c.end_at, baseDate!)
 
                     const originalC =
                         type === "timeTracker"
@@ -1307,24 +1304,20 @@ export default function RoutineTimeTrackerWidget() {
             const timeMap = new Map<number, string>()
             allDailyCards.forEach((c) => {
                 if (linked.some((le) => le.card.id === c.id)) return
-                const {
-                    startMin: cStart,
-                    duration: cDur,
-                    isStartClamped,
-                    isEndClamped,
-                } = getVisualBoundsForDate(c.start_at, c.end_at, currentDate)
+                const { startMin: cStart, duration: cDur } = getAbsoluteBounds(
+                    c.start_at,
+                    c.end_at,
+                    baseDate!
+                )
 
-                const originalC =
-                    type === "timeTracker"
-                        ? allTimeTrackerCards.find((otc) => otc.id === c.id)
-                        : null
-                const isCTracking = originalC && originalC.end_at === null
+                const isCTracking =
+                    type === "timeTracker" &&
+                    (c as TimeTrackerCard).end_at === null
 
-                if (!isStartClamped) {
-                    snapTargets.add(cStart)
-                    timeMap.set(cStart, c.start_at)
-                }
-                if (c.end_at && !isEndClamped && !isCTracking) {
+                snapTargets.add(cStart)
+                timeMap.set(cStart, c.start_at)
+
+                if (c.end_at && !isCTracking) {
                     snapTargets.add(cStart + cDur)
                     timeMap.set(cStart + cDur, c.end_at)
                 }
@@ -1432,12 +1425,10 @@ export default function RoutineTimeTrackerWidget() {
             // Read final overrides
             const finalOverrides = { ...dragOverridesSignal.value }
 
-            const formatMin = (m: number) => {
-                const h = Math.floor(m / 60)
-                const mm = m % 60
-                return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`
+            const getIsoFromAbsoluteMinutes = (m: number) => {
+                const d = new Date(baseDate!.getTime() + m * 60000)
+                return d.toISOString() as IsoDateTime
             }
-            const dateStr = formatLocalDate(currentDate)
 
             // Build atomic list of concurrent updates for all modified linked/primary cards
             const updates: Array<{
@@ -1567,35 +1558,28 @@ export default function RoutineTimeTrackerWidget() {
                                 primaryStartMin - dragState.initialStartMin
 
                             if (le.card.id === dragState.card.id) {
-                                finalCard.start_at = timeToISO(
-                                    formatMin(primaryStartMin),
-                                    dateStr
-                                )
+                                finalCard.start_at =
+                                    getIsoFromAbsoluteMinutes(primaryStartMin)
                                 finalCard.end_at = isOriginallyTracking
                                     ? null
-                                    : timeToISO(
-                                          formatMin(
-                                              primaryStartMin +
-                                                  (dragState.initialEndMin -
-                                                      dragState.initialStartMin)
-                                          ),
-                                          dateStr
+                                    : getIsoFromAbsoluteMinutes(
+                                          primaryStartMin +
+                                              (dragState.initialEndMin -
+                                                  dragState.initialStartMin)
                                       )
                             } else {
                                 if (le.edge === "start") {
-                                    finalCard.start_at = timeToISO(
-                                        formatMin(
+                                    finalCard.start_at =
+                                        getIsoFromAbsoluteMinutes(
                                             le.initialStartMin + deltaMin
-                                        ),
-                                        dateStr
-                                    )
+                                        )
                                     finalCard.end_at = le.card.end_at
                                 } else {
                                     finalCard.start_at = le.card.start_at
-                                    finalCard.end_at = timeToISO(
-                                        formatMin(le.initialEndMin + deltaMin),
-                                        dateStr
-                                    )
+                                    finalCard.end_at =
+                                        getIsoFromAbsoluteMinutes(
+                                            le.initialEndMin + deltaMin
+                                        )
                                 }
                             }
                         }
@@ -1627,10 +1611,8 @@ export default function RoutineTimeTrackerWidget() {
                                         pixelsPerMinuteSignal.value /
                                         5
                                 ) * 5
-                            finalCard.start_at = timeToISO(
-                                formatMin(startMin),
-                                dateStr
-                            )
+                            finalCard.start_at =
+                                getIsoFromAbsoluteMinutes(startMin)
                         }
                     } else {
                         // End edge is being dragged. Start edge remains exactly at its original value.
@@ -1659,10 +1641,8 @@ export default function RoutineTimeTrackerWidget() {
                                             pixelsPerMinuteSignal.value /
                                             5
                                     ) * 5
-                                finalCard.end_at = timeToISO(
-                                    formatMin(endMin),
-                                    dateStr
-                                )
+                                finalCard.end_at =
+                                    getIsoFromAbsoluteMinutes(endMin)
                             }
                         }
                     }
@@ -1767,9 +1747,49 @@ export default function RoutineTimeTrackerWidget() {
         }
     }
 
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        if (!baseDate) return
+        const scrollTop = e.currentTarget.scrollTop
+        const clientHeight = e.currentTarget.clientHeight
+        const ppm = pixelsPerMinuteSignal.value
+
+        // Calculate the minute at the center of the viewport
+        const centerOffset = scrollTop + clientHeight / 2 - TOP_MARGIN
+        const minutesScrolled = Math.max(0, centerOffset) / ppm
+
+        const daysScrolled = Math.floor(minutesScrolled / (24 * 60))
+        const newCurrentDate = new Date(baseDate)
+        newCurrentDate.setDate(newCurrentDate.getDate() + daysScrolled)
+        if (
+            currentDate &&
+            newCurrentDate.toDateString() !== currentDate.toDateString()
+        ) {
+            setCurrentDate(newCurrentDate)
+        }
+    }
+
     return (
         <div className="relative flex h-full w-full flex-col overflow-hidden">
-            <DateNavigator date={currentDate} onDateChange={setCurrentDate} />
+            <DateNavigator
+                date={currentDate || new Date()}
+                onNavigate={(days) => {
+                    if (!baseDate || !scrollContainerRef.current) return
+                    const targetDate = new Date(currentDate || new Date())
+                    targetDate.setDate(targetDate.getDate() + days)
+
+                    const minutesFromBase =
+                        (targetDate.getTime() - baseDate.getTime()) / 60000
+                    const targetY =
+                        minutesFromBase * pixelsPerMinuteSignal.value +
+                        TOP_MARGIN
+
+                    scrollContainerRef.current.scrollTo({
+                        top: Math.max(0, targetY - 100),
+                        behavior: "smooth",
+                    })
+                }}
+                onGoToToday={() => scrollToCurrentTime()}
+            />
 
             <div
                 ref={scrollContainerRef}
@@ -1781,6 +1801,7 @@ export default function RoutineTimeTrackerWidget() {
                 onTouchStart={startPress}
                 onTouchEnd={endPress}
                 onTouchMove={handleMove}
+                onScroll={handleScroll}
                 role="region"
                 aria-label="Daily timeline grid"
             >
@@ -1788,10 +1809,13 @@ export default function RoutineTimeTrackerWidget() {
                     ref={timelineContainerRef}
                     className="pointer-events-none relative mx-auto w-full max-w-2xl"
                     style={{
-                        height: `${24 * 60 * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
+                        height: `${DAYS_TO_RENDER * 24 * 60 * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
                     }}
                 >
-                    <TimelineGrid />
+                    <TimelineGrid
+                        daysToRender={DAYS_TO_RENDER}
+                        baseDate={baseDate || undefined}
+                    />
 
                     <div className="absolute inset-0 flex">
                         {/* Time Tracker Column */}
@@ -1801,7 +1825,7 @@ export default function RoutineTimeTrackerWidget() {
                                 <TaskCard
                                     key={task.id}
                                     card={task}
-                                    currentDate={currentDate}
+                                    baseDate={baseDate!}
                                     isDragging={dragState?.card.id === task.id}
                                     isActive={
                                         allTimeTrackerCards.find(
@@ -1846,10 +1870,8 @@ export default function RoutineTimeTrackerWidget() {
                                 )}
                             />
                             <LinkIndicatorLayer
-                                cards={currentDateTimeTrackerCards.filter(
-                                    (t) => !t.is_deleted
-                                )}
-                                currentDate={currentDate}
+                                cards={currentDateTimeTrackerCards}
+                                baseDate={baseDate}
                                 layoutMap={timeTrackerLayoutMap}
                             />
                         </div>
@@ -1866,7 +1888,7 @@ export default function RoutineTimeTrackerWidget() {
                                             <TaskCard
                                                 key={task.id}
                                                 card={task}
-                                                currentDate={currentDate}
+                                                baseDate={baseDate!}
                                                 isDragging={
                                                     dragState?.card.id ===
                                                     task.id
@@ -1899,17 +1921,15 @@ export default function RoutineTimeTrackerWidget() {
                                 []
                             )}
                             <LinkIndicatorLayer
-                                cards={currentDateRoutineCards.filter(
-                                    (r) => !r.is_deleted
-                                )}
-                                currentDate={currentDate}
+                                cards={currentDateRoutineCards}
+                                baseDate={baseDate}
                                 layoutMap={routineLayoutMap}
                             />
                         </div>
                     </div>
 
                     <CurrentTimeIndicator
-                        isCurrentDay={isCurrentDay}
+                        baseDate={baseDate!}
                         currentTime={now}
                     />
                 </div>

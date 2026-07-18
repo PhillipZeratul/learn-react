@@ -4,19 +4,15 @@ import { TOP_MARGIN } from "../utils/utils"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 export const CurrentTimeIndicator = ({
-    isCurrentDay,
+    baseDate,
     currentTime,
 }: {
-    isCurrentDay: boolean
+    baseDate: Date
     currentTime: Date
 }) => {
     const indicatorRef = useRef<HTMLDivElement>(null)
 
-    const currentMinutes =
-        currentTime.getHours() * 60 +
-        currentTime.getMinutes() +
-        currentTime.getSeconds() / 60 +
-        currentTime.getMilliseconds() / 60000
+    const currentMinutes = (currentTime.getTime() - baseDate.getTime()) / 60000
     const currentTimeString = currentTime.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -24,7 +20,7 @@ export const CurrentTimeIndicator = ({
     })
 
     useEffect(() => {
-        if (!isCurrentDay || !indicatorRef.current) return
+        if (!indicatorRef.current || !baseDate) return
 
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
@@ -34,9 +30,7 @@ export const CurrentTimeIndicator = ({
         })
 
         return () => dispose()
-    }, [isCurrentDay, currentMinutes])
-
-    if (!isCurrentDay) return null
+    }, [baseDate, currentMinutes])
 
     return (
         <div

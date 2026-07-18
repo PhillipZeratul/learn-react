@@ -1,12 +1,12 @@
 import React, { useRef, useEffect, memo } from "react"
 import { effect } from "@preact/signals-react"
 import {
-    getVisualBoundsForDate,
     isoToTime,
     timeToISO,
     TOP_MARGIN,
     getDurationString,
 } from "../utils/utils"
+import { getAbsoluteBounds } from "../utils/time-coordinates"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
 import {
@@ -26,7 +26,7 @@ interface TaskCardProps {
     onPress: (e: React.MouseEvent | React.TouchEvent) => void
     onClick: () => void
     onStop?: () => void
-    currentDate: Date
+    baseDate: Date
     layout?: { left: string; width: string }
 }
 
@@ -44,7 +44,7 @@ export const TaskCard = memo(
         onPress,
         onClick,
         onStop,
-        currentDate,
+        baseDate,
         layout,
     }: TaskCardProps) => {
         const cardRef = useRef<HTMLDivElement>(null)
@@ -56,8 +56,11 @@ export const TaskCard = memo(
         const contentWrapperRef = useRef<HTMLDivElement>(null)
         const tagStripeRef = useRef<HTMLDivElement>(null)
 
-        const { startMin, duration, isStartClamped, isEndClamped } =
-            getVisualBoundsForDate(card.start_at, card.end_at, currentDate)
+        const { startMin, duration } = getAbsoluteBounds(
+            card.start_at,
+            card.end_at,
+            baseDate
+        )
 
         const realStart = new Date(card.start_at).getTime()
         const realEnd = card.end_at
@@ -141,12 +144,13 @@ export const TaskCard = memo(
                             ) * 5
 
                         const formatMin = (m: number) => {
-                            const h = Math.floor(m / 60)
-                            const mm = m % 60
+                            const localM = Math.max(0, m) % (24 * 60)
+                            const h = Math.floor(localM / 60)
+                            const mm = localM % 60
                             return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`
                         }
 
-                        timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin)))} - ${isoToTime(timeToISO(formatMin(currentEndMin)))}`
+                        timeRef.current.textContent = `${isoToTime(timeToISO(formatMin(currentStartMin), "2000-01-01"))} - ${isoToTime(timeToISO(formatMin(currentEndMin), "2000-01-01"))}`
                     }
 
                     if (durationRef.current) {
@@ -252,11 +256,7 @@ export const TaskCard = memo(
         const draggingClasses =
             "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm rounded-xl"
 
-        const roundedTClass = !isStartClamped ? "rounded-t-xl" : ""
-        const roundedBClass = !isEndClamped ? "rounded-b-xl" : ""
-        const currentRounding = `${roundedTClass} ${
-            !isCurrentlyTracking || isDragging ? roundedBClass : ""
-        }`
+        const currentRounding = `rounded-t-xl rounded-b-xl`
 
         const ppm = pixelsPerMinuteSignal.peek()
         const initialHeight = duration * ppm
@@ -285,8 +285,8 @@ export const TaskCard = memo(
                 className={`${baseClasses} ${currentRounding} ${
                     isDragging ? draggingClasses : idleClasses
                 }`}
-                data-start-clamped={isStartClamped}
-                data-end-clamped={isEndClamped}
+                data-start-clamped={false}
+                data-end-clamped={false}
                 role="button"
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
@@ -354,7 +354,7 @@ export const TaskCard = memo(
                         isCurrentlyTracking
                             ? "border-x border-t border-border bg-card/90"
                             : "bg-transparent"
-                    } ${roundedTClass}`}
+                    } rounded-t-xl`}
                     style={{
                         height: isDragging ? undefined : `${initialHeight}px`,
                     }}

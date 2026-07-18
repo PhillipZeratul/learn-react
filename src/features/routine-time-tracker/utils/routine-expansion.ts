@@ -178,3 +178,143 @@ export const getRoutineInstancesForDate = (
 
     return instances
 }
+
+/**
+ * Expands a list of routine cards (master and exceptions) into instances for a specific date range.
+ */
+export const getRoutineInstancesForDateRange = (
+    allCards: RoutineCard[],
+    startDate: Date,
+    endDate: Date
+): RoutineCard[] => {
+    // Determine the very start of the startDate and the very end of the endDate
+    const rangeStart = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        0,
+        0,
+        0,
+        0
+    )
+    const rangeEnd = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate(),
+        23,
+        59,
+        59,
+        999
+    )
+
+    const masterCards = allCards.filter(
+        (c) => !c.parent_routine_id && !c.is_deleted
+    )
+    const exceptions = allCards.filter((c) => !!c.parent_routine_id)
+
+    // Build a map of exceptions for O(1) lookup: parent_id -> original_date_ms -> exception
+    const exceptionsMap = new Map<string, Map<number, RoutineCard>>()
+    for (const e of exceptions) {
+        if (e.parent_routine_id && e.original_recurrence_date) {
+            const time = new Date(e.original_recurrence_date).getTime()
+            let parentMap = exceptionsMap.get(e.parent_routine_id)
+            if (!parentMap) {
+                parentMap = new Map()
+                exceptionsMap.set(e.parent_routine_id, parentMap)
+            }
+            parentMap.set(time, e)
+        }
+    }
+
+    const instances: RoutineCard[] = []
+
+    for (const master of masterCards) {
+        if (!master.rrule) {
+            // Use range check
+            const cardStartMs = new Date(master.start_at).getTime()
+            const cardEndMs = master.end_at
+                ? new Date(master.end_at).getTime()
+                : cardStartMs
+
+            if (
+                cardStartMs <= rangeEnd.getTime() &&
+                cardEndMs >= rangeStart.getTime()
+            ) {
+                instances.push(master)
+            }
+            continue
+        }
+
+        try {
+            // RRule options for strictly UTC handling
+            const ruleStartDate = new Date(master.start_at)
+            const options = RRule.parseString(master.rrule)
+            options.dtstart = ruleStartDate
+            options.tzid = "UTC" // Force UTC calculation
+
+            const rule = new RRule(options)
+
+            // Search back 24 hours to catch instances that started just before the range but overlap it
+            const searchStart = new Date(
+                rangeStart.getTime() - 24 * 60 * 60 * 1000
+            )
+            const occurrences = rule.between(searchStart, rangeEnd, true)
+
+            for (const occurrenceDate of occurrences) {
+                const occurrenceIso =
+                    occurrenceDate.toISOString() as IsoDateTime
+                const occurrenceTime = occurrenceDate.getTime()
+
+                const expandedEndAt = calculateEndAt(
+                    master.start_at,
+                    master.end_at,
+                    occurrenceIso
+                )
+
+                // Check overlap with the range
+                const occurrenceStartMs = new Date(occurrenceIso).getTime()
+                const occurrenceEndMs = new Date(expandedEndAt).getTime()
+
+                if (
+                    occurrenceStartMs > rangeEnd.getTime() ||
+                    occurrenceEndMs < rangeStart.getTime()
+                ) {
+                    continue
+                }
+
+                const override = exceptionsMap
+                    .get(master.id)
+                    ?.get(occurrenceTime)
+
+                if (override) {
+                    if (!override.is_deleted) {
+                        instances.push(override)
+                    }
+                } else {
+                    instances.push({
+                        ...master,
+                        id: `${master.id}_${occurrenceIso}` as RoutineCardId,
+                        start_at: occurrenceIso,
+                        end_at: expandedEndAt,
+                        _isVirtual: true,
+                    })
+                }
+            }
+        } catch (error) {
+            console.error(`Error expanding routine card ${master.id}:`, error)
+            const cardStartMs = new Date(master.start_at).getTime()
+            const cardEndMs = master.end_at
+                ? new Date(master.end_at).getTime()
+                : cardStartMs
+
+            if (
+                cardStartMs <= rangeEnd.getTime() &&
+                cardEndMs >= rangeStart.getTime()
+            ) {
+                instances.push(master)
+            }
+        }
+    }
+
+    return instances
+}

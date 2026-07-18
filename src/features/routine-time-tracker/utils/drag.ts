@@ -136,7 +136,7 @@ export function calculateLinkedBounds(linkedEdges: LinkedEdge[]): {
     absoluteMin: number
     absoluteMax: number
 } {
-    let maxStartLimit = 24 * 60
+    let maxStartLimit = Infinity
     let minEndLimit = 0
 
     linkedEdges.forEach((le) => {
@@ -148,7 +148,7 @@ export function calculateLinkedBounds(linkedEdges: LinkedEdge[]): {
     })
 
     const absoluteMin = Math.max(0, minEndLimit)
-    const absoluteMax = Math.min(24 * 60, maxStartLimit)
+    const absoluteMax = maxStartLimit
 
     return { absoluteMin, absoluteMax }
 }

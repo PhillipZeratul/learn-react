@@ -93,7 +93,7 @@
         "globals": "^16.5.0",
         "happy-dom": "^20.9.0",
         "playwright": "^1.59.1",
-        "react-grab": "^0.1.44",
+        "react-grab": "^0.1.48",
         "storybook": "^10.3.5",
         "typescript": "~5.9.3",
         "vite": "npm:@voidzero-dev/vite-plus-core@latest",

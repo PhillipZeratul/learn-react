@@ -3,8 +3,17 @@ import { effect } from "@preact/signals-react"
 import { TOP_MARGIN } from "../utils/utils"
 import { pixelsPerMinuteSignal, zoomLevelSignal } from "../stores/zoom.store"
 
-export const TimelineGrid = () => {
+interface TimelineGridProps {
+    daysToRender: number
+    baseDate?: Date
+}
+
+export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
     const containerRef = useRef<HTMLDivElement>(null)
+
+    const totalHours = daysToRender * 24
+
+    // Refs to avoid heavy querySelectors on every zoom
     const elementsRef = useRef<{
         hourLines: HTMLElement[]
         hourLabels: HTMLElement[]
@@ -17,7 +26,6 @@ export const TimelineGrid = () => {
     useEffect(() => {
         if (!containerRef.current) return
 
-        // Initial cache
         const container = containerRef.current
         elementsRef.current = {
             hourLines: Array.from(
@@ -47,22 +55,22 @@ export const TimelineGrid = () => {
             if (!cached) return
 
             // 1. Update Hour Markers (Always visible)
-            cached.hourLines.forEach((line, hour) => {
-                line.style.top = `${hour * 60 * ppm + TOP_MARGIN}px`
+            cached.hourLines.forEach((line, i) => {
+                line.style.top = `${i * 60 * ppm + TOP_MARGIN}px`
             })
-            cached.hourLabels.forEach((label, hour) => {
-                label.style.top = `${hour * 60 * ppm + TOP_MARGIN}px`
+            cached.hourLabels.forEach((label, i) => {
+                label.style.top = `${i * 60 * ppm + TOP_MARGIN}px`
             })
 
             // 2. Update Half-Hour Markers (Visible if zoom > 2x)
             const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
-            cached.halfLines.forEach((line, hour) => {
-                line.style.top = `${(hour * 60 + 30) * ppm + TOP_MARGIN}px`
+            cached.halfLines.forEach((line, i) => {
+                line.style.top = `${(i * 60 + 30) * ppm + TOP_MARGIN}px`
                 line.style.opacity = halfOpacity.toString()
                 line.style.display = halfOpacity > 0 ? "block" : "none"
             })
-            cached.halfLabels.forEach((label, hour) => {
-                label.style.top = `${(hour * 60 + 30) * ppm + TOP_MARGIN}px`
+            cached.halfLabels.forEach((label, i) => {
+                label.style.top = `${(i * 60 + 30) * ppm + TOP_MARGIN}px`
                 label.style.opacity = halfOpacity.toString()
                 label.style.display = halfOpacity > 0 ? "block" : "none"
             })
@@ -87,7 +95,7 @@ export const TimelineGrid = () => {
         })
 
         return () => dispose()
-    }, [])
+    }, [daysToRender])
 
     return (
         <div
@@ -95,21 +103,21 @@ export const TimelineGrid = () => {
             className="pointer-events-none absolute inset-0"
         >
             {/* Grid Lines */}
-            {[...Array(25)].map((_, hour) => (
+            {[...Array(totalHours + 1)].map((_, i) => (
                 <div
-                    key={`grid-line-hour-${hour}`}
+                    key={`grid-line-hour-${i}`}
                     className="grid-line-hour absolute right-0 left-0 -translate-y-1/2 border-t border-dashed border-muted-foreground/30"
                 />
             ))}
 
-            {[...Array(24)].map((_, hour) => (
+            {[...Array(totalHours)].map((_, i) => (
                 <div
-                    key={`grid-line-half-${hour}`}
+                    key={`grid-line-half-${i}`}
                     className="grid-line-half absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/25"
                 />
             ))}
 
-            {[...Array(24 * 4)].map((_, i) => (
+            {[...Array(totalHours * 4)].map((_, i) => (
                 <div
                     key={`grid-line-ten-${i}`}
                     className="grid-line-ten absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/20"
@@ -125,32 +133,68 @@ export const TimelineGrid = () => {
                     </div>
 
                     {/* Hour Labels */}
-                    {[...Array(25)].map((_, hour) => (
-                        <div
-                            key={`grid-time-label-hour-${hour}`}
-                            className="grid-time-label-hour absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground"
-                        >
-                            <span className="pointer-events-auto bg-background px-2 tabular-nums">
-                                {String(hour).padStart(2, "0")}:00
-                            </span>
-                        </div>
-                    ))}
+                    {[...Array(totalHours + 1)].map((_, i) => {
+                        const localHour = i % 24
+                        const isMidnight = localHour === 0
+
+                        let dateStr = ""
+                        let isTodayGrid = false
+                        if (isMidnight && baseDate) {
+                            const d = new Date(baseDate)
+                            d.setDate(d.getDate() + Math.floor(i / 24))
+                            dateStr = d.toLocaleDateString(undefined, {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                            })
+                            isTodayGrid =
+                                d.toDateString() === new Date().toDateString()
+                        }
+
+                        return (
+                            <div
+                                key={`grid-time-label-hour-${i}`}
+                                className="grid-time-label-hour absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center font-mono text-xs text-muted-foreground"
+                            >
+                                {isMidnight && dateStr && (
+                                    <span
+                                        className={`pointer-events-auto absolute -top-5 rounded-md px-2 py-0.5 font-sans text-[10px] whitespace-nowrap backdrop-blur-sm ${
+                                            isTodayGrid
+                                                ? "bg-primary/20 font-bold text-primary"
+                                                : "bg-background/80 font-semibold text-primary/80"
+                                        }`}
+                                    >
+                                        {isTodayGrid
+                                            ? `TODAY • ${dateStr}`
+                                            : dateStr}
+                                    </span>
+                                )}
+                                <span className="pointer-events-auto bg-background px-2 tabular-nums">
+                                    {String(localHour).padStart(2, "0")}:00
+                                </span>
+                            </div>
+                        )
+                    })}
 
                     {/* Half-Hour Labels */}
-                    {[...Array(24)].map((_, hour) => (
-                        <div
-                            key={`grid-time-label-half-${hour}`}
-                            className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/80"
-                        >
-                            <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
-                                {String(hour).padStart(2, "0")}:30
-                            </span>
-                        </div>
-                    ))}
+                    {[...Array(totalHours)].map((_, i) => {
+                        const localHour = i % 24
+                        return (
+                            <div
+                                key={`grid-time-label-half-${i}`}
+                                className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/80"
+                            >
+                                <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
+                                    {String(localHour).padStart(2, "0")}:30
+                                </span>
+                            </div>
+                        )
+                    })}
 
                     {/* 10-Minute Labels */}
-                    {[...Array(24 * 4)].map((_, i) => {
+                    {[...Array(totalHours * 4)].map((_, i) => {
                         const hour = Math.floor(i / 4)
+                        const localHour = hour % 24
                         const minute = [10, 20, 40, 50][i % 4]
                         return (
                             <div
@@ -158,7 +202,7 @@ export const TimelineGrid = () => {
                                 className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60"
                             >
                                 <span className="pointer-events-auto bg-background px-1 tabular-nums">
-                                    {String(hour).padStart(2, "0")}:
+                                    {String(localHour).padStart(2, "0")}:
                                     {String(minute).padStart(2, "0")}
                                 </span>
                             </div>
