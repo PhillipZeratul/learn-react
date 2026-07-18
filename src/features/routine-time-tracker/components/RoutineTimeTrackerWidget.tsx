@@ -931,7 +931,7 @@ export default function RoutineTimeTrackerWidget() {
                     nextZoom = currentZoom + delta * 0.1
                 }
 
-                nextZoom = Math.max(0.5, Math.min(7, nextZoom))
+                nextZoom = Math.max(0.9, Math.min(8, nextZoom))
                 updateZoom(nextZoom, focalYViewport)
 
                 if (wheelTimeout) clearTimeout(wheelTimeout)
