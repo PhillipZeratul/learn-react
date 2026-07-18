@@ -34,13 +34,13 @@ export const DateNavigator = ({
                     variant="ghost"
                     size="sm"
                     onClick={onGoToToday}
-                    className={`flex h-auto flex-col py-1 text-xs font-bold ${isToday ? "text-primary" : ""}`}
+                    className={`flex h-auto w-28 flex-col py-1 text-xs font-bold ${isToday ? "text-primary" : ""}`}
                     suppressHydrationWarning
                 >
                     {isToday ? (
                         <>
                             <span>TODAY</span>
-                            <span className="text-[10px] font-normal text-muted-foreground">
+                            <span>
                                 {date.toLocaleDateString(undefined, {
                                     weekday: "short",
                                     month: "short",
@@ -68,7 +68,7 @@ export const DateNavigator = ({
             <div className="flex items-center gap-2 text-muted-foreground">
                 <HugeiconsIcon icon={Calendar03Icon} size={16} />
                 <span
-                    className="text-[10px] font-medium tracking-wider uppercase"
+                    className="w-8 text-left text-[10px] font-medium tracking-wider uppercase"
                     suppressHydrationWarning
                 >
                     {date.toLocaleDateString(undefined, { weekday: "short" })}

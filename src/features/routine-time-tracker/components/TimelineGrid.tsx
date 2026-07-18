@@ -139,7 +139,7 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
 
                         let dateStr = ""
                         let isTodayGrid = false
-                        if (isMidnight && baseDate) {
+                        if (isMidnight && baseDate && i < totalHours) {
                             const d = new Date(baseDate)
                             d.setDate(d.getDate() + Math.floor(i / 24))
                             dateStr = d.toLocaleDateString(undefined, {

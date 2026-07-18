@@ -141,7 +141,7 @@ export default function RoutineTimeTrackerWidget() {
 
     const [baseDate, setBaseDate] = useState<Date | null>(null)
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
-    const DAYS_TO_RENDER = 9
+    const DAYS_TO_RENDER = 10
 
     const [now, setNow] = useState<Date | null>(null)
 
@@ -203,10 +203,15 @@ export default function RoutineTimeTrackerWidget() {
         if (!baseDate) return []
         const endDate = new Date(baseDate)
         endDate.setDate(endDate.getDate() + DAYS_TO_RENDER)
+
+        // Subtract 1 ms to prevent including the boundary day
+        // if endDate is exactly 00:00 of the next day
+        const effectiveEndDate = new Date(endDate.getTime() - 1)
+
         return getRoutineInstancesForDateRange(
             allRoutineCards,
             baseDate,
-            endDate
+            effectiveEndDate
         )
     }, [allRoutineCards, baseDate])
 
@@ -1777,11 +1782,28 @@ export default function RoutineTimeTrackerWidget() {
                     const targetDate = new Date(currentDate || new Date())
                     targetDate.setDate(targetDate.getDate() + days)
 
-                    const minutesFromBase =
-                        (targetDate.getTime() - baseDate.getTime()) / 60000
-                    const targetY =
-                        minutesFromBase * pixelsPerMinuteSignal.value +
-                        TOP_MARGIN
+                    const maxDate = new Date(baseDate)
+                    maxDate.setDate(maxDate.getDate() + DAYS_TO_RENDER - 1)
+                    if (targetDate > maxDate) {
+                        targetDate.setTime(maxDate.getTime())
+                    }
+                    if (targetDate < baseDate) {
+                        targetDate.setTime(baseDate.getTime())
+                    }
+
+                    let targetY: number
+                    if (
+                        days === 1 &&
+                        currentDate?.toDateString() === maxDate.toDateString()
+                    ) {
+                        targetY = scrollContainerRef.current.scrollHeight
+                    } else {
+                        const minutesFromBase =
+                            (targetDate.getTime() - baseDate.getTime()) / 60000
+                        targetY =
+                            minutesFromBase * pixelsPerMinuteSignal.value +
+                            TOP_MARGIN
+                    }
 
                     scrollContainerRef.current.scrollTo({
                         top: Math.max(0, targetY - 100),
@@ -1859,6 +1881,7 @@ export default function RoutineTimeTrackerWidget() {
                                     }}
                                     onStop={() => handleStopTracker(task.id)}
                                     layout={timeTrackerLayoutMap.get(task.id)}
+                                    daysToRender={DAYS_TO_RENDER}
                                 />
                             ))}
                             <TimeTrackerActionButton
@@ -1913,6 +1936,7 @@ export default function RoutineTimeTrackerWidget() {
                                                 layout={routineLayoutMap.get(
                                                     task.id
                                                 )}
+                                                daysToRender={DAYS_TO_RENDER}
                                             />
                                         )
                                     }

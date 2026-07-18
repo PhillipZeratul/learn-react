@@ -28,6 +28,7 @@ interface TaskCardProps {
     onStop?: () => void
     baseDate: Date
     layout?: { left: string; width: string }
+    daysToRender: number
 }
 
 const SHOW_CARD_TITLE_HEIGHT = 20
@@ -46,6 +47,7 @@ export const TaskCard = memo(
         onStop,
         baseDate,
         layout,
+        daysToRender,
     }: TaskCardProps) => {
         const cardRef = useRef<HTMLDivElement>(null)
         const titleRef = useRef<HTMLDivElement>(null)
@@ -56,12 +58,20 @@ export const TaskCard = memo(
         const contentWrapperRef = useRef<HTMLDivElement>(null)
         const tagStripeRef = useRef<HTMLDivElement>(null)
 
-        const { startMin, duration } = getAbsoluteBounds(
-            card.start_at,
-            card.end_at,
-            baseDate
-        )
+        const { startMin: rawStartMin, duration: rawDuration } =
+            getAbsoluteBounds(card.start_at, card.end_at, baseDate)
 
+        const isStartClipped = rawStartMin < 0
+        const isEndClipped = rawStartMin + rawDuration > daysToRender * 24 * 60
+
+        const startMin = Math.max(0, rawStartMin)
+        const duration = Math.max(
+            0,
+            Math.min(
+                rawDuration - (startMin - rawStartMin),
+                daysToRender * 24 * 60 - startMin
+            )
+        )
         const realStart = new Date(card.start_at).getTime()
         const realEnd = card.end_at
             ? new Date(card.end_at).getTime()
@@ -256,7 +266,9 @@ export const TaskCard = memo(
         const draggingClasses =
             "z-50 ring-2 ring-primary border-primary shadow-xl opacity-90 cursor-grabbing backdrop-blur-sm rounded-xl"
 
-        const currentRounding = `rounded-t-xl rounded-b-xl`
+        const currentRounding = `${
+            isStartClipped ? "rounded-t-none border-t-0" : "rounded-t-xl"
+        } ${isEndClipped ? "rounded-b-none border-b-0" : "rounded-b-xl"}`
 
         const ppm = pixelsPerMinuteSignal.peek()
         const initialHeight = duration * ppm
@@ -285,8 +297,8 @@ export const TaskCard = memo(
                 className={`${baseClasses} ${currentRounding} ${
                     isDragging ? draggingClasses : idleClasses
                 }`}
-                data-start-clamped={false}
-                data-end-clamped={false}
+                data-start-clamped={isStartClipped}
+                data-end-clamped={isEndClipped}
                 role="button"
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
@@ -350,13 +362,18 @@ export const TaskCard = memo(
                 {/* Solid Background Layer (Only active for tracking tasks) */}
                 <div
                     ref={solidBgRef}
-                    className={`absolute inset-x-0 top-0 ${
+                    className={`absolute inset-x-0 top-0 overflow-hidden ${
+                        isStartClipped ? "rounded-t-none" : "rounded-t-xl"
+                    } ${
                         isCurrentlyTracking
                             ? "border-x border-t border-border bg-card/90"
                             : "bg-transparent"
-                    } rounded-t-xl`}
+                    }`}
                     style={{
                         height: isDragging ? undefined : `${initialHeight}px`,
+                        borderTopColor: isStartClipped
+                            ? "transparent"
+                            : undefined,
                     }}
                 />
 
