@@ -901,11 +901,11 @@ export default function RoutineTimeTrackerWidget() {
             const animate = () => {
                 const z = zoomLevelSignal.value
                 const diff = targetZoom - z
-                if (Math.abs(diff) < 0.005) {
+                if (Math.abs(diff) < 0.001) {
                     updateZoom(targetZoom, focalYViewport)
                     return
                 }
-                updateZoom(z + diff * 0.15, focalYViewport)
+                updateZoom(z + diff * 0.35, focalYViewport)
                 snapBackRafId = requestAnimationFrame(animate)
             }
             snapBackRafId = requestAnimationFrame(animate)
@@ -926,9 +926,9 @@ export default function RoutineTimeTrackerWidget() {
 
                 // Overshoot resistance
                 if (nextZoom < 1) {
-                    nextZoom = currentZoom + delta * 0.2
+                    nextZoom = currentZoom + delta * 0.1
                 } else if (nextZoom > 6) {
-                    nextZoom = currentZoom + delta * 0.2
+                    nextZoom = currentZoom + delta * 0.1
                 }
 
                 nextZoom = Math.max(0.5, Math.min(7, nextZoom))
@@ -937,7 +937,7 @@ export default function RoutineTimeTrackerWidget() {
                 if (wheelTimeout) clearTimeout(wheelTimeout)
                 wheelTimeout = setTimeout(() => {
                     snapBackZoom(focalYViewport)
-                }, 150)
+                }, 50)
             }
         }
 
@@ -953,9 +953,9 @@ export default function RoutineTimeTrackerWidget() {
             let nextZoom = initialZoom * gestureEvent.scale
 
             if (nextZoom < 1) {
-                nextZoom = 1 - (1 - nextZoom) * 0.3
+                nextZoom = 1 - (1 - nextZoom) * 0.15
             } else if (nextZoom > 6) {
-                nextZoom = 6 + (nextZoom - 6) * 0.3
+                nextZoom = 6 + (nextZoom - 6) * 0.15
             }
 
             nextZoom = Math.max(0.5, Math.min(7, nextZoom))
@@ -999,9 +999,9 @@ export default function RoutineTimeTrackerWidget() {
                 let nextZoom = initialZoom * scale
 
                 if (nextZoom < 1) {
-                    nextZoom = 1 - (1 - nextZoom) * 0.3
+                    nextZoom = 1 - (1 - nextZoom) * 0.15
                 } else if (nextZoom > 6) {
-                    nextZoom = 6 + (nextZoom - 6) * 0.3
+                    nextZoom = 6 + (nextZoom - 6) * 0.15
                 }
 
                 nextZoom = Math.max(0.5, Math.min(7, nextZoom))
