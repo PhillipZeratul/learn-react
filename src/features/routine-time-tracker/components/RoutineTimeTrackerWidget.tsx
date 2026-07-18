@@ -911,6 +911,53 @@ export default function RoutineTimeTrackerWidget() {
             snapBackRafId = requestAnimationFrame(animate)
         }
 
+        let overscrollY = 0
+        let overscrollRafId: number | null = null
+
+        const updateOverscroll = (dy: number) => {
+            const oldSign = Math.sign(overscrollY)
+            overscrollY += dy
+            const newSign = Math.sign(overscrollY)
+
+            if (oldSign !== 0 && overscrollY !== 0 && oldSign !== newSign) {
+                overscrollY = 0 // Crossed 0 threshold
+            }
+
+            const maxOverscroll = 250
+            const sign = Math.sign(overscrollY)
+            const abs = Math.abs(overscrollY)
+            const dampened = maxOverscroll * (1 - Math.exp(-abs / 200))
+
+            if (timelineContainerRef.current) {
+                timelineContainerRef.current.style.transform = `translateY(${sign * dampened}px)`
+            }
+
+            return overscrollY !== 0
+        }
+
+        const snapBackOverscroll = () => {
+            if (overscrollRafId) cancelAnimationFrame(overscrollRafId)
+            const animate = () => {
+                if (Math.abs(overscrollY) < 1) {
+                    overscrollY = 0
+                    if (timelineContainerRef.current) {
+                        timelineContainerRef.current.style.transform = `translateY(0)`
+                    }
+                    return
+                }
+                overscrollY *= 0.8
+                const maxOverscroll = 250
+                const sign = Math.sign(overscrollY)
+                const abs = Math.abs(overscrollY)
+                const dampened = maxOverscroll * (1 - Math.exp(-abs / 200))
+                if (timelineContainerRef.current) {
+                    timelineContainerRef.current.style.transform = `translateY(${sign * dampened}px)`
+                }
+                overscrollRafId = requestAnimationFrame(animate)
+            }
+            overscrollRafId = requestAnimationFrame(animate)
+        }
+
         const handleWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault()
@@ -938,6 +985,24 @@ export default function RoutineTimeTrackerWidget() {
                 wheelTimeout = setTimeout(() => {
                     snapBackZoom(focalYViewport)
                 }, 50)
+            } else {
+                const atTop = container.scrollTop <= 0
+                const atBottom =
+                    container.scrollTop + container.clientHeight >=
+                    container.scrollHeight - 1
+
+                if (
+                    (atTop && e.deltaY < 0) ||
+                    (atBottom && e.deltaY > 0) ||
+                    overscrollY !== 0
+                ) {
+                    e.preventDefault()
+                    if (overscrollRafId) cancelAnimationFrame(overscrollRafId)
+                    updateOverscroll(-e.deltaY * 0.5)
+
+                    if (wheelTimeout) clearTimeout(wheelTimeout)
+                    wheelTimeout = setTimeout(snapBackOverscroll, 50)
+                }
             }
         }
 
@@ -970,6 +1035,8 @@ export default function RoutineTimeTrackerWidget() {
             snapBackZoom(lastFocalYViewport)
         }
 
+        let lastTouchY = 0
+
         const handleTouchStart = (e: TouchEvent) => {
             if (e.touches.length === 2) {
                 if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
@@ -978,6 +1045,9 @@ export default function RoutineTimeTrackerWidget() {
                     e.touches[0].clientY - e.touches[1].clientY
                 )
                 initialZoom = zoomLevelSignal.value
+            } else if (e.touches.length === 1) {
+                lastTouchY = e.touches[0].clientY
+                if (overscrollRafId) cancelAnimationFrame(overscrollRafId)
             }
         }
 
@@ -1006,6 +1076,27 @@ export default function RoutineTimeTrackerWidget() {
 
                 nextZoom = Math.max(0.5, Math.min(7, nextZoom))
                 updateZoom(nextZoom, focalYViewport)
+            } else if (e.touches.length === 1) {
+                const clientY = e.touches[0].clientY
+                const dy = clientY - lastTouchY
+                lastTouchY = clientY
+
+                const atTop = container.scrollTop <= 0
+                const atBottom =
+                    container.scrollTop + container.clientHeight >=
+                    container.scrollHeight - 1
+
+                if (
+                    (atTop && dy > 0) ||
+                    (atBottom && dy < 0) ||
+                    overscrollY !== 0
+                ) {
+                    if (overscrollRafId) cancelAnimationFrame(overscrollRafId)
+                    const isOverscrolling = updateOverscroll(dy * 1.5)
+                    if (isOverscrolling) {
+                        e.preventDefault()
+                    }
+                }
             }
         }
 
@@ -1013,6 +1104,9 @@ export default function RoutineTimeTrackerWidget() {
             if (e.touches.length < 2) {
                 initialTouchDistance = 0
                 snapBackZoom(lastFocalYViewport)
+            }
+            if (overscrollY !== 0) {
+                snapBackOverscroll()
             }
         }
 
@@ -1035,6 +1129,7 @@ export default function RoutineTimeTrackerWidget() {
 
         return () => {
             if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
+            if (overscrollRafId) cancelAnimationFrame(overscrollRafId)
             if (wheelTimeout) clearTimeout(wheelTimeout)
             container.removeEventListener("wheel", handleWheel)
             container.removeEventListener("touchstart", handleTouchStart)
@@ -1893,7 +1988,7 @@ export default function RoutineTimeTrackerWidget() {
 
             <div
                 ref={scrollContainerRef}
-                className={`scrollbar-hide relative w-full flex-1 bg-background select-none ${dragState ? "overflow-hidden" : "overflow-y-auto"}`}
+                className={`scrollbar-hide relative w-full flex-1 overscroll-y-none bg-background select-none ${dragState ? "overflow-hidden" : "overflow-y-auto"}`}
                 onMouseDown={startPress}
                 onMouseUp={endPress}
                 onMouseLeave={endPress}
