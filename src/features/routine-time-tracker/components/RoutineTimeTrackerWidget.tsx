@@ -865,6 +865,9 @@ export default function RoutineTimeTrackerWidget() {
 
         let initialTouchDistance = 0
         let initialZoom = 1
+        let snapBackRafId: number | null = null
+        let wheelTimeout: ReturnType<typeof setTimeout> | null = null
+        let lastFocalYViewport = container.clientHeight / 2
 
         const updateZoom = (nextZoom: number, focalYViewport: number) => {
             const oldZoom = zoomLevelSignal.value
@@ -876,7 +879,6 @@ export default function RoutineTimeTrackerWidget() {
             zoomLevelSignal.value = nextZoom
 
             // Adjust scroll position to keep focal point fixed relative to the viewport
-            // s2 = (s1 + y - TOP_MARGIN) * (z2 / z1) + TOP_MARGIN - y
             const nextScrollTop =
                 (s1 + focalYViewport - TOP_MARGIN) * (nextZoom / oldZoom) +
                 TOP_MARGIN -
@@ -885,41 +887,92 @@ export default function RoutineTimeTrackerWidget() {
             container.scrollTop = nextScrollTop
         }
 
+        const snapBackZoom = (focalYViewport: number) => {
+            if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
+
+            const minZoom = 1
+            const maxZoom = 6
+            const currentZoom = zoomLevelSignal.value
+
+            if (currentZoom >= minZoom && currentZoom <= maxZoom) return
+
+            const targetZoom = currentZoom < minZoom ? minZoom : maxZoom
+
+            const animate = () => {
+                const z = zoomLevelSignal.value
+                const diff = targetZoom - z
+                if (Math.abs(diff) < 0.005) {
+                    updateZoom(targetZoom, focalYViewport)
+                    return
+                }
+                updateZoom(z + diff * 0.15, focalYViewport)
+                snapBackRafId = requestAnimationFrame(animate)
+            }
+            snapBackRafId = requestAnimationFrame(animate)
+        }
+
         const handleWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault()
+                if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
+
                 const rect = container.getBoundingClientRect()
                 const focalYViewport = e.clientY - rect.top
+                lastFocalYViewport = focalYViewport
 
                 const delta = -e.deltaY * 0.005
-                const nextZoom = Math.max(
-                    1,
-                    Math.min(6, zoomLevelSignal.value + delta)
-                )
+                const currentZoom = zoomLevelSignal.value
+                let nextZoom = currentZoom + delta
+
+                // Overshoot resistance
+                if (nextZoom < 1) {
+                    nextZoom = currentZoom + delta * 0.2
+                } else if (nextZoom > 6) {
+                    nextZoom = currentZoom + delta * 0.2
+                }
+
+                nextZoom = Math.max(0.5, Math.min(7, nextZoom))
                 updateZoom(nextZoom, focalYViewport)
+
+                if (wheelTimeout) clearTimeout(wheelTimeout)
+                wheelTimeout = setTimeout(() => {
+                    snapBackZoom(focalYViewport)
+                }, 150)
             }
         }
 
         const handleGestureStart = (e: Event) => {
             e.preventDefault()
+            if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
             initialZoom = zoomLevelSignal.value
         }
 
         const handleGestureChange = (e: Event) => {
             e.preventDefault()
             const gestureEvent = e as unknown as { scale: number }
-            const nextZoom = Math.max(
-                1,
-                Math.min(6, initialZoom * gestureEvent.scale)
-            )
+            let nextZoom = initialZoom * gestureEvent.scale
 
-            // For Safari gestures, use center of container as focal point
+            if (nextZoom < 1) {
+                nextZoom = 1 - (1 - nextZoom) * 0.3
+            } else if (nextZoom > 6) {
+                nextZoom = 6 + (nextZoom - 6) * 0.3
+            }
+
+            nextZoom = Math.max(0.5, Math.min(7, nextZoom))
+
             const focalYViewport = container.clientHeight / 2
+            lastFocalYViewport = focalYViewport
             updateZoom(nextZoom, focalYViewport)
+        }
+
+        const handleGestureEnd = (e: Event) => {
+            e.preventDefault()
+            snapBackZoom(lastFocalYViewport)
         }
 
         const handleTouchStart = (e: TouchEvent) => {
             if (e.touches.length === 2) {
+                if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
                 initialTouchDistance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -940,14 +993,31 @@ export default function RoutineTimeTrackerWidget() {
                 const pinchCenterY =
                     (e.touches[0].clientY + e.touches[1].clientY) / 2
                 const focalYViewport = pinchCenterY - rect.top
+                lastFocalYViewport = focalYViewport
 
                 const scale = currentDistance / initialTouchDistance
-                const nextZoom = Math.max(1, Math.min(6, initialZoom * scale))
+                let nextZoom = initialZoom * scale
+
+                if (nextZoom < 1) {
+                    nextZoom = 1 - (1 - nextZoom) * 0.3
+                } else if (nextZoom > 6) {
+                    nextZoom = 6 + (nextZoom - 6) * 0.3
+                }
+
+                nextZoom = Math.max(0.5, Math.min(7, nextZoom))
                 updateZoom(nextZoom, focalYViewport)
             }
         }
 
+        const handleTouchEnd = (e: TouchEvent) => {
+            if (e.touches.length < 2) {
+                initialTouchDistance = 0
+                snapBackZoom(lastFocalYViewport)
+            }
+        }
+
         const handleDoubleClick = () => {
+            if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
             zoomLevelSignal.value = 1
         }
 
@@ -956,17 +1026,25 @@ export default function RoutineTimeTrackerWidget() {
         container.addEventListener("touchmove", handleTouchMove, {
             passive: false,
         })
+        container.addEventListener("touchend", handleTouchEnd)
+        container.addEventListener("touchcancel", handleTouchEnd)
         container.addEventListener("dblclick", handleDoubleClick)
         container.addEventListener("gesturestart", handleGestureStart)
         container.addEventListener("gesturechange", handleGestureChange)
+        container.addEventListener("gestureend", handleGestureEnd)
 
         return () => {
+            if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
+            if (wheelTimeout) clearTimeout(wheelTimeout)
             container.removeEventListener("wheel", handleWheel)
             container.removeEventListener("touchstart", handleTouchStart)
             container.removeEventListener("touchmove", handleTouchMove)
+            container.removeEventListener("touchend", handleTouchEnd)
+            container.removeEventListener("touchcancel", handleTouchEnd)
             container.removeEventListener("dblclick", handleDoubleClick)
             container.removeEventListener("gesturestart", handleGestureStart)
             container.removeEventListener("gesturechange", handleGestureChange)
+            container.removeEventListener("gestureend", handleGestureEnd)
         }
     }, [currentDate])
 
