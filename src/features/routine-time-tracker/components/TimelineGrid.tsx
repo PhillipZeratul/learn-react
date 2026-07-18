@@ -12,86 +12,32 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
     const containerRef = useRef<HTMLDivElement>(null)
 
     const totalHours = daysToRender * 24
-
-    // Refs to avoid heavy querySelectors on every zoom
-    const elementsRef = useRef<{
-        hourLines: HTMLElement[]
-        hourLabels: HTMLElement[]
-        halfLines: HTMLElement[]
-        halfLabels: HTMLElement[]
-        tenLines: HTMLElement[]
-        tenLabels: HTMLElement[]
-    } | null>(null)
+    const tenMins = [10, 20, 40, 50]
 
     useEffect(() => {
         if (!containerRef.current) return
 
-        const container = containerRef.current
-        elementsRef.current = {
-            hourLines: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-line-hour")
-            ),
-            hourLabels: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-time-label-hour")
-            ),
-            halfLines: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-line-half")
-            ),
-            halfLabels: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-time-label-half")
-            ),
-            tenLines: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-line-ten")
-            ),
-            tenLabels: Array.from(
-                container.querySelectorAll<HTMLElement>(".grid-time-label-ten")
-            ),
-        }
-
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
             const zoom = zoomLevelSignal.value
-            const cached = elementsRef.current
-            if (!cached) return
 
-            // 1. Update Hour Markers (Always visible)
-            cached.hourLines.forEach((line, i) => {
-                line.style.top = `${i * 60 * ppm + TOP_MARGIN}px`
-            })
-            cached.hourLabels.forEach((label, i) => {
-                label.style.top = `${i * 60 * ppm + TOP_MARGIN}px`
-            })
-
-            // 2. Update Half-Hour Markers (Visible if zoom > 2x)
             const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
-            cached.halfLines.forEach((line, i) => {
-                line.style.top = `${(i * 60 + 30) * ppm + TOP_MARGIN}px`
-                line.style.opacity = halfOpacity.toString()
-                line.style.display = halfOpacity > 0 ? "block" : "none"
-            })
-            cached.halfLabels.forEach((label, i) => {
-                label.style.top = `${(i * 60 + 30) * ppm + TOP_MARGIN}px`
-                label.style.opacity = halfOpacity.toString()
-                label.style.display = halfOpacity > 0 ? "block" : "none"
-            })
-
-            // 3. Update 10-Minute Markers (Visible if zoom > 4x)
             const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
-            const tenMins = [10, 20, 40, 50]
-            cached.tenLines.forEach((line, i) => {
-                const hour = Math.floor(i / 4)
-                const minute = tenMins[i % 4]
-                line.style.top = `${(hour * 60 + minute) * ppm + TOP_MARGIN}px`
-                line.style.opacity = tenOpacity.toString()
-                line.style.display = tenOpacity > 0 ? "block" : "none"
-            })
-            cached.tenLabels.forEach((label, i) => {
-                const hour = Math.floor(i / 4)
-                const minute = tenMins[i % 4]
-                label.style.top = `${(hour * 60 + minute) * ppm + TOP_MARGIN}px`
-                label.style.opacity = tenOpacity.toString()
-                label.style.display = tenOpacity > 0 ? "block" : "none"
-            })
+
+            if (containerRef.current) {
+                const style = containerRef.current.style
+                style.setProperty("--ppm", ppm.toString())
+                style.setProperty("--half-opacity", halfOpacity.toString())
+                style.setProperty(
+                    "--half-display",
+                    halfOpacity > 0 ? "block" : "none"
+                )
+                style.setProperty("--ten-opacity", tenOpacity.toString())
+                style.setProperty(
+                    "--ten-display",
+                    tenOpacity > 0 ? "block" : "none"
+                )
+            }
         })
 
         return () => dispose()
@@ -101,28 +47,26 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
         <div
             ref={containerRef}
             className="pointer-events-none absolute inset-0"
+            // Set initial variables so it renders correctly before effect runs
+            style={
+                {
+                    "--ppm": pixelsPerMinuteSignal.peek().toString(),
+                    "--half-opacity": Math.max(
+                        0,
+                        Math.min(1, (zoomLevelSignal.peek() - 2) * 2)
+                    ).toString(),
+                    "--half-display":
+                        zoomLevelSignal.peek() > 2 ? "block" : "none",
+                    "--ten-opacity": Math.max(
+                        0,
+                        Math.min(1, (zoomLevelSignal.peek() - 4) * 2)
+                    ).toString(),
+                    "--ten-display":
+                        zoomLevelSignal.peek() > 4 ? "block" : "none",
+                } as React.CSSProperties
+            }
         >
-            {/* Grid Lines */}
-            {[...Array(totalHours + 1)].map((_, i) => (
-                <div
-                    key={`grid-line-hour-${i}`}
-                    className="grid-line-hour absolute right-0 left-0 -translate-y-1/2 border-t border-dashed border-muted-foreground/30"
-                />
-            ))}
-
-            {[...Array(totalHours)].map((_, i) => (
-                <div
-                    key={`grid-line-half-${i}`}
-                    className="grid-line-half absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/25"
-                />
-            ))}
-
-            {[...Array(totalHours * 4)].map((_, i) => (
-                <div
-                    key={`grid-line-ten-${i}`}
-                    className="grid-line-ten absolute right-0 left-0 -translate-y-1/2 border-t border-dotted border-muted-foreground/20"
-                />
-            ))}
+            <GridLines />
 
             {/* Time Labels */}
             <div className="absolute inset-0 flex">
@@ -139,8 +83,8 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
 
                         let dateStr = ""
                         let isTodayGrid = false
-                        if (isMidnight && baseDate && i < totalHours) {
-                            const d = new Date(baseDate)
+                        if (isMidnight && i > 0 && i < totalHours) {
+                            const d = new Date(baseDate || new Date())
                             d.setDate(d.getDate() + Math.floor(i / 24))
                             dateStr = d.toLocaleDateString(undefined, {
                                 weekday: "short",
@@ -153,10 +97,13 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
 
                         return (
                             <div
-                                key={`grid-time-label-hour-${i}`}
-                                className="grid-time-label-hour absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center font-mono text-xs text-muted-foreground"
+                                key={`grid-label-hour-${i}`}
+                                className="grid-time-label-hour absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center font-mono text-xs text-muted-foreground select-none"
+                                style={{
+                                    top: `calc(${i * 60} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                }}
                             >
-                                {isMidnight && dateStr && (
+                                {isMidnight && dateStr && i < totalHours && (
                                     <span
                                         className={`pointer-events-auto absolute -top-5 rounded-md px-2 py-0.5 font-sans text-[10px] whitespace-nowrap backdrop-blur-sm ${
                                             isTodayGrid
@@ -181,8 +128,13 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
                         const localHour = i % 24
                         return (
                             <div
-                                key={`grid-time-label-half-${i}`}
-                                className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/80"
+                                key={`grid-label-half-${i}`}
+                                className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-[10px] text-muted-foreground/60 select-none"
+                                style={{
+                                    top: `calc(${i * 60 + 30} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                    opacity: "var(--half-opacity)",
+                                    display: "var(--half-display)",
+                                }}
                             >
                                 <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
                                     {String(localHour).padStart(2, "0")}:30
@@ -194,12 +146,17 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
                     {/* 10-Minute Labels */}
                     {[...Array(totalHours * 4)].map((_, i) => {
                         const hour = Math.floor(i / 4)
+                        const minute = tenMins[i % 4]
                         const localHour = hour % 24
-                        const minute = [10, 20, 40, 50][i % 4]
                         return (
                             <div
-                                key={`grid-time-label-ten-${i}`}
-                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60"
+                                key={`grid-label-ten-${i}`}
+                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 select-none"
+                                style={{
+                                    top: `calc(${hour * 60 + minute} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                    opacity: "var(--ten-opacity)",
+                                    display: "var(--ten-display)",
+                                }}
                             >
                                 <span className="pointer-events-auto bg-background px-1 tabular-nums">
                                     {String(localHour).padStart(2, "0")}:
@@ -212,5 +169,124 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
                 <div className="flex-1" /> {/* Right spacer */}
             </div>
         </div>
+    )
+}
+
+const GridLines = () => {
+    const ppm = pixelsPerMinuteSignal.value
+    const zoom = zoomLevelSignal.value
+
+    const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
+    const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
+
+    return (
+        <svg
+            className="pointer-events-none absolute inset-x-0 h-full w-full"
+            style={{
+                top: `${TOP_MARGIN}px`,
+                height: `calc(100% - ${TOP_MARGIN}px)`,
+            }}
+        >
+            <defs>
+                <pattern
+                    id="grid-hour"
+                    width="8"
+                    height={60 * ppm}
+                    patternUnits="userSpaceOnUse"
+                >
+                    <line
+                        x1="0"
+                        y1="0"
+                        x2="100%"
+                        y2="0"
+                        stroke="currentColor"
+                        strokeDasharray="4 4"
+                        strokeWidth="1"
+                        className="text-muted-foreground/30"
+                    />
+                </pattern>
+                <pattern
+                    id="grid-half"
+                    width="4"
+                    height={60 * ppm}
+                    patternUnits="userSpaceOnUse"
+                >
+                    <line
+                        x1="0"
+                        y1={30 * ppm}
+                        x2="100%"
+                        y2={30 * ppm}
+                        stroke="currentColor"
+                        strokeDasharray="2 2"
+                        strokeWidth="1"
+                        className="text-muted-foreground/25"
+                    />
+                </pattern>
+                <pattern
+                    id="grid-ten"
+                    width="4"
+                    height={60 * ppm}
+                    patternUnits="userSpaceOnUse"
+                >
+                    <line
+                        x1="0"
+                        y1={10 * ppm}
+                        x2="100%"
+                        y2={10 * ppm}
+                        stroke="currentColor"
+                        strokeDasharray="2 2"
+                        strokeWidth="1"
+                        className="text-muted-foreground/20"
+                    />
+                    <line
+                        x1="0"
+                        y1={20 * ppm}
+                        x2="100%"
+                        y2={20 * ppm}
+                        stroke="currentColor"
+                        strokeDasharray="2 2"
+                        strokeWidth="1"
+                        className="text-muted-foreground/20"
+                    />
+                    <line
+                        x1="0"
+                        y1={40 * ppm}
+                        x2="100%"
+                        y2={40 * ppm}
+                        stroke="currentColor"
+                        strokeDasharray="2 2"
+                        strokeWidth="1"
+                        className="text-muted-foreground/20"
+                    />
+                    <line
+                        x1="0"
+                        y1={50 * ppm}
+                        x2="100%"
+                        y2={50 * ppm}
+                        stroke="currentColor"
+                        strokeDasharray="2 2"
+                        strokeWidth="1"
+                        className="text-muted-foreground/20"
+                    />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-hour)" />
+            {halfOpacity > 0 && (
+                <rect
+                    width="100%"
+                    height="100%"
+                    fill="url(#grid-half)"
+                    style={{ opacity: halfOpacity }}
+                />
+            )}
+            {tenOpacity > 0 && (
+                <rect
+                    width="100%"
+                    height="100%"
+                    fill="url(#grid-ten)"
+                    style={{ opacity: tenOpacity }}
+                />
+            )}
+        </svg>
     )
 }
