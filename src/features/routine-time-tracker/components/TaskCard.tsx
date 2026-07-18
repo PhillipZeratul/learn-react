@@ -31,10 +31,6 @@ interface TaskCardProps {
     daysToRender: number
 }
 
-const SHOW_CARD_TITLE_HEIGHT = 20
-const SHOW_CARD_TIME_HEIGHT = 44
-const SHOW_CARD_DURATION_HEIGHT = 58
-
 export const TaskCard = memo(
     ({
         card,
@@ -50,13 +46,9 @@ export const TaskCard = memo(
         daysToRender,
     }: TaskCardProps) => {
         const cardRef = useRef<HTMLDivElement>(null)
-        const titleRef = useRef<HTMLDivElement>(null)
         const timeRef = useRef<HTMLDivElement>(null)
         const durationRef = useRef<HTMLDivElement>(null)
         const solidBgRef = useRef<HTMLDivElement>(null)
-        const ghostBgRef = useRef<HTMLDivElement>(null)
-        const contentWrapperRef = useRef<HTMLDivElement>(null)
-        const tagStripeRef = useRef<HTMLDivElement>(null)
 
         const { startMin: rawStartMin, duration: rawDuration } =
             getAbsoluteBounds(card.start_at, card.end_at, baseDate)
@@ -81,9 +73,15 @@ export const TaskCard = memo(
         const GHOST_EXTENSION_PX = 60
         const isCurrentlyTracking = isActive || !card.end_at
 
+        const initialHeightCalc = `calc(var(--duration) * var(--ppm) * 1px)`
+        const initialTotalHeightCalc = isCurrentlyTracking
+            ? `calc(var(--duration) * var(--ppm) * 1px + ${GHOST_EXTENSION_PX}px)`
+            : initialHeightCalc
+        const maskImageCalc = `linear-gradient(to bottom, black 0%, black ${initialHeightCalc}, transparent ${initialTotalHeightCalc})`
+        const initialTransform = `translateY(calc(var(--start-min) * var(--ppm) * 1px + ${TOP_MARGIN}px))`
+
         useEffect(() => {
             const dispose = effect(() => {
-                const ppm = pixelsPerMinuteSignal.value
                 const container = cardRef.current
                 if (!container) return
 
@@ -91,14 +89,11 @@ export const TaskCard = memo(
                 const activeDrag = isDragging || !!override
 
                 if (activeDrag) {
+                    const ppm = pixelsPerMinuteSignal.value
                     const dragHeight = override
                         ? override.height
                         : dragHeightSignal.value
                     const top = override ? override.top : dragTopSignal.value
-                    const showTitle = dragHeight >= SHOW_CARD_TITLE_HEIGHT
-                    const showTime = dragHeight >= SHOW_CARD_TIME_HEIGHT
-                    const showDuration = dragHeight >= SHOW_CARD_DURATION_HEIGHT
-
                     const leftOffset = isDragging ? dragLeftSignal.value : 0
 
                     Object.assign(container.style, {
@@ -122,30 +117,7 @@ export const TaskCard = memo(
                         solidBgRef.current.style.height = `${dragHeight}px`
                     }
 
-                    if (contentWrapperRef.current) {
-                        Object.assign(contentWrapperRef.current.style, {
-                            height: `${dragHeight}px`,
-                            paddingTop: showTime ? "0.5rem" : "0",
-                            paddingBottom: showTime ? "0.5rem" : "0",
-                        })
-                    }
-
-                    if (tagStripeRef.current) {
-                        tagStripeRef.current.style.height = `${dragHeight}px`
-                    }
-
-                    if (titleRef.current) {
-                        Object.assign(titleRef.current.style, {
-                            display: showTitle ? "block" : "none",
-                            lineHeight: showTime ? "1.25rem" : "1",
-                        })
-                    }
-
                     if (timeRef.current) {
-                        timeRef.current.style.display = showTime
-                            ? "block"
-                            : "none"
-
                         const currentStartMin =
                             Math.round((top - TOP_MARGIN) / ppm / 5) * 5
                         const currentEndMin =
@@ -164,9 +136,6 @@ export const TaskCard = memo(
                     }
 
                     if (durationRef.current) {
-                        durationRef.current.style.display = showDuration
-                            ? "block"
-                            : "none"
                         const activeRealDurationMinutes =
                             realDurationMinutes + (dragHeight / ppm - duration)
                         durationRef.current.textContent = `${getDurationString(activeRealDurationMinutes)}`
@@ -179,64 +148,25 @@ export const TaskCard = memo(
                         "border-primary/30"
                     )
 
-                    const height = duration * ppm
-                    const totalHeight = isCurrentlyTracking
-                        ? Math.max(height, 1) + GHOST_EXTENSION_PX
-                        : height
-                    const showTitle = totalHeight >= SHOW_CARD_TITLE_HEIGHT
-                    const showTime = totalHeight >= SHOW_CARD_TIME_HEIGHT
-                    const showDuration =
-                        totalHeight >= SHOW_CARD_DURATION_HEIGHT
-
                     Object.assign(container.style, {
-                        transform: `translateY(${startMin * ppm + TOP_MARGIN}px)`,
-                        height: `${totalHeight}px`,
+                        transform: initialTransform,
+                        height: initialTotalHeightCalc,
                         WebkitMaskImage: isCurrentlyTracking
-                            ? `linear-gradient(to bottom, black 0%, black ${height}px, transparent ${totalHeight}px)`
+                            ? maskImageCalc
                             : "",
-                        maskImage: isCurrentlyTracking
-                            ? `linear-gradient(to bottom, black 0%, black ${height}px, transparent ${totalHeight}px)`
-                            : "",
+                        maskImage: isCurrentlyTracking ? maskImageCalc : "",
+                        zIndex: "10",
                     })
 
                     if (solidBgRef.current) {
-                        solidBgRef.current.style.height = `${height}px`
-                    }
-
-                    if (ghostBgRef.current) {
-                        ghostBgRef.current.style.top = `${height}px`
-                    }
-
-                    if (contentWrapperRef.current) {
-                        Object.assign(contentWrapperRef.current.style, {
-                            height: `${totalHeight}px`,
-                            paddingTop: showTime ? "0.5rem" : "0",
-                            paddingBottom: showTime ? "0.5rem" : "0",
-                        })
-                    }
-
-                    if (tagStripeRef.current) {
-                        tagStripeRef.current.style.height = `${totalHeight}px`
-                    }
-
-                    if (titleRef.current) {
-                        Object.assign(titleRef.current.style, {
-                            display: showTitle ? "block" : "none",
-                            lineHeight: showTime ? "1.25rem" : "1",
-                        })
+                        solidBgRef.current.style.height = initialHeightCalc
                     }
 
                     if (timeRef.current) {
-                        timeRef.current.style.display = showTime
-                            ? "block"
-                            : "none"
                         timeRef.current.textContent = `${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`
                     }
 
                     if (durationRef.current) {
-                        durationRef.current.style.display = showDuration
-                            ? "block"
-                            : "none"
                         durationRef.current.textContent = `${getDurationString(realDurationMinutes)}`
                     }
                 }
@@ -246,10 +176,13 @@ export const TaskCard = memo(
         }, [
             isDragging,
             card,
-            startMin,
             duration,
-            isCurrentlyTracking,
             realDurationMinutes,
+            initialTransform,
+            initialTotalHeightCalc,
+            maskImageCalc,
+            initialHeightCalc,
+            isCurrentlyTracking,
         ])
 
         const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -259,7 +192,7 @@ export const TaskCard = memo(
             }
         }
 
-        const baseClasses = `task-card absolute pointer-events-auto flex flex-col justify-start overflow-hidden`
+        const baseClasses = `task-card tc-container absolute pointer-events-auto flex flex-col justify-start overflow-hidden`
         const idleClasses = isCurrentlyTracking
             ? "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm"
             : "transition-shadow duration-200 hover:shadow-md cursor-pointer shadow-sm border border-border bg-card/60"
@@ -269,17 +202,6 @@ export const TaskCard = memo(
         const currentRounding = `${
             isStartClipped ? "rounded-t-none border-t-0" : "rounded-t-xl"
         } ${isEndClipped ? "rounded-b-none border-b-0" : "rounded-b-xl"}`
-
-        const ppm = pixelsPerMinuteSignal.peek()
-        const initialHeight = duration * ppm
-        const initialTotalHeight = isCurrentlyTracking
-            ? Math.max(initialHeight, 1) + GHOST_EXTENSION_PX
-            : initialHeight
-        const initialTransform = `translateY(${startMin * ppm + TOP_MARGIN}px)`
-        const initialShowTitle = initialTotalHeight >= SHOW_CARD_TITLE_HEIGHT
-        const initialShowTime = initialTotalHeight >= SHOW_CARD_TIME_HEIGHT
-        const initialShowDuration =
-            initialTotalHeight >= SHOW_CARD_DURATION_HEIGHT
 
         const defaultLeft = layout ? layout.left : "0.5rem"
         const defaultWidth = layout ? layout.width : "calc(100% - 1rem)"
@@ -302,23 +224,27 @@ export const TaskCard = memo(
                 role="button"
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
-                style={{
-                    top: 0,
-                    transform: isDragging ? undefined : initialTransform,
-                    height: isDragging ? undefined : `${initialTotalHeight}px`,
-                    left: leftStyle,
-                    width: widthStyle,
-                    zIndex: zIndexStyle,
-                    willChange: willChangeStyle,
-                    WebkitMaskImage:
-                        isCurrentlyTracking && !isDragging
-                            ? `linear-gradient(to bottom, black 0%, black ${initialHeight}px, transparent ${initialTotalHeight}px)`
-                            : undefined,
-                    maskImage:
-                        isCurrentlyTracking && !isDragging
-                            ? `linear-gradient(to bottom, black 0%, black ${initialHeight}px, transparent ${initialTotalHeight}px)`
-                            : undefined,
-                }}
+                style={
+                    {
+                        top: 0,
+                        transform: isDragging ? undefined : initialTransform,
+                        height: isDragging ? undefined : initialTotalHeightCalc,
+                        left: leftStyle,
+                        width: widthStyle,
+                        zIndex: zIndexStyle,
+                        willChange: willChangeStyle,
+                        WebkitMaskImage:
+                            isCurrentlyTracking && !isDragging
+                                ? maskImageCalc
+                                : undefined,
+                        maskImage:
+                            isCurrentlyTracking && !isDragging
+                                ? maskImageCalc
+                                : undefined,
+                        "--start-min": startMin.toString(),
+                        "--duration": duration.toString(),
+                    } as React.CSSProperties
+                }
                 onMouseDown={onPress}
                 onTouchStart={onPress}
                 onClick={(e) => {
@@ -338,9 +264,8 @@ export const TaskCard = memo(
                 {/* Ghost Extension Layer (Rendered underneath solid part) */}
                 {isCurrentlyTracking && !isDragging && (
                     <div
-                        ref={ghostBgRef}
                         className="pointer-events-none absolute inset-x-0 h-15"
-                        style={{ top: `${initialHeight}px` }}
+                        style={{ top: initialHeightCalc }}
                     >
                         <div
                             className="absolute inset-x-0 bg-primary/20"
@@ -370,7 +295,7 @@ export const TaskCard = memo(
                             : "bg-transparent"
                     }`}
                     style={{
-                        height: isDragging ? undefined : `${initialHeight}px`,
+                        height: isDragging ? undefined : initialHeightCalc,
                         borderTopColor: isStartClipped
                             ? "transparent"
                             : undefined,
@@ -379,47 +304,28 @@ export const TaskCard = memo(
 
                 {/* Content Wrapper */}
                 <div
-                    ref={contentWrapperRef}
-                    className={`absolute inset-x-0 top-0 z-10 flex flex-col justify-center px-3 ${
-                        !isDragging && initialShowTime ? "py-2" : "py-0"
-                    }`}
-                    style={{
-                        height: isDragging
-                            ? undefined
-                            : `${initialTotalHeight}px`,
-                    }}
+                    className={`tc-content-wrapper absolute inset-x-0 top-0 bottom-0 z-10 flex flex-col justify-center px-3`}
                 >
                     <div
-                        ref={tagStripeRef}
                         className="absolute top-0 bottom-0 left-0 z-10 w-1.5"
                         style={{
                             backgroundColor: getTagColor(card.tag_id),
-                            height: isDragging
-                                ? undefined
-                                : `${initialTotalHeight}px`,
                         }}
                     />
                     <div
-                        ref={titleRef}
-                        className={`card-title shrink-0 truncate text-sm font-medium text-foreground ${
-                            isDragging || initialShowTitle ? "block" : "none"
-                        } ${initialShowTime ? "leading-tight" : "leading-none"}`}
+                        className={`tc-title shrink-0 truncate text-sm font-medium text-foreground`}
                     >
                         {card.title || getTagName(card.tag_id)}
                     </div>
                     <div
                         ref={timeRef}
-                        className={`card-time shrink-0 truncate text-[10px] text-muted-foreground tabular-nums ${
-                            isDragging || initialShowTime ? "block" : "none"
-                        }`}
+                        className={`tc-time shrink-0 truncate text-[10px] text-muted-foreground tabular-nums`}
                     >
                         {`${isoToTime(card.start_at)} - ${card.end_at ? isoToTime(card.end_at) : "Now"}`}
                     </div>
                     <div
                         ref={durationRef}
-                        className={`card-duration shrink-0 truncate text-[10px] text-muted-foreground/80 tabular-nums ${
-                            isDragging || initialShowDuration ? "block" : "none"
-                        }`}
+                        className={`tc-duration shrink-0 truncate text-[10px] text-muted-foreground/80 tabular-nums`}
                     >
                         {`${getDurationString(realDurationMinutes)}`}
                     </div>

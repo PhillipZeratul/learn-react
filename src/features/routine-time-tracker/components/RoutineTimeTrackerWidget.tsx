@@ -792,6 +792,10 @@ export default function RoutineTimeTrackerWidget() {
 
             if (timelineContainerRef.current) {
                 timelineContainerRef.current.style.height = `${DAYS_TO_RENDER * 24 * 60 * ppm + BOTTOM_MARGIN}px`
+                timelineContainerRef.current.style.setProperty(
+                    "--ppm",
+                    ppm.toString()
+                )
             }
         })
         return () => dispose()
@@ -2003,9 +2007,12 @@ export default function RoutineTimeTrackerWidget() {
                 <div
                     ref={timelineContainerRef}
                     className="pointer-events-none relative mx-auto w-full max-w-2xl"
-                    style={{
-                        height: `${DAYS_TO_RENDER * 24 * 60 * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
-                    }}
+                    style={
+                        {
+                            height: `${DAYS_TO_RENDER * 24 * 60 * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
+                            "--ppm": pixelsPerMinuteSignal.peek().toString(),
+                        } as React.CSSProperties
+                    }
                 >
                     <TimelineGrid
                         daysToRender={DAYS_TO_RENDER}

@@ -184,3 +184,39 @@
     opacity: 0;
     border-color: #ef4444;
 }
+@layer components {
+    .tc-container {
+        container-type: size;
+    }
+    @container (max-height: 19.9px) {
+        .tc-title {
+            display: none !important;
+        }
+    }
+    @container (max-height: 43.9px) {
+        .tc-time {
+            display: none !important;
+        }
+        .tc-content-wrapper {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        .tc-title {
+            line-height: 1 !important;
+        }
+    }
+    @container (max-height: 57.9px) {
+        .tc-duration {
+            display: none !important;
+        }
+    }
+    @container (min-height: 44px) {
+        .tc-content-wrapper {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+        .tc-title {
+            line-height: 1.25rem !important;
+        }
+    }
+}
