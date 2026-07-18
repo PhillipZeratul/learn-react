@@ -129,7 +129,7 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
                         return (
                             <div
                                 key={`grid-label-half-${i}`}
-                                className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-[10px] text-muted-foreground/60 select-none"
+                                className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60 select-none"
                                 style={{
                                     top: `calc(${i * 60 + 30} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
                                     opacity: "var(--half-opacity)",
@@ -151,7 +151,7 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
                         return (
                             <div
                                 key={`grid-label-ten-${i}`}
-                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-[9px] text-muted-foreground/40 select-none"
+                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/40 select-none"
                                 style={{
                                     top: `calc(${hour * 60 + minute} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
                                     opacity: "var(--ten-opacity)",
@@ -173,120 +173,80 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
 }
 
 const GridLines = () => {
-    const ppm = pixelsPerMinuteSignal.value
-    const zoom = zoomLevelSignal.value
-
-    const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
-    const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
-
     return (
-        <svg
-            className="pointer-events-none absolute inset-x-0 h-full w-full"
-            style={{
-                top: `${TOP_MARGIN}px`,
-                height: `calc(100% - ${TOP_MARGIN}px)`,
-            }}
-        >
-            <defs>
-                <pattern
-                    id="grid-hour"
-                    width="8"
-                    height={60 * ppm}
-                    patternUnits="userSpaceOnUse"
-                >
-                    <line
-                        x1="0"
-                        y1="0"
-                        x2="100%"
-                        y2="0"
-                        stroke="currentColor"
-                        strokeDasharray="4 4"
-                        strokeWidth="1"
-                        className="text-muted-foreground/30"
-                    />
-                </pattern>
-                <pattern
-                    id="grid-half"
-                    width="4"
-                    height={60 * ppm}
-                    patternUnits="userSpaceOnUse"
-                >
-                    <line
-                        x1="0"
-                        y1={30 * ppm}
-                        x2="100%"
-                        y2={30 * ppm}
-                        stroke="currentColor"
-                        strokeDasharray="2 2"
-                        strokeWidth="1"
-                        className="text-muted-foreground/25"
-                    />
-                </pattern>
-                <pattern
-                    id="grid-ten"
-                    width="4"
-                    height={60 * ppm}
-                    patternUnits="userSpaceOnUse"
-                >
-                    <line
-                        x1="0"
-                        y1={10 * ppm}
-                        x2="100%"
-                        y2={10 * ppm}
-                        stroke="currentColor"
-                        strokeDasharray="2 2"
-                        strokeWidth="1"
-                        className="text-muted-foreground/20"
-                    />
-                    <line
-                        x1="0"
-                        y1={20 * ppm}
-                        x2="100%"
-                        y2={20 * ppm}
-                        stroke="currentColor"
-                        strokeDasharray="2 2"
-                        strokeWidth="1"
-                        className="text-muted-foreground/20"
-                    />
-                    <line
-                        x1="0"
-                        y1={40 * ppm}
-                        x2="100%"
-                        y2={40 * ppm}
-                        stroke="currentColor"
-                        strokeDasharray="2 2"
-                        strokeWidth="1"
-                        className="text-muted-foreground/20"
-                    />
-                    <line
-                        x1="0"
-                        y1={50 * ppm}
-                        x2="100%"
-                        y2={50 * ppm}
-                        stroke="currentColor"
-                        strokeDasharray="2 2"
-                        strokeWidth="1"
-                        className="text-muted-foreground/20"
-                    />
-                </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid-hour)" />
-            {halfOpacity > 0 && (
-                <rect
-                    width="100%"
-                    height="100%"
-                    fill="url(#grid-half)"
-                    style={{ opacity: halfOpacity }}
-                />
-            )}
-            {tenOpacity > 0 && (
-                <rect
-                    width="100%"
-                    height="100%"
-                    fill="url(#grid-ten)"
-                    style={{ opacity: tenOpacity }}
-                />
-            )}
-        </svg>
+        <>
+            {/* Hour lines */}
+            <div
+                className="pointer-events-none absolute inset-x-0 text-muted-foreground/30"
+                style={{
+                    top: `${TOP_MARGIN}px`,
+                    bottom: 0,
+                    backgroundImage: `repeating-linear-gradient(to bottom, 
+                        currentColor 0, 
+                        currentColor 1px, 
+                        transparent 1px, 
+                        transparent calc(60 * var(--ppm) * 1px)
+                    )`,
+                    maskImage: `repeating-linear-gradient(to right, black 0, black 4px, transparent 4px, transparent 8px)`,
+                    WebkitMaskImage: `repeating-linear-gradient(to right, black 0, black 4px, transparent 4px, transparent 8px)`,
+                }}
+            />
+            {/* Half-hour lines */}
+            <div
+                className="pointer-events-none absolute inset-x-0 text-muted-foreground/25"
+                style={{
+                    top: `${TOP_MARGIN}px`,
+                    bottom: 0,
+                    opacity: "var(--half-opacity)",
+                    display: "var(--half-display)",
+                    backgroundImage: `repeating-linear-gradient(to bottom, 
+                        transparent 0, 
+                        transparent calc(30 * var(--ppm) * 1px), 
+                        currentColor calc(30 * var(--ppm) * 1px), 
+                        currentColor calc(30 * var(--ppm) * 1px + 1px), 
+                        transparent calc(30 * var(--ppm) * 1px + 1px), 
+                        transparent calc(60 * var(--ppm) * 1px)
+                    )`,
+                    maskImage: `repeating-linear-gradient(to right, black 0, black 2px, transparent 2px, transparent 4px)`,
+                    WebkitMaskImage: `repeating-linear-gradient(to right, black 0, black 2px, transparent 2px, transparent 4px)`,
+                }}
+            />
+            {/* Ten-minute lines */}
+            <div
+                className="pointer-events-none absolute inset-x-0 text-muted-foreground/20"
+                style={{
+                    top: `${TOP_MARGIN}px`,
+                    bottom: 0,
+                    opacity: "var(--ten-opacity)",
+                    display: "var(--ten-display)",
+                    backgroundImage: `repeating-linear-gradient(to bottom, 
+                        transparent 0,
+                        transparent calc(10 * var(--ppm) * 1px),
+                        currentColor calc(10 * var(--ppm) * 1px),
+                        currentColor calc(10 * var(--ppm) * 1px + 1px),
+                        
+                        transparent calc(10 * var(--ppm) * 1px + 1px),
+                        transparent calc(20 * var(--ppm) * 1px),
+                        currentColor calc(20 * var(--ppm) * 1px),
+                        currentColor calc(20 * var(--ppm) * 1px + 1px),
+                        
+                        transparent calc(20 * var(--ppm) * 1px + 1px),
+                        transparent calc(40 * var(--ppm) * 1px),
+                        currentColor calc(40 * var(--ppm) * 1px),
+                        currentColor calc(40 * var(--ppm) * 1px + 1px),
+                        
+                        transparent calc(40 * var(--ppm) * 1px + 1px),
+                        transparent calc(50 * var(--ppm) * 1px),
+                        currentColor calc(50 * var(--ppm) * 1px),
+                        currentColor calc(50 * var(--ppm) * 1px + 1px),
+                        
+                        transparent calc(50 * var(--ppm) * 1px + 1px),
+                        transparent calc(60 * var(--ppm) * 1px)
+                    )`,
+                    maskImage: `repeating-linear-gradient(to right, black 0, black 2px, transparent 2px, transparent 4px)`,
+                    WebkitMaskImage: `repeating-linear-gradient(to right, black 0, black 2px, transparent 2px, transparent 4px)`,
+                }}
+            />
+        </>
     )
 }
