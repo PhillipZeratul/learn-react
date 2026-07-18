@@ -1,19 +1,19 @@
-export type Brand<K, T> = K & { readonly __brand: T }
+import type { Tagged } from "type-fest"
 
 // ==========================================
 // Id Definitions
 // ==========================================
-export type UserId = Brand<string, "UserId">
-export type QuestId = Brand<string, "QuestId">
+export type UserId = Tagged<string, "UserId">
+export type QuestId = Tagged<string, "QuestId">
 
 // ==========================================
 // Type Definitions
 // ==========================================
-export type Experience = Brand<number, "Experience">
-export type HealthPoint = Brand<number, "HealthPoint">
-export type Coin = Brand<number, "Coin">
+export type Experience = Tagged<number, "Experience">
+export type HealthPoint = Tagged<number, "HealthPoint">
+export type Coin = Tagged<number, "Coin">
 
-export type IsoDateTime = Brand<string, "ISODateTime">
+export type IsoDateTime = Tagged<string, "ISODateTime">
 
 // ==========================================
 // Base Model

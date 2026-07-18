@@ -1,5 +1,5 @@
-import type { Brand } from "@/shared/models/base.model"
+import type { Tagged } from "type-fest"
 
-export type RoutineCardId = Brand<string, "TaskId">
-export type TimeTrackerCardId = Brand<string, "TimeTrackerBlockId">
-export type TagId = Brand<string, "TagId">
+export type RoutineCardId = Tagged<string, "TaskId">
+export type TimeTrackerCardId = Tagged<string, "TimeTrackerBlockId">
+export type TagId = Tagged<string, "TagId">
