@@ -129,6 +129,18 @@ export default function RoutineTimeTrackerWidget() {
     } = useRoutineCardStore()
 
     const { items: tags } = useTagStore()
+
+    // O(1) lookup for "is this tracker currently running" (#5)
+    const activeTrackerIds = useMemo(
+        () =>
+            new Set(
+                allTimeTrackerCards
+                    .filter((c) => c.end_at === null)
+                    .map((c) => c.id)
+            ),
+        [allTimeTrackerCards]
+    )
+
     const handleStopTracker = async (id: TimeTrackerCardId) => {
         const activeCount = allTimeTrackerCards.filter(
             (c) => c.end_at === null && !c.is_deleted
@@ -173,7 +185,19 @@ export default function RoutineTimeTrackerWidget() {
             setNow(initialDate)
         }, 0)
 
-        const interval = setInterval(() => setNow(new Date()), 1000)
+        // Tick at minute precision (#6): the UI displays minute-level times
+        // (1 minute = 1px at zoom 1), so sub-minute re-renders are pure
+        // churn. Returning the previous reference lets React bail out.
+        const interval = setInterval(() => {
+            const next = new Date()
+            setNow((prev) =>
+                prev &&
+                Math.floor(prev.getTime() / 60000) ===
+                    Math.floor(next.getTime() / 60000)
+                    ? prev
+                    : next
+            )
+        }, 1000)
         return () => {
             clearTimeout(timer)
             clearInterval(interval)
@@ -294,6 +318,49 @@ export default function RoutineTimeTrackerWidget() {
     useEffect(() => {
         dragStateRef.current = dragState
     }, [dragState])
+
+    // ── Stable TaskCard dispatchers (#5) ───────────────────────────────────
+    // TaskCard is memoized; fresh inline closures on every widget render
+    // would defeat the memo. These wrappers never change identity — they
+    // forward to the latest handlers via refs.
+    const cardPressRef = useRef<
+        (
+            e: React.MouseEvent | React.TouchEvent,
+            type: "routine" | "timeTracker",
+            card: RoutineCard | TimeTrackerCard
+        ) => void
+    >(() => {})
+    const cardClickRef = useRef<
+        (
+            type: "routine" | "timeTracker",
+            card: RoutineCard | TimeTrackerCard
+        ) => void
+    >(() => {})
+    const stopTrackerRef = useRef<(id: TimeTrackerCardId) => void>(() => {})
+
+    const stableCardPress = useCallback(
+        (
+            e: React.MouseEvent | React.TouchEvent,
+            type: "routine" | "timeTracker",
+            card: RoutineCard | TimeTrackerCard
+        ) => cardPressRef.current(e, type, card),
+        []
+    )
+    const stableCardClick = useCallback(
+        (
+            type: "routine" | "timeTracker",
+            card: RoutineCard | TimeTrackerCard
+        ) => cardClickRef.current(type, card),
+        []
+    )
+    const stableStopTracker = useCallback(
+        (id: TimeTrackerCardId) => stopTrackerRef.current(id),
+        []
+    )
+
+    useEffect(() => {
+        stopTrackerRef.current = handleStopTracker
+    })
     const [confirmDragState, setConfirmDragState] = useState<{
         type: "routine" | "timeTracker"
         card: RoutineCard | TimeTrackerCard
@@ -1323,14 +1390,6 @@ export default function RoutineTimeTrackerWidget() {
         }
     }, [currentDate, updateVisibleRange])
 
-    if (!currentDate || !now) {
-        return (
-            <div className="flex h-full w-full items-center justify-center p-8 text-muted-foreground">
-                Loading tracker…
-            </div>
-        )
-    }
-
     const handleTimeTrackerAction = async (timestamp?: IsoDateTime) => {
         const nowIso = timestamp || getNowISO()
 
@@ -1347,15 +1406,22 @@ export default function RoutineTimeTrackerWidget() {
         })
     }
 
-    const getTagColor = (tagId: string) => {
-        const tag = tags.find((t) => t.id === tagId)
-        return resolveTagColor(tag?.color || "#94a3b8")
-    }
+    // Stable identities so memoized TaskCards aren't re-rendered by these (#5)
+    const getTagColor = useCallback(
+        (tagId: string) => {
+            const tag = tags.find((t) => t.id === tagId)
+            return resolveTagColor(tag?.color || "#94a3b8")
+        },
+        [tags]
+    )
 
-    const getTagName = (tagId: string) => {
-        const tag = tags.find((t) => t.id === tagId)
-        return tag?.name || "Task"
-    }
+    const getTagName = useCallback(
+        (tagId: string) => {
+            const tag = tags.find((t) => t.id === tagId)
+            return tag?.name || "Task"
+        },
+        [tags]
+    )
 
     const handleCreateTask = async (clientX: number, clientY: number) => {
         if (!scrollContainerRef.current || !baseDate) return
@@ -1399,7 +1465,7 @@ export default function RoutineTimeTrackerWidget() {
         const isTimeTrackerBlock = relativeX < contentWidth / 2
 
         if (isTimeTrackerBlock) {
-            if (new Date(startIso).getTime() > now.getTime()) {
+            if (new Date(startIso).getTime() > Date.now()) {
                 return
             }
             const newCard = createTimeTrackerCard({
@@ -1416,12 +1482,37 @@ export default function RoutineTimeTrackerWidget() {
         }
     }
 
+    const handleCardClick = (
+        type: "routine" | "timeTracker",
+        card: RoutineCard | TimeTrackerCard
+    ) => {
+        if (wasDragged.current) return
+
+        if (type === "timeTracker") {
+            // Use the store's original object, not a virtualized copy
+            const original =
+                allTimeTrackerCards.find((c) => c.id === card.id) ??
+                (card as TimeTrackerCard)
+            setEditingState({ type: "timeTracker", card: original })
+        } else {
+            setEditingState({ type: "routine", card: card as RoutineCard })
+        }
+    }
+
     const handleCardPress = (
         e: React.MouseEvent | React.TouchEvent,
         type: "routine" | "timeTracker",
-        task: RoutineCard | TimeTrackerCard
+        rawTask: RoutineCard | TimeTrackerCard
     ) => {
         e.stopPropagation()
+
+        // Rendered tracker cards may be virtualized copies (active tasks get a
+        // synthetic end_at) — always operate on the store's original object.
+        const task =
+            type === "timeTracker"
+                ? allTimeTrackerCards.find((c) => c.id === rawTask.id) ||
+                  rawTask
+                : rawTask
 
         // Ignore multi-touch (pinch zoom)
         if (isTouchEvent(e) && e.touches.length > 1) {
@@ -1714,6 +1805,13 @@ export default function RoutineTimeTrackerWidget() {
             longPressTimer.current = null
         }, 500)
     }
+
+    useEffect(() => {
+        cardPressRef.current = handleCardPress
+    })
+    useEffect(() => {
+        cardClickRef.current = handleCardClick
+    })
 
     const startPress = (e: React.MouseEvent | React.TouchEvent) => {
         if ((e.target as HTMLElement).closest(".task-card")) return
@@ -2127,6 +2225,14 @@ export default function RoutineTimeTrackerWidget() {
         }
     }
 
+    if (!currentDate || !now) {
+        return (
+            <div className="flex h-full w-full items-center justify-center p-8 text-muted-foreground">
+                Loading tracker…
+            </div>
+        )
+    }
+
     return (
         <div className="relative flex h-full w-full flex-col overflow-hidden">
             <DateNavigator
@@ -2218,40 +2324,21 @@ export default function RoutineTimeTrackerWidget() {
                                 <TaskCard
                                     key={task.id}
                                     card={task}
+                                    type="timeTracker"
                                     baseDate={baseDate!}
                                     isDragging={dragState?.card.id === task.id}
-                                    isActive={
-                                        allTimeTrackerCards.find(
-                                            (c) => c.id === task.id
-                                        )?.end_at === null
-                                    }
+                                    isActive={activeTrackerIds.has(task.id)}
                                     getTagColor={getTagColor}
                                     getTagName={getTagName}
-                                    onPress={(e) => {
-                                        const original =
-                                            allTimeTrackerCards.find(
-                                                (c) => c.id === task.id
-                                            ) || task
-                                        handleCardPress(
-                                            e,
-                                            "timeTracker",
-                                            original
-                                        )
-                                    }}
-                                    onClick={() => {
-                                        if (!wasDragged.current) {
-                                            const original =
-                                                allTimeTrackerCards.find(
-                                                    (c) => c.id === task.id
-                                                ) || task
-                                            setEditingState({
-                                                type: "timeTracker",
-                                                card: original,
-                                            })
-                                        }
-                                    }}
-                                    onStop={() => handleStopTracker(task.id)}
-                                    layout={timeTrackerLayoutMap.get(task.id)}
+                                    onPress={stableCardPress}
+                                    onClick={stableCardClick}
+                                    onStop={stableStopTracker}
+                                    layoutLeft={
+                                        timeTrackerLayoutMap.get(task.id)?.left
+                                    }
+                                    layoutWidth={
+                                        timeTrackerLayoutMap.get(task.id)?.width
+                                    }
                                     daysToRender={DAYS_TO_RENDER}
                                 />
                             ))}
@@ -2282,6 +2369,7 @@ export default function RoutineTimeTrackerWidget() {
                                             <TaskCard
                                                 key={task.id}
                                                 card={task}
+                                                type="routine"
                                                 baseDate={baseDate!}
                                                 isDragging={
                                                     dragState?.card.id ===
@@ -2289,24 +2377,18 @@ export default function RoutineTimeTrackerWidget() {
                                                 }
                                                 getTagColor={getTagColor}
                                                 getTagName={getTagName}
-                                                onPress={(e) => {
-                                                    handleCardPress(
-                                                        e,
-                                                        "routine",
-                                                        task
-                                                    )
-                                                }}
-                                                onClick={() => {
-                                                    if (!wasDragged.current) {
-                                                        setEditingState({
-                                                            type: "routine",
-                                                            card: task,
-                                                        })
-                                                    }
-                                                }}
-                                                layout={routineLayoutMap.get(
-                                                    task.id
-                                                )}
+                                                onPress={stableCardPress}
+                                                onClick={stableCardClick}
+                                                layoutLeft={
+                                                    routineLayoutMap.get(
+                                                        task.id
+                                                    )?.left
+                                                }
+                                                layoutWidth={
+                                                    routineLayoutMap.get(
+                                                        task.id
+                                                    )?.width
+                                                }
                                                 daysToRender={DAYS_TO_RENDER}
                                             />
                                         )
@@ -2429,7 +2511,7 @@ export default function RoutineTimeTrackerWidget() {
                                                 up.originalStartAt,
                                             _isVirtual: undefined,
                                             updated_at:
-                                                now.toISOString() as IsoDateTime,
+                                                new Date().toISOString() as IsoDateTime,
                                         }
                                         upsertRoutineCard(detachedInstance)
                                         saves.push(
@@ -2509,7 +2591,7 @@ export default function RoutineTimeTrackerWidget() {
                                                 ...master,
                                                 ...newMasterProps,
                                                 updated_at:
-                                                    now.toISOString() as IsoDateTime,
+                                                    new Date().toISOString() as IsoDateTime,
                                             }
                                             upsertRoutineCard(updatedMaster)
                                             saves.push(

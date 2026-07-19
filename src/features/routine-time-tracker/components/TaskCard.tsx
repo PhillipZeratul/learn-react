@@ -9,6 +9,7 @@ import {
 import { getAbsoluteBounds } from "../utils/time-coordinates"
 import type { RoutineCard } from "../models/routine-card.model"
 import type { TimeTrackerCard } from "../models/time-tracker-card.model"
+import type { TimeTrackerCardId } from "../models/routine-time-tracker.model"
 import {
     dragTopSignal,
     dragHeightSignal,
@@ -19,21 +20,31 @@ import { pixelsPerMinuteSignal } from "../stores/zoom.store"
 
 interface TaskCardProps {
     card: RoutineCard | TimeTrackerCard
+    type: "routine" | "timeTracker"
     isDragging: boolean
     isActive?: boolean
     getTagColor: (tagId: string) => string
     getTagName: (tagId: string) => string
-    onPress: (e: React.MouseEvent | React.TouchEvent) => void
-    onClick: () => void
-    onStop?: () => void
+    onPress: (
+        e: React.MouseEvent | React.TouchEvent,
+        type: "routine" | "timeTracker",
+        card: RoutineCard | TimeTrackerCard
+    ) => void
+    onClick: (
+        type: "routine" | "timeTracker",
+        card: RoutineCard | TimeTrackerCard
+    ) => void
+    onStop?: (id: TimeTrackerCardId) => void
     baseDate: Date
-    layout?: { left: string; width: string }
+    layoutLeft?: string
+    layoutWidth?: string
     daysToRender: number
 }
 
 export const TaskCard = memo(
     ({
         card,
+        type,
         isDragging,
         isActive = false,
         getTagColor,
@@ -42,7 +53,8 @@ export const TaskCard = memo(
         onClick,
         onStop,
         baseDate,
-        layout,
+        layoutLeft,
+        layoutWidth,
         daysToRender,
     }: TaskCardProps) => {
         const cardRef = useRef<HTMLDivElement>(null)
@@ -188,7 +200,7 @@ export const TaskCard = memo(
         const handleKeyDown = (e: React.KeyboardEvent) => {
             if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault()
-                onClick()
+                onClick(type, card)
             }
         }
 
@@ -203,8 +215,8 @@ export const TaskCard = memo(
             isStartClipped ? "rounded-t-none border-t-0" : "rounded-t-xl"
         } ${isEndClipped ? "rounded-b-none border-b-0" : "rounded-b-xl"}`
 
-        const defaultLeft = layout ? layout.left : "0.5rem"
-        const defaultWidth = layout ? layout.width : "calc(100% - 1rem)"
+        const defaultLeft = layoutLeft ?? "0.5rem"
+        const defaultWidth = layoutWidth ?? "calc(100% - 1rem)"
 
         const leftStyle = defaultLeft
         const widthStyle = defaultWidth
@@ -245,8 +257,8 @@ export const TaskCard = memo(
                         "--duration": duration.toString(),
                     } as React.CSSProperties
                 }
-                onMouseDown={onPress}
-                onTouchStart={onPress}
+                onMouseDown={(e) => onPress(e, type, card)}
+                onTouchStart={(e) => onPress(e, type, card)}
                 onClick={(e) => {
                     if (isCurrentlyTracking && !isDragging) {
                         const rect = e.currentTarget.getBoundingClientRect()
@@ -254,11 +266,11 @@ export const TaskCard = memo(
                         const currentPpm = pixelsPerMinuteSignal.value
                         const currentSolidHeight = duration * currentPpm
                         if (relativeY > currentSolidHeight) {
-                            onStop?.()
+                            onStop?.(card.id as TimeTrackerCardId)
                             return
                         }
                     }
-                    onClick()
+                    onClick(type, card)
                 }}
             >
                 {/* Ghost Extension Layer (Rendered underneath solid part) */}

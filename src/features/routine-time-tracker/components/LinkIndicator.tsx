@@ -1,19 +1,23 @@
 import { useRef, useEffect, useCallback } from "react"
 import { effect } from "@preact/signals-react"
 import { TOP_MARGIN } from "../utils/utils"
-import { getAbsoluteBounds } from "../utils/time-coordinates"
 import { dragOverridesSignal } from "../stores/drag.store"
 import { pixelsPerMinuteSignal } from "../stores/zoom.store"
-import type { RoutineCard } from "../models/routine-card.model"
-import type { TimeTrackerCard } from "../models/time-tracker-card.model"
+
+/** Minute-bounds of a card relative to the timeline's base date. */
+export interface CardBounds {
+    startMin: number
+    duration: number
+}
+
+export type CardBoundsMap = Map<string, CardBounds>
 
 export interface LinkIndicatorProps {
     isLinked: boolean
     cardAId: string
     cardBId: string
-    /** All cards in the column – passed by ref so the effect doesn't need to re-subscribe. */
-    cardsRef: React.RefObject<Array<RoutineCard | TimeTrackerCard>>
-    baseDate: Date
+    /** Minute-bounds per card id – passed by ref so the effect doesn't need to re-subscribe. */
+    boundsMapRef: React.RefObject<CardBoundsMap>
     /** Layout map – passed by ref so the effect doesn't need to re-subscribe. */
     layoutMapRef: React.RefObject<Map<string, { left: string; width: string }>>
     onAnimationDone: () => void
@@ -29,48 +33,39 @@ export const LinkIndicator = ({
     isLinked,
     cardAId,
     cardBId,
-    cardsRef,
-    baseDate,
+    boundsMapRef,
     layoutMapRef,
     onAnimationDone,
 }: LinkIndicatorProps) => {
     const containerRef = useRef<HTMLDivElement>(null)
 
     // Stable compute function: reads signals + refs, never changes identity.
+    // O(1) map lookups + arithmetic only — no array scans or Date parsing,
+    // so it stays cheap at drag/zoom signal frequency.
     const computePosition = useCallback((): {
         top: number
         leftPct: number
     } | null => {
-        const cards = cardsRef.current
+        const boundsMap = boundsMapRef.current
         const layoutMap = layoutMapRef.current
-        if (!cards || !layoutMap) return null
+        if (!boundsMap || !layoutMap) return null
 
         const ppm = pixelsPerMinuteSignal.value // signal subscription
 
-        const cardA = cards.find((c) => c.id === cardAId)
-        const cardB = cards.find((c) => c.id === cardBId)
-        if (!cardA || !cardB) return null
+        const boundsA = boundsMap.get(cardAId)
+        const boundsB = boundsMap.get(cardBId)
+        if (!boundsA || !boundsB) return null
 
         const overrides = dragOverridesSignal.value // signal subscription
         const overrideA = overrides[cardAId]
         const overrideB = overrides[cardBId]
 
-        const boundsA = getAbsoluteBounds(
-            cardA.start_at,
-            cardA.end_at,
-            baseDate
-        )
         const topA = overrideA
             ? overrideA.top
             : boundsA.startMin * ppm + TOP_MARGIN
         const heightA = overrideA ? overrideA.height : boundsA.duration * ppm
         const bottomA = topA + heightA
 
-        const boundsB = getAbsoluteBounds(
-            cardB.start_at,
-            cardB.end_at,
-            baseDate
-        )
         const topB = overrideB
             ? overrideB.top
             : boundsB.startMin * ppm + TOP_MARGIN
@@ -97,8 +92,8 @@ export const LinkIndicator = ({
         }
 
         return { top: boundaryY, leftPct }
-    }, [cardAId, cardBId, cardsRef, baseDate, layoutMapRef])
-    // ^^ cardAId, cardBId, baseDate are stable per mount; cardsRef/layoutMapRef are refs
+    }, [cardAId, cardBId, boundsMapRef, layoutMapRef])
+    // ^^ cardAId, cardBId are stable per mount; boundsMapRef/layoutMapRef are refs
 
     // Drive position updates at signal frequency (60 fps) via direct DOM writes.
     useEffect(() => {
