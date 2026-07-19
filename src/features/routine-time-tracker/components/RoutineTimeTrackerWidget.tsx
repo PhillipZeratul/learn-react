@@ -218,13 +218,13 @@ export default function RoutineTimeTrackerWidget() {
                 const cStartMs = new Date(c.start_at).getTime()
                 const cEndMs = c.end_at
                     ? new Date(c.end_at).getTime()
-                    : cStartMs
+                    : now.getTime()
                 if (
                     cStartMs <= endDate.getTime() &&
                     cEndMs >= baseDate.getTime()
                 ) {
-                    // For active tasks on the current day, virtualize end_at to 'now' for real-time UI updates
-                    if (c.end_at === null && isCurrentDay) {
+                    // For active tasks, virtualize end_at to 'now' for real-time UI updates
+                    if (c.end_at === null) {
                         acc.push({
                             ...c,
                             end_at: now.toISOString() as IsoDateTime,
@@ -237,7 +237,7 @@ export default function RoutineTimeTrackerWidget() {
             }
             return acc
         }, [])
-    }, [allTimeTrackerCards, baseDate, isCurrentDay, now])
+    }, [allTimeTrackerCards, baseDate, now])
 
     const currentDateRoutineCards = useMemo(() => {
         if (!baseDate) return []
