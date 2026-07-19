@@ -7,6 +7,7 @@ interface TimeTrackerActionButtonProps {
     onAction: () => void
     isCurrentDay: boolean
     currentTime: Date
+    baseDate: Date
     hasActiveTasks: boolean
 }
 
@@ -14,15 +15,12 @@ export const TimeTrackerActionButton = ({
     onAction,
     isCurrentDay,
     currentTime,
+    baseDate,
     hasActiveTasks,
 }: TimeTrackerActionButtonProps) => {
     const buttonRef = useRef<HTMLDivElement>(null)
 
-    const currentMinutes =
-        currentTime.getHours() * 60 +
-        currentTime.getMinutes() +
-        currentTime.getSeconds() / 60 +
-        currentTime.getMilliseconds() / 60000
+    const currentMinutes = (currentTime.getTime() - baseDate.getTime()) / 60000
 
     useEffect(() => {
         if (!isCurrentDay || !buttonRef.current) return
@@ -44,6 +42,10 @@ export const TimeTrackerActionButton = ({
         <div
             ref={buttonRef}
             className="pointer-events-none absolute right-0 left-0 z-30 flex justify-center"
+            style={{
+                transform: "scaleY(var(--inverse-preview-scale-y, 1))",
+                transformOrigin: "center",
+            }}
         >
             <button
                 onClick={(e) => {

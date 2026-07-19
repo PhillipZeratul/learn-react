@@ -23,6 +23,7 @@ export const CurrentTimeIndicator = ({
             className="pointer-events-none absolute right-0 left-0 z-20 flex -translate-y-1/2 items-center justify-center"
             style={{
                 top: `calc(${currentMinutes} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                transform: `translateY(-50%) scaleY(var(--inverse-preview-scale-y, 1))`,
             }}
         >
             <div className="w-full border-t-2 border-primary/50" />

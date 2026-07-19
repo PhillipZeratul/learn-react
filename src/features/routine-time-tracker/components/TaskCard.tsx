@@ -317,6 +317,10 @@ export const TaskCard = memo(
                 {/* Content Wrapper */}
                 <div
                     className={`tc-content-wrapper absolute inset-x-0 top-0 bottom-0 z-10 flex flex-col justify-center px-3`}
+                    style={{
+                        transform: "scaleY(var(--inverse-preview-scale-y, 1))",
+                        transformOrigin: "center",
+                    }}
                 >
                     <div
                         className="absolute top-0 bottom-0 left-0 z-10 w-1.5"

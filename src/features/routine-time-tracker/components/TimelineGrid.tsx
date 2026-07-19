@@ -87,9 +87,10 @@ export const TimelineGrid = ({
                         return (
                             <div
                                 key={`grid-label-hour-${i}`}
-                                className="grid-time-label-hour absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center font-mono text-xs text-muted-foreground select-none"
+                                className="grid-time-label-hour absolute left-1/2 z-10 flex flex-col items-center justify-center font-mono text-xs text-muted-foreground select-none"
                                 style={{
                                     top: `calc(${i * 60} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                    transform: `translate(-50%, -50%) scaleY(var(--inverse-preview-scale-y, 1))`,
                                 }}
                             >
                                 {isMidnight && dateStr && i < totalHours && (
@@ -121,9 +122,10 @@ export const TimelineGrid = ({
                             return (
                                 <div
                                     key={`grid-label-half-${i}`}
-                                    className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60 select-none"
+                                    className="grid-time-label-half absolute left-1/2 z-10 font-mono text-xs text-muted-foreground/60 select-none"
                                     style={{
                                         top: `calc(${i * 60 + 30} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                        transform: `translate(-50%, -50%) scaleY(var(--inverse-preview-scale-y, 1))`,
                                         opacity: "var(--half-opacity)",
                                         display: "var(--half-display)",
                                     }}
@@ -147,14 +149,15 @@ export const TimelineGrid = ({
                             return (
                                 <div
                                     key={`grid-label-ten-${i}`}
-                                    className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/40 select-none"
+                                    className="grid-time-label-ten absolute left-1/2 z-10 font-mono text-xs text-muted-foreground/60 select-none"
                                     style={{
                                         top: `calc(${hour * 60 + minute} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                        transform: `translate(-50%, -50%) scaleY(var(--inverse-preview-scale-y, 1))`,
                                         opacity: "var(--ten-opacity)",
                                         display: "var(--ten-display)",
                                     }}
                                 >
-                                    <span className="pointer-events-auto bg-background px-1 tabular-nums">
+                                    <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
                                         {String(localHour).padStart(2, "0")}:
                                         {String(minute).padStart(2, "0")}
                                     </span>
@@ -209,7 +212,7 @@ const GridLines = () => {
             />
             {/* Ten-minute lines */}
             <div
-                className="pointer-events-none absolute inset-x-0 text-muted-foreground/20"
+                className="pointer-events-none absolute inset-x-0 text-muted-foreground/25"
                 style={{
                     top: `${TOP_MARGIN}px`,
                     bottom: 0,

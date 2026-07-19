@@ -1073,6 +1073,8 @@ export default function RoutineTimeTrackerWidget() {
                 el.style.transform = ""
                 el.style.transformOrigin = ""
                 el.style.willChange = ""
+                el.style.removeProperty("--preview-scale-y")
+                el.style.removeProperty("--inverse-preview-scale-y")
                 return
             }
 
@@ -1081,6 +1083,11 @@ export default function RoutineTimeTrackerWidget() {
             el.style.transformOrigin = `0 ${previewFocalContentYRef.current}px`
             el.style.transform = `translateY(${overscroll}px) scaleY(${scale})`
             el.style.willChange = "transform"
+            el.style.setProperty("--preview-scale-y", scale.toString())
+            el.style.setProperty(
+                "--inverse-preview-scale-y",
+                (1 / scale).toString()
+            )
         }
 
         const commitZoom = (nextZoom: number, focalYViewport: number) => {
@@ -2346,6 +2353,7 @@ export default function RoutineTimeTrackerWidget() {
                                 onAction={handleTimeTrackerAction}
                                 isCurrentDay={isCurrentDay}
                                 currentTime={now}
+                                baseDate={baseDate!}
                                 hasActiveTasks={allTimeTrackerCards.some(
                                     (c) => c.end_at === null && !c.is_deleted
                                 )}
