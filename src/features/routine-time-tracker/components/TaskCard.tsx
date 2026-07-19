@@ -217,6 +217,7 @@ export const TaskCard = memo(
 
         const defaultLeft = layoutLeft ?? "0.5rem"
         const defaultWidth = layoutWidth ?? "calc(100% - 1rem)"
+        const tagColor = getTagColor(card.tag_id)
 
         const leftStyle = defaultLeft
         const widthStyle = defaultWidth
@@ -283,16 +284,8 @@ export const TaskCard = memo(
                             className="absolute inset-x-0 bg-primary/20"
                             style={{ height: "60px", top: 0 }}
                         />
-                        {/* Tag color (handled by global mask) */}
-                        <div
-                            className="absolute top-0 bottom-0 left-0 w-1.5 opacity-80"
-                            style={{
-                                height: "60px",
-                                backgroundColor: getTagColor(card.tag_id),
-                            }}
-                        />
-                        {/* Scanning animation */}
-                        <div className="animate-scan-down absolute inset-x-0 h-1 bg-primary/40 blur-[2px]" />
+                        {/* Scanning animation (paint-only — see index.css) */}
+                        <div className="animate-scan-down absolute inset-x-0 top-0 h-[3px] rounded-full" />
                     </div>
                 )}
 
@@ -314,6 +307,17 @@ export const TaskCard = memo(
                     }}
                 />
 
+                {/* Tag color band — structural chrome. Painted as a background
+                    gradient on a card-level layer (outside the counter-scaled
+                    content wrapper) so it stretches atomically with the card
+                    box during zoom preview instead of lagging frames behind. */}
+                <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                        backgroundImage: `linear-gradient(to right, ${tagColor} 0, ${tagColor} 0.375rem, transparent 0.375rem)`,
+                    }}
+                />
+
                 {/* Content Wrapper */}
                 <div
                     className={`tc-content-wrapper absolute inset-x-0 top-0 bottom-0 z-10 flex flex-col justify-center px-3`}
@@ -322,12 +326,6 @@ export const TaskCard = memo(
                         transformOrigin: "center",
                     }}
                 >
-                    <div
-                        className="absolute top-0 bottom-0 left-0 z-10 w-1.5"
-                        style={{
-                            backgroundColor: getTagColor(card.tag_id),
-                        }}
-                    />
                     <div
                         className={`tc-title shrink-0 truncate text-sm font-medium text-foreground`}
                     >

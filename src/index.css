@@ -110,20 +110,32 @@
     .animate-scan-down {
         animation: scan-down 2s linear infinite;
     }
+    /* Paint-only keyframes (top/background-color): transform/opacity/filter
+       would promote the element to its own compositor layer with a
+       compositor-thread animation clock, which desyncs for a few frames
+       from the main-thread-driven zoom preview transform. */
     @keyframes scan-down {
         0% {
-            transform: translateY(0);
-            opacity: 0;
+            top: 0;
+            background-color: transparent;
         }
         10% {
-            opacity: 1;
+            background-color: color-mix(
+                in srgb,
+                var(--primary) 40%,
+                transparent
+            );
         }
         90% {
-            opacity: 1;
+            background-color: color-mix(
+                in srgb,
+                var(--primary) 40%,
+                transparent
+            );
         }
         100% {
-            transform: translateY(60px);
-            opacity: 0;
+            top: 60px;
+            background-color: transparent;
         }
     }
 }
