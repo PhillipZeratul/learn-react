@@ -63,6 +63,9 @@ import {
     calculateLinkedBounds,
 } from "../utils/drag"
 
+const FULL_DAY_MIN = 24 * 60
+const DAY_BUFFER_DAYS = 1
+
 type EditingState =
     | { type: "routine"; card: RoutineCard; isNew?: boolean }
     | {
@@ -142,6 +145,19 @@ export default function RoutineTimeTrackerWidget() {
     const [baseDate, setBaseDate] = useState<Date | null>(null)
     const [currentDate, setCurrentDate] = useState<Date | null>(null)
     const DAYS_TO_RENDER = 10
+
+    // Day-range virtualization (#8): only cards/labels intersecting the
+    // visible days (± buffer) are mounted. Everything is absolutely
+    // positioned in container space, so unmounted days need no placeholders.
+    // Initial range centers on today (baseDate starts as today - 7 days).
+    const [dayRange, setDayRange] = useState(() => {
+        const todayIdx = Math.min(DAYS_TO_RENDER - 1, 7)
+        return {
+            start: Math.max(0, todayIdx - 2),
+            end: Math.min(DAYS_TO_RENDER - 1, todayIdx + 2),
+        }
+    })
+    const dayRangeRef = useRef<{ start: number; end: number } | null>(null)
 
     const [now, setNow] = useState<Date | null>(null)
 
@@ -231,8 +247,53 @@ export default function RoutineTimeTrackerWidget() {
         )
     }, [currentDateTimeTrackerCards, baseDate])
 
+    // Virtualization filter (#8): keep only cards intersecting rendered days.
+    // Cards spanning midnight are kept if *any* intersected day is rendered.
+    const isCardInRenderedRange = useCallback(
+        (startMin: number, duration: number) => {
+            const totalMin = DAYS_TO_RENDER * FULL_DAY_MIN
+            const clampedStart = Math.max(0, startMin)
+            const clampedEnd = Math.min(totalMin, startMin + duration)
+            const startDay = Math.floor(clampedStart / FULL_DAY_MIN)
+            const endDay = Math.floor(
+                Math.max(clampedStart, clampedEnd - 1e-6) / FULL_DAY_MIN
+            )
+            return endDay >= dayRange.start && startDay <= dayRange.end
+        },
+        [dayRange, DAYS_TO_RENDER]
+    )
+
+    const renderedTimeTrackerCards = useMemo(() => {
+        if (!baseDate) return []
+        return currentDateTimeTrackerCards.filter((c) => {
+            const { startMin, duration } = getAbsoluteBounds(
+                c.start_at,
+                c.end_at,
+                baseDate
+            )
+            return isCardInRenderedRange(startMin, duration)
+        })
+    }, [currentDateTimeTrackerCards, baseDate, isCardInRenderedRange])
+
+    const renderedRoutineCards = useMemo(() => {
+        if (!baseDate) return []
+        return currentDateRoutineCards.filter((c) => {
+            if (c.is_deleted) return false
+            const { startMin, duration } = getAbsoluteBounds(
+                c.start_at,
+                c.end_at,
+                baseDate
+            )
+            return isCardInRenderedRange(startMin, duration)
+        })
+    }, [currentDateRoutineCards, baseDate, isCardInRenderedRange])
+
     const [editingState, setEditingState] = useState<EditingState>(null)
     const [dragState, setDragState] = useState<DragState | null>(null)
+
+    useEffect(() => {
+        dragStateRef.current = dragState
+    }, [dragState])
     const [confirmDragState, setConfirmDragState] = useState<{
         type: "routine" | "timeTracker"
         card: RoutineCard | TimeTrackerCard
@@ -255,6 +316,15 @@ export default function RoutineTimeTrackerWidget() {
     const lastTouchPos = useRef<{ x: number; y: number } | null>(null)
     const wasDragged = useRef(false)
     const lastBackgroundTime = useRef<number | null>(null)
+
+    // Zoom preview state (#7): during a zoom gesture only a compositor
+    // transform is updated; the real zoom (--ppm/height/scrollTop) is
+    // committed exactly once at gesture end.
+    const previewZoomRef = useRef(zoomLevelSignal.peek())
+    const previewActiveRef = useRef(false)
+    const overscrollPxRef = useRef(0)
+    const previewFocalContentYRef = useRef(0)
+    const dragStateRef = useRef<DragState | null>(null)
 
     // Snapping and Linking gesture state refs
     const shakeHistoryRef = useRef<Array<{ y: number; timestamp: number }>>([])
@@ -785,16 +855,31 @@ export default function RoutineTimeTrackerWidget() {
         updateDragPositionRef.current = updateDragPosition
     }, [updateDragPosition])
 
-    // Synchronize zoom signal with DOM elements to avoid React re-renders
+    // Synchronize zoom signal with DOM elements to avoid React re-renders.
+    // Only runs on zoom *commits* (once per gesture) thanks to the
+    // transform-preview architecture — never per wheel/touchmove frame.
     useEffect(() => {
         const dispose = effect(() => {
             const ppm = pixelsPerMinuteSignal.value
+            const zoom = zoomLevelSignal.value
 
             if (timelineContainerRef.current) {
-                timelineContainerRef.current.style.height = `${DAYS_TO_RENDER * 24 * 60 * ppm + BOTTOM_MARGIN}px`
-                timelineContainerRef.current.style.setProperty(
-                    "--ppm",
-                    ppm.toString()
+                const style = timelineContainerRef.current.style
+                style.height = `${DAYS_TO_RENDER * FULL_DAY_MIN * ppm + BOTTOM_MARGIN}px`
+                style.setProperty("--ppm", ppm.toString())
+
+                // Label-tier fade variables (consumed by TimelineGrid)
+                const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
+                const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
+                style.setProperty("--half-opacity", halfOpacity.toString())
+                style.setProperty(
+                    "--half-display",
+                    halfOpacity > 0 ? "block" : "none"
+                )
+                style.setProperty("--ten-opacity", tenOpacity.toString())
+                style.setProperty(
+                    "--ten-display",
+                    tenOpacity > 0 ? "block" : "none"
                 )
             }
         })
@@ -821,10 +906,40 @@ export default function RoutineTimeTrackerWidget() {
         [baseDate]
     )
 
+    // Recompute which days are visible (± buffer) — drives virtualization.
+    // Cheap; only triggers a re-render when the integer day range changes.
+    const updateVisibleRange = useCallback(() => {
+        const container = scrollContainerRef.current
+        if (!container) return
+
+        const ppm = pixelsPerMinuteSignal.peek()
+        const dayPx = FULL_DAY_MIN * ppm
+        const start = Math.max(
+            0,
+            Math.floor((container.scrollTop - TOP_MARGIN) / dayPx) -
+                DAY_BUFFER_DAYS
+        )
+        const end = Math.min(
+            DAYS_TO_RENDER - 1,
+            Math.floor(
+                (container.scrollTop + container.clientHeight - TOP_MARGIN) /
+                    dayPx
+            ) + DAY_BUFFER_DAYS
+        )
+
+        const prev = dayRangeRef.current
+        if (!prev || prev.start !== start || prev.end !== end) {
+            const next = { start, end }
+            dayRangeRef.current = next
+            setDayRange(next)
+        }
+    }, [DAYS_TO_RENDER])
+
     useEffect(() => {
         // Initial scroll - jump immediately (no smooth animation)
         const timer = setTimeout(() => {
             scrollToCurrentTime(false)
+            updateVisibleRange()
         }, 10)
 
         const handleVisibilityChange = () => {
@@ -861,7 +976,7 @@ export default function RoutineTimeTrackerWidget() {
                 handleVisibilityChange
             )
         }
-    }, [setCurrentDate, scrollToCurrentTime])
+    }, [setCurrentDate, scrollToCurrentTime, updateVisibleRange])
 
     useEffect(() => {
         if (!scrollContainerRef.current) return
@@ -873,22 +988,71 @@ export default function RoutineTimeTrackerWidget() {
         let wheelTimeout: ReturnType<typeof setTimeout> | null = null
         let lastFocalYViewport = container.clientHeight / 2
 
-        const updateZoom = (nextZoom: number, focalYViewport: number) => {
+        // ── Zoom preview/commit (#7) ───────────────────────────────────────
+        // During a zoom gesture only a compositor-friendly
+        // `transform: scaleY()` is applied to the timeline container (no
+        // style recalc, no layout). The real zoom (--ppm, container height,
+        // scrollTop) is committed exactly once when the gesture ends.
+
+        const writeTransform = () => {
+            const el = timelineContainerRef.current
+            if (!el) return
+            const overscroll = overscrollPxRef.current
+            const scale = previewActiveRef.current
+                ? previewZoomRef.current / zoomLevelSignal.value
+                : 1
+
+            if (overscroll === 0 && scale === 1) {
+                el.style.transform = ""
+                el.style.transformOrigin = ""
+                el.style.willChange = ""
+                return
+            }
+
+            // translateY is unaffected by transform-origin; scaleY is pinned
+            // to the focal content point so it stays fixed in the viewport.
+            el.style.transformOrigin = `0 ${previewFocalContentYRef.current}px`
+            el.style.transform = `translateY(${overscroll}px) scaleY(${scale})`
+            el.style.willChange = "transform"
+        }
+
+        const commitZoom = (nextZoom: number, focalYViewport: number) => {
             const oldZoom = zoomLevelSignal.value
-            if (oldZoom === nextZoom) return
+            previewActiveRef.current = false
+            previewZoomRef.current = nextZoom
+
+            if (oldZoom === nextZoom) {
+                writeTransform() // just clears any leftover preview transform
+                return
+            }
 
             const s1 = container.scrollTop
 
-            // Apply new zoom
+            // Apply new zoom (synchronously flushes height/--ppm/tier vars)
             zoomLevelSignal.value = nextZoom
 
             // Adjust scroll position to keep focal point fixed relative to the viewport
-            const nextScrollTop =
+            container.scrollTop =
                 (s1 + focalYViewport - TOP_MARGIN) * (nextZoom / oldZoom) +
                 TOP_MARGIN -
                 focalYViewport
 
-            container.scrollTop = nextScrollTop
+            // Clear the preview transform in the same frame as the layout commit
+            writeTransform()
+            updateVisibleRange()
+        }
+
+        const applyZoomPreview = (nextZoom: number, focalYViewport: number) => {
+            // Drag math reads the committed ppm — never preview during a drag
+            if (dragStateRef.current) {
+                commitZoom(nextZoom, focalYViewport)
+                return
+            }
+            previewZoomRef.current = nextZoom
+            previewActiveRef.current = true
+            previewFocalContentYRef.current =
+                container.scrollTop + focalYViewport
+            writeTransform()
         }
 
         const snapBackZoom = (focalYViewport: number) => {
@@ -896,20 +1060,24 @@ export default function RoutineTimeTrackerWidget() {
 
             const minZoom = 1
             const maxZoom = 6
-            const currentZoom = zoomLevelSignal.value
+            const currentZoom = previewZoomRef.current
 
-            if (currentZoom >= minZoom && currentZoom <= maxZoom) return
+            if (currentZoom >= minZoom && currentZoom <= maxZoom) {
+                commitZoom(currentZoom, focalYViewport)
+                return
+            }
 
             const targetZoom = currentZoom < minZoom ? minZoom : maxZoom
 
+            // Rubber-band back using cheap transform-only preview frames
             const animate = () => {
-                const z = zoomLevelSignal.value
+                const z = previewZoomRef.current
                 const diff = targetZoom - z
                 if (Math.abs(diff) < 0.001) {
-                    updateZoom(targetZoom, focalYViewport)
+                    commitZoom(targetZoom, focalYViewport)
                     return
                 }
-                updateZoom(z + diff * 0.35, focalYViewport)
+                applyZoomPreview(z + diff * 0.35, focalYViewport)
                 snapBackRafId = requestAnimationFrame(animate)
             }
             snapBackRafId = requestAnimationFrame(animate)
@@ -932,9 +1100,8 @@ export default function RoutineTimeTrackerWidget() {
             const abs = Math.abs(overscrollY)
             const dampened = maxOverscroll * (1 - Math.exp(-abs / 200))
 
-            if (timelineContainerRef.current) {
-                timelineContainerRef.current.style.transform = `translateY(${sign * dampened}px)`
-            }
+            overscrollPxRef.current = sign * dampened
+            writeTransform()
 
             return overscrollY !== 0
         }
@@ -944,9 +1111,8 @@ export default function RoutineTimeTrackerWidget() {
             const animate = () => {
                 if (Math.abs(overscrollY) < 1) {
                     overscrollY = 0
-                    if (timelineContainerRef.current) {
-                        timelineContainerRef.current.style.transform = `translateY(0)`
-                    }
+                    overscrollPxRef.current = 0
+                    writeTransform()
                     return
                 }
                 overscrollY *= 0.8
@@ -954,9 +1120,8 @@ export default function RoutineTimeTrackerWidget() {
                 const sign = Math.sign(overscrollY)
                 const abs = Math.abs(overscrollY)
                 const dampened = maxOverscroll * (1 - Math.exp(-abs / 200))
-                if (timelineContainerRef.current) {
-                    timelineContainerRef.current.style.transform = `translateY(${sign * dampened}px)`
-                }
+                overscrollPxRef.current = sign * dampened
+                writeTransform()
                 overscrollRafId = requestAnimationFrame(animate)
             }
             overscrollRafId = requestAnimationFrame(animate)
@@ -972,7 +1137,7 @@ export default function RoutineTimeTrackerWidget() {
                 lastFocalYViewport = focalYViewport
 
                 const delta = -e.deltaY * 0.005
-                const currentZoom = zoomLevelSignal.value
+                const currentZoom = previewZoomRef.current
                 let nextZoom = currentZoom + delta
 
                 // Overshoot resistance
@@ -983,13 +1148,19 @@ export default function RoutineTimeTrackerWidget() {
                 }
 
                 nextZoom = Math.max(0.9, Math.min(8, nextZoom))
-                updateZoom(nextZoom, focalYViewport)
+                applyZoomPreview(nextZoom, focalYViewport)
 
                 if (wheelTimeout) clearTimeout(wheelTimeout)
                 wheelTimeout = setTimeout(() => {
                     snapBackZoom(focalYViewport)
                 }, 50)
             } else {
+                // A scroll intent ends any active zoom gesture
+                if (previewActiveRef.current) {
+                    if (wheelTimeout) clearTimeout(wheelTimeout)
+                    commitZoom(previewZoomRef.current, lastFocalYViewport)
+                }
+
                 const atTop = container.scrollTop <= 0
                 const atBottom =
                     container.scrollTop + container.clientHeight >=
@@ -1013,7 +1184,7 @@ export default function RoutineTimeTrackerWidget() {
         const handleGestureStart = (e: Event) => {
             e.preventDefault()
             if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
-            initialZoom = zoomLevelSignal.value
+            initialZoom = previewZoomRef.current
         }
 
         const handleGestureChange = (e: Event) => {
@@ -1031,7 +1202,7 @@ export default function RoutineTimeTrackerWidget() {
 
             const focalYViewport = container.clientHeight / 2
             lastFocalYViewport = focalYViewport
-            updateZoom(nextZoom, focalYViewport)
+            applyZoomPreview(nextZoom, focalYViewport)
         }
 
         const handleGestureEnd = (e: Event) => {
@@ -1048,8 +1219,12 @@ export default function RoutineTimeTrackerWidget() {
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 )
-                initialZoom = zoomLevelSignal.value
+                initialZoom = previewZoomRef.current
             } else if (e.touches.length === 1) {
+                // A one-finger gesture (scroll/drag) ends any active zoom preview
+                if (previewActiveRef.current) {
+                    commitZoom(previewZoomRef.current, lastFocalYViewport)
+                }
                 lastTouchY = e.touches[0].clientY
                 if (overscrollRafId) cancelAnimationFrame(overscrollRafId)
             }
@@ -1079,7 +1254,7 @@ export default function RoutineTimeTrackerWidget() {
                 }
 
                 nextZoom = Math.max(0.5, Math.min(7, nextZoom))
-                updateZoom(nextZoom, focalYViewport)
+                applyZoomPreview(nextZoom, focalYViewport)
             } else if (e.touches.length === 1) {
                 const clientY = e.touches[0].clientY
                 const dy = clientY - lastTouchY
@@ -1116,7 +1291,8 @@ export default function RoutineTimeTrackerWidget() {
 
         const handleDoubleClick = () => {
             if (snapBackRafId) cancelAnimationFrame(snapBackRafId)
-            zoomLevelSignal.value = 1
+            if (wheelTimeout) clearTimeout(wheelTimeout)
+            commitZoom(1, container.clientHeight / 2)
         }
 
         container.addEventListener("wheel", handleWheel, { passive: false })
@@ -1145,7 +1321,7 @@ export default function RoutineTimeTrackerWidget() {
             container.removeEventListener("gesturechange", handleGestureChange)
             container.removeEventListener("gestureend", handleGestureEnd)
         }
-    }, [currentDate])
+    }, [currentDate, updateVisibleRange])
 
     if (!currentDate || !now) {
         return (
@@ -1931,6 +2107,7 @@ export default function RoutineTimeTrackerWidget() {
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (!baseDate) return
+        updateVisibleRange()
         const scrollTop = e.currentTarget.scrollTop
         const clientHeight = e.currentTarget.clientHeight
         const ppm = pixelsPerMinuteSignal.value
@@ -2009,21 +2186,35 @@ export default function RoutineTimeTrackerWidget() {
                     className="pointer-events-none relative mx-auto w-full max-w-2xl"
                     style={
                         {
-                            height: `${DAYS_TO_RENDER * 24 * 60 * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
+                            height: `${DAYS_TO_RENDER * FULL_DAY_MIN * pixelsPerMinuteSignal.peek() + BOTTOM_MARGIN}px`,
                             "--ppm": pixelsPerMinuteSignal.peek().toString(),
+                            "--half-opacity": Math.max(
+                                0,
+                                Math.min(1, (zoomLevelSignal.peek() - 2) * 2)
+                            ).toString(),
+                            "--half-display":
+                                zoomLevelSignal.peek() > 2 ? "block" : "none",
+                            "--ten-opacity": Math.max(
+                                0,
+                                Math.min(1, (zoomLevelSignal.peek() - 4) * 2)
+                            ).toString(),
+                            "--ten-display":
+                                zoomLevelSignal.peek() > 4 ? "block" : "none",
                         } as React.CSSProperties
                     }
                 >
                     <TimelineGrid
                         daysToRender={DAYS_TO_RENDER}
                         baseDate={baseDate || undefined}
+                        renderStartDay={dayRange.start}
+                        renderEndDay={dayRange.end}
                     />
 
                     <div className="absolute inset-0 flex">
                         {/* Time Tracker Column */}
                         <div className="relative h-full flex-1">
                             <TrackerDropZoneHighlight />
-                            {currentDateTimeTrackerCards.map((task) => (
+                            {renderedTimeTrackerCards.map((task) => (
                                 <TaskCard
                                     key={task.id}
                                     card={task}
@@ -2073,7 +2264,7 @@ export default function RoutineTimeTrackerWidget() {
                                 )}
                             />
                             <LinkIndicatorLayer
-                                cards={currentDateTimeTrackerCards}
+                                cards={renderedTimeTrackerCards}
                                 baseDate={baseDate}
                                 layoutMap={timeTrackerLayoutMap}
                             />
@@ -2084,7 +2275,7 @@ export default function RoutineTimeTrackerWidget() {
 
                         {/* Routine Column */}
                         <div className="relative h-full flex-1">
-                            {currentDateRoutineCards.reduce<React.ReactNode[]>(
+                            {renderedRoutineCards.reduce<React.ReactNode[]>(
                                 (acc, task) => {
                                     if (!task.is_deleted) {
                                         acc.push(
@@ -2125,7 +2316,7 @@ export default function RoutineTimeTrackerWidget() {
                                 []
                             )}
                             <LinkIndicatorLayer
-                                cards={currentDateRoutineCards}
+                                cards={renderedRoutineCards}
                                 baseDate={baseDate}
                                 layoutMap={routineLayoutMap}
                             />

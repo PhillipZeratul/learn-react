@@ -1,71 +1,53 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
 import { effect } from "@preact/signals-react"
 import { TOP_MARGIN } from "../utils/utils"
-import { pixelsPerMinuteSignal, zoomLevelSignal } from "../stores/zoom.store"
+import { zoomLevelSignal } from "../stores/zoom.store"
 
 interface TimelineGridProps {
     daysToRender: number
     baseDate?: Date
+    /** Inclusive range of day indices whose labels should be mounted. */
+    renderStartDay: number
+    renderEndDay: number
 }
 
-export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
-    const containerRef = useRef<HTMLDivElement>(null)
+/**
+ * Zoom tier gating which label densities are mounted in the DOM (#9):
+ *  - tier 0 (zoom <= 2): hour labels only
+ *  - tier 1 (zoom  > 2): + half-hour labels
+ *  - tier 2 (zoom  > 4): + 10-minute labels
+ *
+ * The opacity/display fade is still driven by CSS variables set on the
+ * timeline container, so freshly mounted tiers fade in smoothly.
+ */
+const getZoomTier = (zoom: number) => (zoom > 4 ? 2 : zoom > 2 ? 1 : 0)
 
+export const TimelineGrid = ({
+    daysToRender,
+    baseDate,
+    renderStartDay,
+    renderEndDay,
+}: TimelineGridProps) => {
     const totalHours = daysToRender * 24
     const tenMins = [10, 20, 40, 50]
 
+    const [zoomTier, setZoomTier] = useState(() =>
+        getZoomTier(zoomLevelSignal.peek())
+    )
+
     useEffect(() => {
-        if (!containerRef.current) return
-
         const dispose = effect(() => {
-            const ppm = pixelsPerMinuteSignal.value
-            const zoom = zoomLevelSignal.value
-
-            const halfOpacity = Math.max(0, Math.min(1, (zoom - 2) * 2))
-            const tenOpacity = Math.max(0, Math.min(1, (zoom - 4) * 2))
-
-            if (containerRef.current) {
-                const style = containerRef.current.style
-                style.setProperty("--ppm", ppm.toString())
-                style.setProperty("--half-opacity", halfOpacity.toString())
-                style.setProperty(
-                    "--half-display",
-                    halfOpacity > 0 ? "block" : "none"
-                )
-                style.setProperty("--ten-opacity", tenOpacity.toString())
-                style.setProperty(
-                    "--ten-display",
-                    tenOpacity > 0 ? "block" : "none"
-                )
-            }
+            const tier = getZoomTier(zoomLevelSignal.value)
+            setZoomTier((prev) => (prev === tier ? prev : tier))
         })
-
         return () => dispose()
-    }, [daysToRender])
+    }, [])
+
+    const isDayRendered = (day: number) =>
+        day >= renderStartDay && day <= renderEndDay
 
     return (
-        <div
-            ref={containerRef}
-            className="pointer-events-none absolute inset-0"
-            // Set initial variables so it renders correctly before effect runs
-            style={
-                {
-                    "--ppm": pixelsPerMinuteSignal.peek().toString(),
-                    "--half-opacity": Math.max(
-                        0,
-                        Math.min(1, (zoomLevelSignal.peek() - 2) * 2)
-                    ).toString(),
-                    "--half-display":
-                        zoomLevelSignal.peek() > 2 ? "block" : "none",
-                    "--ten-opacity": Math.max(
-                        0,
-                        Math.min(1, (zoomLevelSignal.peek() - 4) * 2)
-                    ).toString(),
-                    "--ten-display":
-                        zoomLevelSignal.peek() > 4 ? "block" : "none",
-                } as React.CSSProperties
-            }
-        >
+        <div className="pointer-events-none absolute inset-0">
             <GridLines />
 
             {/* Time Labels */}
@@ -78,6 +60,13 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
 
                     {/* Hour Labels */}
                     {[...Array(totalHours + 1)].map((_, i) => {
+                        // The final boundary label belongs to the last day
+                        const day = Math.min(
+                            Math.floor(i / 24),
+                            daysToRender - 1
+                        )
+                        if (!isDayRendered(day)) return null
+
                         const localHour = i % 24
                         const isMidnight = localHour === 0
 
@@ -123,48 +112,55 @@ export const TimelineGrid = ({ daysToRender, baseDate }: TimelineGridProps) => {
                         )
                     })}
 
-                    {/* Half-Hour Labels */}
-                    {[...Array(totalHours)].map((_, i) => {
-                        const localHour = i % 24
-                        return (
-                            <div
-                                key={`grid-label-half-${i}`}
-                                className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60 select-none"
-                                style={{
-                                    top: `calc(${i * 60 + 30} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
-                                    opacity: "var(--half-opacity)",
-                                    display: "var(--half-display)",
-                                }}
-                            >
-                                <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
-                                    {String(localHour).padStart(2, "0")}:30
-                                </span>
-                            </div>
-                        )
-                    })}
+                    {/* Half-Hour Labels (only mounted past zoom tier 1) */}
+                    {zoomTier >= 1 &&
+                        [...Array(totalHours)].map((_, i) => {
+                            if (!isDayRendered(Math.floor(i / 24))) return null
 
-                    {/* 10-Minute Labels */}
-                    {[...Array(totalHours * 4)].map((_, i) => {
-                        const hour = Math.floor(i / 4)
-                        const minute = tenMins[i % 4]
-                        const localHour = hour % 24
-                        return (
-                            <div
-                                key={`grid-label-ten-${i}`}
-                                className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/40 select-none"
-                                style={{
-                                    top: `calc(${hour * 60 + minute} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
-                                    opacity: "var(--ten-opacity)",
-                                    display: "var(--ten-display)",
-                                }}
-                            >
-                                <span className="pointer-events-auto bg-background px-1 tabular-nums">
-                                    {String(localHour).padStart(2, "0")}:
-                                    {String(minute).padStart(2, "0")}
-                                </span>
-                            </div>
-                        )
-                    })}
+                            const localHour = i % 24
+                            return (
+                                <div
+                                    key={`grid-label-half-${i}`}
+                                    className="grid-time-label-half absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/60 select-none"
+                                    style={{
+                                        top: `calc(${i * 60 + 30} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                        opacity: "var(--half-opacity)",
+                                        display: "var(--half-display)",
+                                    }}
+                                >
+                                    <span className="pointer-events-auto bg-background px-1.5 tabular-nums">
+                                        {String(localHour).padStart(2, "0")}:30
+                                    </span>
+                                </div>
+                            )
+                        })}
+
+                    {/* 10-Minute Labels (only mounted past zoom tier 2) */}
+                    {zoomTier >= 2 &&
+                        [...Array(totalHours * 4)].map((_, i) => {
+                            const hour = Math.floor(i / 4)
+                            if (!isDayRendered(Math.floor(hour / 24)))
+                                return null
+
+                            const minute = tenMins[i % 4]
+                            const localHour = hour % 24
+                            return (
+                                <div
+                                    key={`grid-label-ten-${i}`}
+                                    className="grid-time-label-ten absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground/40 select-none"
+                                    style={{
+                                        top: `calc(${hour * 60 + minute} * var(--ppm) * 1px + ${TOP_MARGIN}px)`,
+                                        opacity: "var(--ten-opacity)",
+                                        display: "var(--ten-display)",
+                                    }}
+                                >
+                                    <span className="pointer-events-auto bg-background px-1 tabular-nums">
+                                        {String(localHour).padStart(2, "0")}:
+                                        {String(minute).padStart(2, "0")}
+                                    </span>
+                                </div>
+                            )
+                        })}
                 </div>
                 <div className="flex-1" /> {/* Right spacer */}
             </div>
