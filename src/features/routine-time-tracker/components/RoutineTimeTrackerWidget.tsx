@@ -1546,8 +1546,8 @@ export default function RoutineTimeTrackerWidget() {
 
         longPressTimer.current = setTimeout(() => {
             const { startMin, duration } = getAbsoluteBounds(
-                task.start_at,
-                task.end_at,
+                rawTask.start_at,
+                rawTask.end_at,
                 baseDate!
             )
 

@@ -29,7 +29,7 @@ export const TimeTrackerActionButton = ({
             const ppm = pixelsPerMinuteSignal.value
             if (buttonRef.current) {
                 // Positioned below the 60px ghost extension (60 + 24 spacing)
-                buttonRef.current.style.top = `${currentMinutes * ppm + TOP_MARGIN + 80}px`
+                buttonRef.current.style.top = `calc(${currentMinutes * ppm + TOP_MARGIN}px)`
             }
         })
 
@@ -43,8 +43,9 @@ export const TimeTrackerActionButton = ({
             ref={buttonRef}
             className="pointer-events-none absolute right-0 left-0 z-30 flex justify-center"
             style={{
-                transform: "scaleY(var(--inverse-preview-scale-y, 1))",
-                transformOrigin: "center",
+                transform:
+                    "translateY(calc(80px * var(--inverse-preview-scale-y, 1))) scaleY(var(--inverse-preview-scale-y, 1))",
+                transformOrigin: "top",
             }}
         >
             <button

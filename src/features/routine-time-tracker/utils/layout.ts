@@ -24,7 +24,8 @@ export function calculateLayout(
             card.end_at,
             baseDate
         )
-        const endMin = startMin + duration
+        const isActive = (card as { _isActive?: boolean })._isActive
+        const endMin = isActive ? Infinity : startMin + duration
 
         if (startMin >= clusterEndMin) {
             if (currentCluster.length > 0) {
@@ -67,7 +68,9 @@ export function calculateLayout(
                         lastCard.end_at,
                         baseDate
                     )
-                const lastEnd = lastStart + lastDur
+                const isActiveLast = (lastCard as { _isActive?: boolean })
+                    ._isActive
+                const lastEnd = isActiveLast ? Infinity : lastStart + lastDur
                 const gap = startMin - lastEnd
 
                 const bothActive =
